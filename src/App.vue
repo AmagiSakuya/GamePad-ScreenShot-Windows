@@ -64,13 +64,14 @@
           <div class="combo-rows-container">
 
             <div v-for="(key, index) in config.comboKeys" :key="index" class="combo-row">
-              <select class="form-select combo-select">
+              <select class="form-select combo-select" v-model="config.comboKeys[index]">
+                <option selected>PS(XBOX)</option>
                 <option selected>L1(LB)</option>
                 <option>R1(RB)</option>
                 <option>Share(Select)</option>
                 <option>Option(Start)</option>
               </select>
-              <button @click="removeCombo(index)" class="btn btn-danger" >
+              <button @click="removeCombo(index)" class="btn btn-danger">
                 <i class="fas fa-trash-alt"></i>
                 <span>删除</span>
               </button>
@@ -79,7 +80,7 @@
           </div>
         </div>
         <div class="action-buttons">
-          <button class="btn btn-success" @click="addCombo" >
+          <button class="btn btn-success" @click="addCombo">
             <span>添加按键</span>
           </button>
         </div>
@@ -106,30 +107,13 @@
       </button>
     </div>
   </div>
-
-  <!-- <div style="padding:20px">
-    <button @click="takeScreenshot">截图</button>
-    <br /><br />
-    <p>{{ desktopPath }}</p>
-  </div> -->
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
-const defaultConfig = {
-  path: '',
-  resolution: '4K',
-  controller: 'DS4',
-  comboKeys: [],
-  sound: 'NS2'
-}
 
 export default {
   name: 'App',
-  components: {
-    HelloWorld
-  },
+  components: {},
   data() {
     return {
       desktopPath: "",
@@ -142,21 +126,23 @@ export default {
       }
     }
   },
-  mounted() {
-    window.electronAPI.onGlobalHotkey(this.takeScreenshot)
+  async mounted() {
+    window.electronAPI.onHotkeyTriggered(this.takeScreenshot)
+    this.config = await window.electronAPI.readConfig();
+    await this.initDevice();
   },
   unmounted() {
-    window.electronAPI.offGlobalHotkey(this.takeScreenshot)
+    window.electronAPI.offHotkeyTriggered(this.takeScreenshot)
   },
   methods: {
     async takeScreenshot() {
       this.desktopPath = await window.electronAPI.screenShot()
     },
     async chooseFolder() {
-      // const folder = await window.api.selectFolder()
-      // if (folder) {
-      //   this.config.path = folder
-      // }
+      const folder = await window.electronAPI.selectFolder()
+      if (folder) {
+        this.config.path = folder
+      }
     },
     addCombo() {
       this.config.comboKeys.push('L1(LB)')
@@ -165,8 +151,24 @@ export default {
       this.config.comboKeys.splice(index, 1)
     },
     async save() {
-      //await window.api.saveConfig(this.config)
-      alert('保存成功')
+      var stringData = JSON.stringify(this.config);
+      var pureObj = JSON.parse(stringData);
+      if (pureObj.path == "") {
+        alert('截图路径为空')
+        return;
+      }
+      await window.electronAPI.saveConfig(pureObj)
+      let success = await this.initDevice();
+      if (success) {
+        alert('保存成功')
+      }
+    },
+    async initDevice() {
+      let success = await window.electronAPI.initDevice()
+      if (!success) {
+        alert('初始化设备失败 请确保控制已连接')
+      }
+      return success
     }
   }
 }

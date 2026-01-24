@@ -6,7 +6,14 @@ module.exports = defineConfig({
       preload: 'src/preload.js',
       builderOptions: {
         asarUnpack: [
-          'preload.js'
+          'preload.js',
+          '**/*.mp3'
+        ],
+        extraResources: [
+          {
+            from: 'src/assets/ns2截图音.mp3',
+            to: 'assets/ns2截图音.mp3'
+          }
         ]
       }
     }

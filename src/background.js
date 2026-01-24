@@ -1,17 +1,36 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, globalShortcut } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
 const HID = require('node-hid')
+const sound = require('sound-play')
+
 const fs = require('fs')
 const path = require('path')
 
-var device = new HID.HID(1118, 654);
+const { parseDS4, parseXbox } = require('./lib/parseController');
 
+const exeDir = path.dirname(app.getPath('exe'))
+const configPath = app.isPackaged ? path.join(exeDir, 'userConfig.json') :
+  path.join(app.getAppPath(), 'userConfig.json')
 
-var lasta = false;
+const soundPath = app.isPackaged
+  ? path.join(
+    process.resourcesPath, 'assets', 'ns2截图音.mp3')
+  : path.join(__dirname, '../src/assets/ns2截图音.mp3')
+
+var win;
+
+const defaultConfig = {
+  path: '',
+  resolution: '4K',
+  controller: 'DS4',
+  comboKeys: [],
+  sound: 'NS2'
+}
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -24,9 +43,12 @@ const preloadPath = app.isPackaged
 
 async function createWindow() {
   // Create the browser window.
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
+    title: 'Gamepad Full-ScreenShot Tool',
     width: 800,
     height: 900,
+    autoHideMenuBar: true,
+    icon: path.join(__dirname, 'gamepad.ico'),
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
@@ -34,58 +56,6 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
       preload: preloadPath
     }
-  })
-
-  //test 
-  device.on("data", function (data) {
-    //console.log(data);
-    const parseStick = (offset) => {
-      const val = data.readInt16LE(offset);
-      return parseFloat((val / 32768).toFixed(3)); // 归一化为 -1 到 1
-    };
-
-    const state = {
-      leftStickX: parseStick(1),
-      leftStickY: parseStick(3),
-      rightStickX: parseStick(5),
-      rightStickY: parseStick(7),
-
-      // 2. 扳机键 (LT/RT 通常在 Index 9 和 10)
-      // Xbox 蓝牙版有时候把两个扳机放在一个 16 位里，或者独立字节
-      leftTrigger: data[9],  // 0-255
-      rightTrigger: data[10], // 0-255
-
-      // 3. 按钮解析 (Index 11 开始是位掩码)
-      buttons: {
-        a: !!(data[11] & 0x01),
-        b: !!(data[11] & 0x02),
-        x: !!(data[11] & 0x04),
-        y: !!(data[11] & 0x08),
-        lb: !!(data[11] & 0x10),
-        rb: !!(data[11] & 0x20),
-        view: !!(data[11] & 0x40), // 菜单键
-        menu: !!(data[11] & 0x80),
-        ls: !!(data[12] & 0x01), // 左摇杆下压
-        rs: !!(data[12] & 0x02), // 右摇杆下压
-      },
-
-      // 4. 方向键 (Xbox 蓝牙通常用 Index 13 的低位表示)
-      // 1=北, 2=东北, 3=东, 4=东南, 5=南, 6=西南, 7=西, 8=西北, 0=释放
-      dpad: data[13]
-    };
-
-    if (lasta != state.buttons.a) {
-      console.log(state.buttons.a);
-      if (state.buttons.a == true) {
-        win.webContents.send('global-hotkey')
-      }
-    }
-    lasta = state.buttons.a;
-  });
-
-  // 注册全局快捷键
-  globalShortcut.register('F', () => {
-    win.webContents.send('global-hotkey')
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
@@ -146,4 +116,103 @@ if (isDevelopment) {
       app.quit()
     })
   }
+}
+
+//选择文件夹
+ipcMain.handle('select-folder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  })
+  return result.canceled ? null : result.filePaths[0]
+})
+
+async function getConfig() {
+  if (!fs.existsSync(configPath)) {
+    fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2))
+    return defaultConfig
+  }
+  var res = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+  return res
+}
+
+ipcMain.handle('read-config', async () => {
+  return await getConfig()
+})
+
+ipcMain.handle('save-config', async (_, data) => {
+  fs.writeFileSync(configPath, JSON.stringify(data, null, 2))
+})
+
+ipcMain.handle('init-device', async () => {
+  var m_config = await getConfig()
+  var success = initHidDevice(m_config);
+  return success
+})
+
+var device;
+
+function initHidDevice(configData) {
+  //尝试销毁上一个
+  if (device) {
+    try {
+      device.close();
+      device = null
+    } catch (err) {
+      console.error('关闭设备时出错:', err);
+      return false;
+    }
+  }
+  lastFlag = false
+  try {
+    if (configData.controller === 'XBOX') {
+      device = new HID.HID(1118, 654)
+    } else if (configData.controller === 'DS4') {
+      device = new HID.HID(1356, 2508)
+    }
+
+    device.on("data", function (data) {
+      if (configData.controller === 'XBOX') {
+
+      } else if (configData.controller === 'DS4') {
+        Update_PS_KeyDownCheck(parseDS4(data), configData)
+      }
+    });
+  } catch (e) {
+    console.error(`无法读取设备：${configData.controller}`)
+    return false;
+  }
+
+  return true;
+}
+
+var lastFlag = false;
+
+function Update_PS_KeyDownCheck(parseDS4Data, config) {
+  var R1 = parseDS4Data.buttons[5]
+  var L1 = parseDS4Data.buttons[4]
+  var Share = parseDS4Data.buttons[8]
+  var opition = parseDS4Data.buttons[9]
+  var PS = parseDS4Data.buttons[12]
+
+  var flag = true
+  if (config.comboKeys.length == 0) flag = false
+  for (let i = 0; i < config.comboKeys.length; i++) {
+    var selectedItem = config.comboKeys[i];
+    if (selectedItem == 'PS(XBOX)') {
+      if (!PS) flag = false
+    } else if (selectedItem == 'L1(LB)') {
+      if (!L1) flag = false
+    } else if (selectedItem == 'R1(RB)') {
+      if (!R1) flag = false
+    } else if (selectedItem == 'Share(Select)') {
+      if (!Share) flag = false
+    } else if (selectedItem == 'Option(Start)') {
+      if (!opition) flag = false
+    }
+  }
+  if (flag != lastFlag && flag) {
+    win.webContents.send('hotkey-triggered')
+    sound.play(soundPath)
+  }
+  lastFlag = flag;
 }

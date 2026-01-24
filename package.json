@@ -16,6 +16,7 @@
     "core-js": "^3.8.3",
     "fs": "^0.0.1-security",
     "node-hid": "^3.2.0",
+    "sound-play": "^1.1.0",
     "vue": "^3.2.13"
   },
   "devDependencies": {

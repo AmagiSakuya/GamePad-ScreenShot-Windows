@@ -5,28 +5,51 @@ const os = require('os')
 
 contextBridge.exposeInMainWorld('electronAPI', {
     screenShot: async () => {
+        const config = await ipcRenderer.invoke('read-config');
+        var sizeArr = [{ width: 1920, height: 1080 }, { width: 2560, height: 1440 }, { width: 3840, height: 2160 }]
+        var size;
+        switch (config.resolution) {
+            case '1080P':
+                size = sizeArr[0]
+                break;
+
+            case '2K':
+                size = sizeArr[1]
+                break;
+
+            case '4K':
+                size = sizeArr[2]
+                break;
+
+            default:
+                size = sizeArr[0]
+        }
+
         const sources = await desktopCapturer.getSources({
             types: ['screen'],
-            thumbnailSize: { width: 3840, height: 2160 }
+            thumbnailSize: size
         })
 
         const img = sources[0].thumbnail
         const buffer = img.toPNG() // ⚠ 必须直接调用
 
-        const desktopPath = path.join(
-            os.homedir(),
-            'Desktop',
-            `screenshot_${Date.now()}.png`
+        const filePath = path.join(
+            config.path,
+            `Screenshot_${Date.now()}.png`
         )
 
-        fs.writeFileSync(desktopPath, buffer)
+        fs.writeFileSync(filePath, buffer)
 
-        return desktopPath
-    }, 
-    onGlobalHotkey: (callback) => {
-        ipcRenderer.on('global-hotkey', callback)
+        return filePath
     },
-    offGlobalHotkey: (callback) => {
-        ipcRenderer.removeListener('global-hotkey', callback)
-    }
+    onHotkeyTriggered: (callback) => {
+        ipcRenderer.on('hotkey-triggered', callback)
+    },
+    offHotkeyTriggered: (callback) => {
+        ipcRenderer.removeListener('hotkey-triggered', callback)
+    },
+    selectFolder: () => ipcRenderer.invoke('select-folder'),
+    readConfig: () => ipcRenderer.invoke('read-config'),
+    saveConfig: (data) => ipcRenderer.invoke('save-config', data),
+    initDevice: () => ipcRenderer.invoke('init-device')
 })
