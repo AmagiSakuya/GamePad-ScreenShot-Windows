@@ -47,7 +47,7 @@
         </div>
         <div class="setting-controls">
           <select class="form-select" v-model="config.controller">
-            <option selected>XBOX</option>
+            <option selected>XBOX(UU远程)</option>
             <option>DS4</option>
           </select>
         </div>
@@ -72,7 +72,6 @@
                 <option>Option(Start)</option>
               </select>
               <button @click="removeCombo(index)" class="btn btn-danger">
-                <i class="fas fa-trash-alt"></i>
                 <span>删除</span>
               </button>
             </div>

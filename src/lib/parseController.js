@@ -35,25 +35,42 @@ function parseDS4(data) {
     return { buttons, axes }
 }
 
-function parseXbox(data) {
-    // buttons 在 byte2-3
-    const btnBits = data.readUInt16LE(2)
+function parseUURemoteXbox(data) {
+    // ---- Axes ----
+  const axes = {
+    lx: data.readInt16LE(0) / 32767,
+    ly: data.readInt16LE(2) / 32767,
+    rx: data.readInt16LE(4) / 32767,
+    ry: data.readInt16LE(6) / 32767
+  }
 
-    const buttons = []
-    for (let i = 0; i < 16; i++) {
-        buttons[i] = ((btnBits >> i) & 1) === 1
-    }
+  // ---- Buttons LOW ----
+  const b10 = data[10]
+  const buttons = {
+    A:      (b10 & 0x01) !== 0,
+    B:      (b10 & 0x02) !== 0,
+    X:      (b10 & 0x04) !== 0,
+    Y:      (b10 & 0x08) !== 0,
+    L1:     (b10 & 0x10) !== 0,
+    R1:     (b10 & 0x20) !== 0,
+    SELECT: (b10 & 0x40) !== 0,
+    START:  (b10 & 0x80) !== 0
+  }
 
-    const axes = {
-        lx: data.readInt16LE(4) / 32767,
-        ly: data.readInt16LE(6) / 32767,
-        rx: data.readInt16LE(8) / 32767,
-        ry: data.readInt16LE(10) / 32767,
-        lt: data[12] / 255,
-        rt: data[13] / 255
-    }
+  // ---- Buttons HIGH ----
+  const b11 = data[11]
+  buttons.L3 = (b11 & 0x01) !== 0
+  buttons.R3 = (b11 & 0x02) !== 0
 
-    return { buttons, axes }
+  const dpadCode = (b11 >> 2) & 0x07
+  const dpad = {
+    up:    dpadCode === 1,
+    right: dpadCode === 3,
+    down:  dpadCode === 5,
+    left:  dpadCode === 7
+  }
+
+  return { axes, buttons, dpad }
 }
 
-module.exports = { parseDS4, parseXbox };
+module.exports = { parseDS4, parseUURemoteXbox };

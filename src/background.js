@@ -11,7 +11,7 @@ const sound = require('sound-play')
 const fs = require('fs')
 const path = require('path')
 
-const { parseDS4, parseXbox } = require('./lib/parseController');
+const { parseDS4, parseUURemoteXbox } = require('./lib/parseController');
 
 const exeDir = path.dirname(app.getPath('exe'))
 const configPath = app.isPackaged ? path.join(exeDir, 'userConfig.json') :
@@ -164,20 +164,22 @@ function initHidDevice(configData) {
   }
   lastFlag = false
   try {
-    if (configData.controller === 'XBOX') {
+
+    if (configData.controller === 'XBOX(UU远程)') {
       device = new HID.HID(1118, 654)
     } else if (configData.controller === 'DS4') {
       device = new HID.HID(1356, 2508)
     }
 
     device.on("data", function (data) {
-      if (configData.controller === 'XBOX') {
-
+      if (configData.controller === 'XBOX(UU远程)') {
+        Update_PS_KeyDownCheck(MakeCommonInput('XBOX(UU远程)', parseUURemoteXbox(data)), configData)
       } else if (configData.controller === 'DS4') {
-        Update_PS_KeyDownCheck(parseDS4(data), configData)
+        Update_PS_KeyDownCheck(MakeCommonInput('DS4', parseDS4(data)), configData)
       }
     });
   } catch (e) {
+    console.error(`${e}`)
     console.error(`无法读取设备：${configData.controller}`)
     return false;
   }
@@ -187,27 +189,21 @@ function initHidDevice(configData) {
 
 var lastFlag = false;
 
-function Update_PS_KeyDownCheck(parseDS4Data, config) {
-  var R1 = parseDS4Data.buttons[5]
-  var L1 = parseDS4Data.buttons[4]
-  var Share = parseDS4Data.buttons[8]
-  var opition = parseDS4Data.buttons[9]
-  var PS = parseDS4Data.buttons[12]
-
+function Update_PS_KeyDownCheck(commonInput, config) {
   var flag = true
   if (config.comboKeys.length == 0) flag = false
   for (let i = 0; i < config.comboKeys.length; i++) {
     var selectedItem = config.comboKeys[i];
     if (selectedItem == 'PS(XBOX)') {
-      if (!PS) flag = false
+      if (!commonInput.PS) flag = false
     } else if (selectedItem == 'L1(LB)') {
-      if (!L1) flag = false
+      if (!commonInput.L1) flag = false
     } else if (selectedItem == 'R1(RB)') {
-      if (!R1) flag = false
+      if (!commonInput.R1) flag = false
     } else if (selectedItem == 'Share(Select)') {
-      if (!Share) flag = false
+      if (!commonInput.Share) flag = false
     } else if (selectedItem == 'Option(Start)') {
-      if (!opition) flag = false
+      if (!commonInput.opition) flag = false
     }
   }
   if (flag != lastFlag && flag) {
@@ -215,4 +211,25 @@ function Update_PS_KeyDownCheck(parseDS4Data, config) {
     sound.play(soundPath)
   }
   lastFlag = flag;
+}
+
+function MakeCommonInput(type, parseData) {
+  if (type == 'DS4') {
+    return {
+      R1: parseData.buttons[5],
+      L1: parseData.buttons[4],
+      Share: parseData.buttons[8],
+      opition: parseData.buttons[9],
+      PS: parseData.buttons[12],
+    }
+  }
+  if (type == 'XBOX(UU远程)') {
+    return {
+      R1: parseData.buttons.R1,
+      L1: parseData.buttons.L1,
+      Share: parseData.buttons.SELECT,
+      opition: parseData.buttons.START,
+      PS: false
+    }
+  }
 }
