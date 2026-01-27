@@ -4,51 +4,42 @@ import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
-
 const HID = require('node-hid')
 const sound = require('sound-play')
-
 const fs = require('fs')
 const path = require('path')
-
-const { parseDS4, parseUURemoteXbox } = require('./lib/parseController');
-
+const vm = require('vm')
+//Scripts
+const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum } = require('@/lib/enum')
+//Path Define
 const exeDir = path.dirname(app.getPath('exe'))
-const configPath = app.isPackaged ? path.join(exeDir, 'userConfig.json') :
-  path.join(app.getAppPath(), 'userConfig.json')
+const configPath = app.isPackaged ? path.join(exeDir, 'userConfig.json') : path.join(app.getAppPath(), 'userConfig.json')
+const soundPath = app.isPackaged ? path.join(process.resourcesPath, 'assets', 'ns2截图音.mp3') : path.join(__dirname, '../src/assets/ns2截图音.mp3')
+const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js') : path.join(__dirname, '../src/preload.js')
+const controllerDefinePath = app.isPackaged ? path.join(process.resourcesPath, 'controllerDefinition.js') : path.join(__dirname, '../src/controllerDefinition.js')
 
-const soundPath = app.isPackaged
-  ? path.join(
-    process.resourcesPath, 'assets', 'ns2截图音.mp3')
-  : path.join(__dirname, '../src/assets/ns2截图音.mp3')
-
-var win;
-
-const defaultConfig = {
-  path: '',
-  resolution: '4K',
-  controller: 'DS4',
-  comboKeys: [],
-  sound: 'NS2'
-}
+//Temp Varibles
+const defaultConfig = { path: '', resolution: resolutionEnum.R_4K, controller: '', comboKeys: [], sound: screenshotSoundEnum.NS2 }
+let win, device;
+let lastFlag = false;
+let controllerDefine;
+let lastBuffer;
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
 
-const preloadPath = app.isPackaged
-  ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js')
-  : path.join(__dirname, '../src/preload.js')
-
 async function createWindow() {
+  //Read Controller Define JS
+  controllerDefine = await getControllerDefine(controllerDefinePath);
   // Create the browser window.
   win = new BrowserWindow({
     title: 'Gamepad Full-ScreenShot Tool',
     width: 800,
     height: 900,
     autoHideMenuBar: true,
-    icon: path.join(__dirname, 'gamepad.ico'),
+    icon: path.join(__dirname, '../src/gamepad.ico'),
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
@@ -56,6 +47,10 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
       preload: preloadPath
     }
+  })
+
+  win.on('page-title-updated', (e) => {
+    e.preventDefault()
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
@@ -145,91 +140,85 @@ ipcMain.handle('save-config', async (_, data) => {
 
 ipcMain.handle('init-device', async () => {
   var m_config = await getConfig()
-  var success = initHidDevice(m_config);
+  var success = initHidDevice(m_config)
   return success
 })
 
-var device;
+ipcMain.handle('get-controller-define', () => {
+  return JSON.parse(JSON.stringify(controllerDefine))
+})
+
+ipcMain.handle('get-last-buffer', () => {
+  return lastBuffer
+})
 
 function initHidDevice(configData) {
+  lastBuffer = void 0
   //尝试销毁上一个
   if (device) {
     try {
-      device.close();
+      device.close()
       device = null
     } catch (err) {
-      console.error('关闭设备时出错:', err);
-      return false;
+      console.error('关闭设备时出错:', err)
+      return false
     }
   }
   lastFlag = false
   try {
-
-    if (configData.controller === 'XBOX(UU远程)') {
-      device = new HID.HID(1118, 654)
-    } else if (configData.controller === 'DS4') {
-      device = new HID.HID(1356, 2508)
-    }
-
+    let m_config = GetControllerConfigInDefine(configData.controller);
+    device = new HID.HID(m_config.vid, m_config.pid)
     device.on("data", function (data) {
-      if (configData.controller === 'XBOX(UU远程)') {
-        Update_PS_KeyDownCheck(MakeCommonInput('XBOX(UU远程)', parseUURemoteXbox(data)), configData)
-      } else if (configData.controller === 'DS4') {
-        Update_PS_KeyDownCheck(MakeCommonInput('DS4', parseDS4(data)), configData)
-      }
-    });
+      lastBuffer = data
+      Update_KeyDownCheck(m_config.parseDataFunction(data), configData)
+    })
   } catch (e) {
     console.error(`${e}`)
     console.error(`无法读取设备：${configData.controller}`)
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }
 
-var lastFlag = false;
-
-function Update_PS_KeyDownCheck(commonInput, config) {
+function Update_KeyDownCheck(commonButtonMap, config) {
   var flag = true
   if (config.comboKeys.length == 0) flag = false
+
   for (let i = 0; i < config.comboKeys.length; i++) {
-    var selectedItem = config.comboKeys[i];
-    if (selectedItem == 'PS(XBOX)') {
-      if (!commonInput.PS) flag = false
-    } else if (selectedItem == 'L1(LB)') {
-      if (!commonInput.L1) flag = false
-    } else if (selectedItem == 'R1(RB)') {
-      if (!commonInput.R1) flag = false
-    } else if (selectedItem == 'Share(Select)') {
-      if (!commonInput.Share) flag = false
-    } else if (selectedItem == 'Option(Start)') {
-      if (!commonInput.opition) flag = false
-    }
+    var selectedItem = config.comboKeys[i]
+    if (!commonButtonMap[selectedItem]) flag = false
   }
+
   if (flag != lastFlag && flag) {
     win.webContents.send('hotkey-triggered')
     sound.play(soundPath)
   }
-  lastFlag = flag;
+
+  lastFlag = flag
 }
 
-function MakeCommonInput(type, parseData) {
-  if (type == 'DS4') {
-    return {
-      R1: parseData.buttons[5],
-      L1: parseData.buttons[4],
-      Share: parseData.buttons[8],
-      opition: parseData.buttons[9],
-      PS: parseData.buttons[12],
-    }
+function getControllerDefine(filePath) {
+  try {
+    // 2. 读取文件内容（字符串）
+    const code = fs.readFileSync(filePath, 'utf8');
+
+    // 3. 创建一个上下文环境
+    const context = { module: { exports: {} } };
+    vm.createContext(context);
+
+    // 4. 执行代码
+    vm.runInContext(code, context);
+
+    // 5. 获取结果
+    return context.module.exports;
+  } catch (err) {
+    console.error("动态加载配置失败:", err);
   }
-  if (type == 'XBOX(UU远程)') {
-    return {
-      R1: parseData.buttons.R1,
-      L1: parseData.buttons.L1,
-      Share: parseData.buttons.SELECT,
-      opition: parseData.buttons.START,
-      PS: false
-    }
+}
+
+function GetControllerConfigInDefine(deviceName) {
+  for (let i = 0; i < controllerDefine.length; i++) {
+    if (controllerDefine[i].deviceName === deviceName) return controllerDefine[i]
   }
 }

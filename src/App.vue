@@ -31,9 +31,7 @@
         </div>
         <div class="setting-controls">
           <select class="form-select" v-model="config.resolution">
-            <option>1080P</option>
-            <option selected>2K</option>
-            <option>4K</option>
+            <option v-for="(value, index) in resolutionEnum" :key="index">{{ value }}</option>
           </select>
         </div>
         <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
@@ -46,9 +44,9 @@
           <span>控制器</span>
         </div>
         <div class="setting-controls">
-          <select class="form-select" v-model="config.controller">
-            <option selected>XBOX(UU远程)</option>
-            <option>DS4</option>
+          <select class="form-select" v-model="config.controller" @change="onControllerrSelectChange">
+            <option v-for="(value, index) in controllerDefine" :key="index" :value="value.deviceName">
+              {{ value.deviceName }}</option>
           </select>
         </div>
         <!-- <span class="hint-text">选择您使用的游戏控制器类型</span> -->
@@ -62,20 +60,14 @@
         </div>
         <div class="setting-controls">
           <div class="combo-rows-container">
-
             <div v-for="(key, index) in config.comboKeys" :key="index" class="combo-row">
               <select class="form-select combo-select" v-model="config.comboKeys[index]">
-                <option selected>PS(XBOX)</option>
-                <option selected>L1(LB)</option>
-                <option>R1(RB)</option>
-                <option>Share(Select)</option>
-                <option>Option(Start)</option>
+                <option v-for="(value, index) in buttonKeys" :key="index">{{ value }}</option>
               </select>
               <button @click="removeCombo(index)" class="btn btn-danger">
                 <span>删除</span>
               </button>
             </div>
-
           </div>
         </div>
         <div class="action-buttons">
@@ -94,11 +86,24 @@
         </div>
         <div class="setting-controls">
           <select class="form-select" v-model="config.sound">
-            <option selected>无声音</option>
-            <option>NS2</option>
+            <option v-for="(value, index) in screenshotSoundEnum" :key="index">{{ value }}</option>
           </select>
         </div>
         <!-- <span class="hint-text">选择截图时播放的音效</span> -->
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-label">
+          <i class="fas fa-volume-up"></i>
+          <span>Buffer(Debug)</span>
+        </div>
+        <div class="setting-controls" style="overflow: hidden;">
+          <p class="setting-controls-p">{{ bufferPreview }}</p>
+        </div>
+        <button class="btn btn-primary" @click="copyBuffer">
+          <span>复制当前值</span>
+        </button>
+
       </div>
 
       <button class="save-button" @click="save">
@@ -109,25 +114,33 @@
 </template>
 
 <script>
+const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum } = require('@/lib/enum')
 
+let timer;
 export default {
   name: 'App',
   components: {},
   data() {
     return {
       desktopPath: "",
+      controllerDefine: [],
       config: {
         path: '',
-        resolution: '4K',
-        controller: 'DS4',
+        resolution: '',
+        controller: '',
         comboKeys: [],
-        sound: 'NS2'
-      }
+        sound: ''
+      },
+      screenshotSoundEnum: screenshotSoundEnum,
+      resolutionEnum: resolutionEnum,
+      buttonKeys: Object.keys(CommonButtonEnum),
+      bufferPreview: ""
     }
   },
   async mounted() {
     window.electronAPI.onHotkeyTriggered(this.takeScreenshot)
     this.config = await window.electronAPI.readConfig();
+    this.controllerDefine = await window.electronAPI.getControllerDefine();
     await this.initDevice();
   },
   unmounted() {
@@ -144,7 +157,7 @@ export default {
       }
     },
     addCombo() {
-      this.config.comboKeys.push('L1(LB)')
+      this.config.comboKeys.push(CommonButtonEnum.HOME)
     },
     removeCombo(index) {
       this.config.comboKeys.splice(index, 1)
@@ -163,11 +176,32 @@ export default {
       }
     },
     async initDevice() {
+      if (timer) {
+        clearInterval(timer)
+        timer = null
+        this.bufferPreview = ''
+      }
+      if (!this.config.controller) return
       let success = await window.electronAPI.initDevice()
       if (!success) {
         alert('初始化设备失败 请确保控制已连接')
+      } else {
+
+        timer = setInterval(async () => {
+          let buffer = await window.electronAPI.getLastBuffer()
+          this.bufferPreview = `[${Array.from(buffer).join(',')}]`
+        }, 60);
       }
       return success
+    },
+    onControllerrSelectChange() {
+      //this.config.comboKeys = []
+    },
+    copyBuffer() {
+      if (this.bufferPreview) {
+        window.electronAPI.copyText(this.bufferPreview)
+        alert('复制成功')
+      }
     }
   }
 }
@@ -465,6 +499,12 @@ body {
   .combo-select {
     max-width: 100%;
     width: 100%;
+  }
+
+  .setting-controls-p {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 }
 </style>
