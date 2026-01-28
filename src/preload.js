@@ -49,11 +49,27 @@ contextBridge.exposeInMainWorld('electronAPI', {
     offHotkeyTriggered: (callback) => {
         ipcRenderer.removeListener('hotkey-triggered', callback)
     },
+    onScreenShotDeviceError: (callback) => {
+        ipcRenderer.on('screenshot-device-err', callback)
+    },
+    offScreenShotDeviceError: (callback) => {
+        ipcRenderer.removeListener('screenshot-device-err', callback)
+    },
+    onControllerSettingsDeviceError: (callback) => {
+        ipcRenderer.on('controller-settings-device-err', callback)
+    },
+    offControllerSettingsDeviceError: (callback) => {
+        ipcRenderer.removeListener('controller-settings-device-err', callback)
+    },
     selectFolder: () => ipcRenderer.invoke('select-folder'),
     readConfig: () => ipcRenderer.invoke('read-config'),
     saveConfig: (data) => ipcRenderer.invoke('save-config', data),
     initDevice: () => ipcRenderer.invoke('init-device'),
     getLastBuffer: () => ipcRenderer.invoke('get-last-buffer'),
     copyText: (text) => clipboard.writeText(text),
-    getControllerConfig: () => ipcRenderer.invoke('read-controller-config')
+    getControllerConfig: () => ipcRenderer.invoke('read-controller-config'),
+    getAllGamePad: () => ipcRenderer.invoke('get-all-gamepad'),
+    getLastControllerSettingUseBuffer: () => ipcRenderer.invoke('get-last-controller-settings-buffer'),
+    initControllerSettingsDevice: (vid, pid) => ipcRenderer.invoke('init-controller-settings-device', vid, pid),
+    setScreenShotTrigger: (active) => ipcRenderer.invoke('set-screenshot-triggert', active)
 })
