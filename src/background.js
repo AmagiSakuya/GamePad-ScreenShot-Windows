@@ -24,6 +24,7 @@ const defaultConfig = { path: '', resolution: resolutionEnum.R_4K, controller: '
 let win, device;
 let lastFlag = false;
 let lastBuffer;
+let screen_shotTrigger;
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -151,6 +152,9 @@ ipcMain.handle('get-all-gamepad', () => {
   return getAllGamepads()
 })
 
+ipcMain.handle('set-screenshot-trigger', (_, active) => {
+  screen_shotTrigger = active
+})
 //#endregion
 
 //#region 配置文件相关
@@ -221,7 +225,6 @@ async function initHidDevice(configData) {
     })
 
     device.on('error', err => {
-       console.error(`${err}`)
       //showWarning('警告', '控制器连接已断开，请确保插上控制器后重启软件')
       win.webContents.send('screenshot-device-err')
       // 一定要 try-catch
@@ -258,7 +261,8 @@ function update_KeyDownCheck(commonButtonMap, config) {
     var selectedItem = config.comboKeys[i]
     if (!commonButtonMap[selectedItem]) flag = false
   }
-  
+
+  if(!screen_shotTrigger) return
   if (flag != lastFlag && flag) {
     win.webContents.send('hotkey-triggered')
     sound.play(soundPath)

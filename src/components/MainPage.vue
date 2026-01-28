@@ -134,11 +134,13 @@ export default {
   async mounted() {
     await window.electronAPI.onHotkeyTriggered(this.takeScreenshot)
     await window.electronAPI.onScreenShotDeviceError(this.onScreenShotDeviceError)
+    await window.electronAPI.setScreenShotTrigger(true)
     await this.reOpenDevice();
   },
   async beforeUnmount(){
     await window.electronAPI.offHotkeyTriggered()
     await window.electronAPI.offScreenShotDeviceError()
+    await window.electronAPI.setScreenShotTrigger(false)
   },
   async unmounted() {
    
