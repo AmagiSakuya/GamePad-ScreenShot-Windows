@@ -53,7 +53,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readConfig: () => ipcRenderer.invoke('read-config'),
     saveConfig: (data) => ipcRenderer.invoke('save-config', data),
     initDevice: () => ipcRenderer.invoke('init-device'),
-    getControllerDefine: () => ipcRenderer.invoke('get-controller-define'),
     getLastBuffer: () => ipcRenderer.invoke('get-last-buffer'),
-    copyText: (text) => clipboard.writeText(text)
+    copyText: (text) => clipboard.writeText(text),
+    getControllerConfig: () => ipcRenderer.invoke('read-controller-config')
 })

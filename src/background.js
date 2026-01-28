@@ -11,18 +11,18 @@ const path = require('path')
 const vm = require('vm')
 //Scripts
 const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum } = require('@/lib/enum')
+const buildInControllerConfig = require('@/config/buildInControllerConfig')
 //Path Define
 const exeDir = path.dirname(app.getPath('exe'))
 const configPath = app.isPackaged ? path.join(exeDir, 'userConfig.json') : path.join(app.getAppPath(), 'userConfig.json')
+const controllerConfigPath = app.isPackaged ? path.join(exeDir,'controllerConfig.json') : path.join(app.getAppPath(), 'controllerConfig.json')
 const soundPath = app.isPackaged ? path.join(process.resourcesPath, 'assets', 'ns2截图音.mp3') : path.join(__dirname, '../src/assets/ns2截图音.mp3')
 const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js') : path.join(__dirname, '../src/preload.js')
-const controllerDefinePath = app.isPackaged ? path.join(process.resourcesPath, 'controllerDefinition.js') : path.join(__dirname, '../src/controllerDefinition.js')
 
 //Temp Varibles
 const defaultConfig = { path: '', resolution: resolutionEnum.R_4K, controller: '', comboKeys: [], sound: screenshotSoundEnum.NS2 }
 let win, device;
 let lastFlag = false;
-let controllerDefine;
 let lastBuffer;
 
 // Scheme must be registered before the app is ready
@@ -31,8 +31,6 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 async function createWindow() {
-  //Read Controller Define JS
-  controllerDefine = await getControllerDefine(controllerDefinePath);
   // Create the browser window.
   win = new BrowserWindow({
     title: 'Gamepad Full-ScreenShot Tool',
@@ -130,8 +128,21 @@ async function getConfig() {
   return res
 }
 
+async function getControllerConfig() {
+  if (!fs.existsSync(controllerConfigPath)) {
+    fs.writeFileSync(controllerConfigPath, JSON.stringify(buildInControllerConfig, null, 2))
+    return buildInControllerConfig
+  }
+  var res = JSON.parse(fs.readFileSync(controllerConfigPath, 'utf-8'))
+  return res
+}
+
 ipcMain.handle('read-config', async () => {
   return await getConfig()
+})
+
+ipcMain.handle('read-controller-config', async () => {
+  return await getControllerConfig()
 })
 
 ipcMain.handle('save-config', async (_, data) => {
@@ -140,19 +151,15 @@ ipcMain.handle('save-config', async (_, data) => {
 
 ipcMain.handle('init-device', async () => {
   var m_config = await getConfig()
-  var success = initHidDevice(m_config)
+  var success = await initHidDevice(m_config)
   return success
-})
-
-ipcMain.handle('get-controller-define', () => {
-  return JSON.parse(JSON.stringify(controllerDefine))
 })
 
 ipcMain.handle('get-last-buffer', () => {
   return lastBuffer
 })
 
-function initHidDevice(configData) {
+async function initHidDevice(configData) {
   lastBuffer = void 0
   //尝试销毁上一个
   if (device) {
@@ -166,11 +173,11 @@ function initHidDevice(configData) {
   }
   lastFlag = false
   try {
-    let m_config = getControllerConfigInDefine(configData.controller);
+    let m_config = await getControllerSingleConfig(configData.controller);
     device = new HID.HID(m_config.vid, m_config.pid)
     device.on("data", function (data) {
       lastBuffer = data
-      Update_KeyDownCheck(m_config.parseDataFunction(data), configData)
+      update_KeyDownCheck(parseData(data,m_config), configData)
     })
   } catch (e) {
     console.error(`${e}`)
@@ -181,7 +188,19 @@ function initHidDevice(configData) {
   return true
 }
 
-function Update_KeyDownCheck(commonButtonMap, config) {
+function parseData(data, controlleConfig) {
+  var resMap = {};
+
+  var keys = Object.keys(controlleConfig.buttons);
+
+  for (let i = 0; i < keys.length; i++) {
+    resMap[keys[i]] = data[controlleConfig.buttons[keys[i]].buffer] & (1 << controlleConfig.buttons[keys[i]].bit)
+  }
+
+  return resMap
+}
+
+function update_KeyDownCheck(commonButtonMap, config) {
   var flag = true
   if (config.comboKeys.length == 0) flag = false
 
@@ -198,27 +217,9 @@ function Update_KeyDownCheck(commonButtonMap, config) {
   lastFlag = flag
 }
 
-function getControllerDefine(filePath) {
-  try {
-    // 2. 读取文件内容（字符串）
-    const code = fs.readFileSync(filePath, 'utf8');
-
-    // 3. 创建一个上下文环境
-    const context = { module: { exports: {} } };
-    vm.createContext(context);
-
-    // 4. 执行代码
-    vm.runInContext(code, context);
-
-    // 5. 获取结果
-    return context.module.exports;
-  } catch (err) {
-    console.error("动态加载配置失败:", err);
-  }
-}
-
-function getControllerConfigInDefine(deviceName) {
-  for (let i = 0; i < controllerDefine.length; i++) {
-    if (controllerDefine[i].deviceName === deviceName) return controllerDefine[i]
+async function getControllerSingleConfig(deviceName) {
+  let controllerConfig  = await getControllerConfig();
+  for (let i = 0; i < controllerConfig.length; i++) {
+    if (controllerConfig[i].deviceName === deviceName) return controllerConfig[i]
   }
 }

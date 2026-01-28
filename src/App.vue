@@ -44,8 +44,8 @@
           <span>控制器</span>
         </div>
         <div class="setting-controls">
-          <select class="form-select" v-model="config.controller" @change="onControllerrSelectChange">
-            <option v-for="(value, index) in controllerDefine" :key="index" :value="value.deviceName">
+          <select class="form-select" v-model="config.controller">
+            <option v-for="(value, index) in controllerConfig" :key="index" :value="value.deviceName">
               {{ value.deviceName }}</option>
           </select>
         </div>
@@ -92,18 +92,7 @@
         <!-- <span class="hint-text">选择截图时播放的音效</span> -->
       </div>
 
-      <!-- <div class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-volume-up"></i>
-          <span>Buffer(Debug)</span>
-        </div>
-        <div class="setting-controls" style="overflow: hidden;">
-          <p class="setting-controls-p">{{ bufferPreview }}</p>
-        </div>
-        <button class="btn btn-primary" @click="copyBuffer">
-          <span>复制当前值</span>
-        </button>
-      </div> -->
+       <!-- 6. Buffer Debug设置 -->
       <div class="setting-row">
         <div class="setting-label">
           <i class="fas fa-bug"></i>
@@ -124,7 +113,7 @@
             <table class="buffer-table">
               <thead>
                 <tr>
-                  <th class="buffer-index-header">
+                  <th class="buffer-index-header col-buffer">
                     <div class="header-content">
                       <span class="header-desc">索引</span>
                     </div>
@@ -138,7 +127,7 @@
               </thead>
               <tbody>
                 <tr v-for="(binaryStr, index) in bufferDebugList" :key="index" class="buffer-row">
-                  <td class="buffer-index-cell">
+                  <td class="buffer-index-cell col-buffer">
                     <div class="index-content">
                       <span class="buffer-index">buffer[{{ index }}]</span>
                     </div>
@@ -156,9 +145,11 @@
         </div>
       </div>
 
+       <!-- 保存按钮 -->
       <button class="save-button" @click="save">
         <span>保存设置</span>
       </button>
+
     </div>
   </div>
 </template>
@@ -174,6 +165,7 @@ export default {
     return {
       desktopPath: "",
       controllerDefine: [],
+      controllerConfig:[],
       config: {
         path: '',
         resolution: '',
@@ -189,10 +181,12 @@ export default {
       bufferDebugList: []
     }
   },
+  async beforeMount(){
+    this.config = await window.electronAPI.readConfig();
+    this.controllerConfig = await window.electronAPI.getControllerConfig();
+  },
   async mounted() {
     window.electronAPI.onHotkeyTriggered(this.takeScreenshot)
-    this.config = await window.electronAPI.readConfig();
-    this.controllerDefine = await window.electronAPI.getControllerDefine();
     await this.initDevice();
   },
   unmounted() {
@@ -246,9 +240,6 @@ export default {
       }
       return success
     },
-    onControllerrSelectChange() {
-      //this.config.comboKeys = []
-    },
     updateBufferDebug(bufferArray) {
       let m_list = []
       bufferArray.map((buffer, index) => {
@@ -257,13 +248,9 @@ export default {
       this.bufferDebugList = m_list;
     },
     getBitValue(binaryStr, bitPos) {
-      // bitPos: 1表示bit7，8表示bit0
-      // 字符串索引：0表示bit7，7表示bit0
       const index = bitPos - 1;
       return binaryStr[index];
     },
-
-    // 获取bit的CSS类名
     getBitClass(binaryStr, bitPos) {
       const bitValue = this.getBitValue(binaryStr, bitPos);
       return bitValue === '1' ? 'bit-1' : 'bit-0';
@@ -595,8 +582,6 @@ body {
 }
 
 .buffer-list-container {
-  max-height: 400px;
-  overflow-y: auto;
   border: 1px solid #e1e5e9;
   border-radius: 8px;
   background: #f8fafc;
@@ -896,5 +881,27 @@ input:checked+.slider:before {
 
 .slider.round:before {
   border-radius: 50%;
+}
+
+/* table {
+  width: 100%;
+  border-collapse: collapse;
+} */
+
+thead, tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+tbody {
+  display: block;
+  max-height: 400px; /* 设置tbody的最大高度 */
+  overflow-y: auto; /* 垂直滚动条 */
+  overflow-x: hidden;
+}
+
+.col-buffer{
+min-width: 150px; width: 150px;
 }
 </style>

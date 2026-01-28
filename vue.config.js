@@ -12,17 +12,12 @@ module.exports = defineConfig({
         },
         asarUnpack: [
           'preload.js',
-          'controllerDefinition.js',
           '**/*.mp3'
         ],
         extraResources: [
           {
             from: 'src/assets/ns2截图音.mp3',
             to: 'assets/ns2截图音.mp3'
-          },
-          {
-            from: 'src/controllerDefinition.js',
-            to: 'controllerDefinition.js'
           }
         ]
       }
