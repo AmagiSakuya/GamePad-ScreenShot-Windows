@@ -78,14 +78,21 @@ export default {
     },
     async mounted() {
         this.loadGamePadList()
-        window.electronAPI.onControllerSettingsDeviceError(this.onDeviceError)
+        await window.electronAPI.onControllerSettingsDeviceError(this.onDeviceError)
     },
-    unmounted() {
-        window.electronAPI.offControllerSettingsDeviceError(this.onDeviceError)
+    async beforeUnmount(){
+        await window.electronAPI.offControllerSettingsDeviceError()
+    },
+    async unmounted() {
+     
     },
     methods: {
         updateBufferDebug(bufferArray) {
             let m_list = []
+            if(!bufferArray) {
+                console.log(bufferArray)
+                return;
+            }
             bufferArray.map((buffer, index) => {
                 m_list.push(buffer.toString(2).padStart(8, '0'))
             });

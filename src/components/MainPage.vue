@@ -132,15 +132,16 @@ export default {
     this.controllerConfig = await window.electronAPI.getControllerConfig();
   },
   async mounted() {
-    window.electronAPI.onHotkeyTriggered(this.takeScreenshot)
-    window.electronAPI.onScreenShotDeviceError(this.onScreenShotDeviceError)
+    await window.electronAPI.onHotkeyTriggered(this.takeScreenshot)
+    await window.electronAPI.onScreenShotDeviceError(this.onScreenShotDeviceError)
     await this.reOpenDevice();
-    window.electronAPI.setScreenShotTrigger(true)
   },
-  unmounted() {
-    window.electronAPI.setScreenShotTrigger(false)
-    window.electronAPI.offHotkeyTriggered(this.takeScreenshot)
-    window.electronAPI.offScreenShotDeviceError(this.onScreenShotDeviceError)
+  async beforeUnmount(){
+    await window.electronAPI.offHotkeyTriggered()
+    await window.electronAPI.offScreenShotDeviceError()
+  },
+  async unmounted() {
+   
   },
   methods: {
     async takeScreenshot() {
