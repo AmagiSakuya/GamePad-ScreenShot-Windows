@@ -21,8 +21,8 @@
 一个基于 **HID 输入** 的 Windows 工具，允许你使用**手柄快捷键**来触发**全屏截图**。
 
 - ✅ 支持组合键触发
-- ✅ 支持自定义手柄与外设扩展（高级功能）
-- ✅ 预置适配手柄：**DualShock 4**、**UU远程**
+- ✅ 支持自定义手柄与外设扩展
+- ✅ 预置适配手柄：**DualShock 4 / 5**、**Pro Controller**、**Xbox**
 
 ---
 
@@ -36,35 +36,46 @@
 
 ## 🎮 手柄按键映射
 
-| 按键               | DualShock 4 | UU远程     |
-| ------------------ | ----------- | ---------- |
-| **HOME**           | PS 按钮     | （未实现） |
-| **LEFT_SHOULDER**  | L1          | LB         |
-| **RIGHT_SHOULDER** | R1          | RB         |
-| **START**          | Share       | Select     |
-| **SELECT**         | Option      | Start      |
+| 按键               | DualShock 4 / 5 | XBOX     | Pro Controller     |
+| ------------------ | ----------- | ---------- |---------- |
+| **Home**           | PS 按钮     | （未实现） | Home|
+| **L1**  | L1          | LB         |L1|
+| **R1** | R1          | RB         |R1|
+| **Start**          | Share       | Select     |Minus|
+| **Select**         | Option      | Start      |Plus|
 
 ---
 
-## ⚙️ 如何扩展其他手柄（高级）
+## ⚙️ 如何扩展其他手柄
 
-> ⚠️ 需要具备一定的编程能力
+> ⚠️ 需要具备基础的 JSON 阅读与编辑能力
 
-1. 打开 `程序目录/resources/controllerDefinition.js`
-2. 在数组中新增一条记录：
+1. 打开 `程序目录/controllerConfig.json`文件
+2. 在数组中新增一条记录（可复制已有一条进行修改）：
    - `deviceName`：界面显示名称
-   - `vid` / `pid`：按实际设备填写
-3. 编写该记录中的 **USB-HID 数据解析函数** `parseDataFunction`
-4. 保存文件后，重新打开程序，选择该设备并保存配置
-5. 连接设备后，可在 **Buffer(Debug)** 中查看原始数据，辅助调试和编写`parseDataFunction`
+   - `vid` / `pid`：设备对应的 Vendor ID / Product ID
+   - `buttons`：各按钮对应的 buffer 索引 与 bit 位索引
+3. 启动程序，切换到 第二个 Tab 页，选择需要配置的控制器
+
+<p align="center">
+  <img src="./images/2.jpg" alt="软件主界面" width="600" />
+</p>
+
+4. 依次按下需要绑定的按钮
+    - 观察数据变化（通常为 0 → 1）
+    - 记录发生变化的 buffer 索引 与 bit 位
+    - 将对应值填写回 `controllerConfig.json`
+5. 完成后保存配置并重新加载即可生效 🎮
 
 ---
 
 ## 📋 开发计划 (TODO)
 
+- [x] 增加对标准 XBOX、NS、DS5 手柄的支持
+- [x] 降低自定义手柄的扩展难度
+- [ ] 音频音量调整
 - [ ] 支持可选的截图格式
-- [ ] 增加对标准 XBOX、NS、DS5 手柄的支持
-- [ ] 降低自定义手柄的扩展难度
+- [ ] 保存文件名可配置
 
 ---
 
