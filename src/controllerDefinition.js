@@ -30,11 +30,11 @@ module.exports = [
         vid: 0x057e,
         pid: 0x2009,
         parseDataFunction: function (buffer) {
-            let LEFT_SHOULDER = (buffer[5] & 0x40) !== 0;
-            let RIGHT_SHOULDER = (buffer[3] & 0x40) !== 0;
-            let SELECT = (buffer[4] & 0x01) !== 0;
-            let START = (buffer[4] & 0x02) !== 0;
-            let HOME = (buffer[4] & 0x10) !== 0;
+            let LEFT_SHOULDER = (buffer[5] & (1 << 6)) !== 0;
+            let RIGHT_SHOULDER = (buffer[3] & (1 << 6)) !== 0;
+            let SELECT = (buffer[4] & (1 << 0)) !== 0;
+            let START = (buffer[4] & (1 << 1)) !== 0;
+            let HOME = (buffer[4] & (1 << 4)) !== 0;
             return { LEFT_SHOULDER, RIGHT_SHOULDER, SELECT, START, HOME };
         }
     },

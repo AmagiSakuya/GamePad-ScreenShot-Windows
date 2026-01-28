@@ -37,7 +37,7 @@ async function createWindow() {
   win = new BrowserWindow({
     title: 'Gamepad Full-ScreenShot Tool',
     width: 800,
-    height: 900,
+    height: 950,
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../src/gamepad.ico'),
     webPreferences: {
@@ -166,7 +166,7 @@ function initHidDevice(configData) {
   }
   lastFlag = false
   try {
-    let m_config = GetControllerConfigInDefine(configData.controller);
+    let m_config = getControllerConfigInDefine(configData.controller);
     device = new HID.HID(m_config.vid, m_config.pid)
     device.on("data", function (data) {
       lastBuffer = data
@@ -217,7 +217,7 @@ function getControllerDefine(filePath) {
   }
 }
 
-function GetControllerConfigInDefine(deviceName) {
+function getControllerConfigInDefine(deviceName) {
   for (let i = 0; i < controllerDefine.length; i++) {
     if (controllerDefine[i].deviceName === deviceName) return controllerDefine[i]
   }
