@@ -23,7 +23,7 @@
 - ✅ 支持组合键触发
 - ✅ 支持自定义手柄与外设扩展
 - ✅ 支持**OBS-Websocket**连接，使用**OBS场景**来截图
-- ✅ 预置适配手柄：**DualShock 4 / 5**、**Pro Controller**、**Xbox**
+- ✅ 适配的手柄：**DualShock 4 / 5**、**非官方 Pro Controller**、**非官方 Xbox**
 ---
 
 ## 🖼️ 软件界面
