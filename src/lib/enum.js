@@ -17,4 +17,10 @@ const CommonButtonEnum = {
     Select: 'Select'
 }
 
-module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum }
+
+const ScreenShotWayEnum = {
+    DesktopCapturer: 'Default',
+    OBS: 'OBS', 
+}
+
+module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum }

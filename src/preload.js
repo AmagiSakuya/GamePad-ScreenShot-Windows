@@ -71,5 +71,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAllGamePad: () => ipcRenderer.invoke('get-all-gamepad'),
     getLastControllerSettingUseBuffer: () => ipcRenderer.invoke('get-last-controller-settings-buffer'),
     initControllerSettingsDevice: (vid, pid) => ipcRenderer.invoke('init-controller-settings-device', vid, pid),
-    setScreenShotTrigger: (active) => ipcRenderer.invoke('set-screenshot-trigger', active)
+    setScreenShotTrigger: (active) => ipcRenderer.invoke('set-screenshot-trigger', active),
+    playScreenshotSound: () => ipcRenderer.invoke('play-screenshot-sound')
 })

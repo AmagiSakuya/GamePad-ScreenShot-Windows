@@ -10,7 +10,7 @@ const fs = require('fs')
 const path = require('path')
 const vm = require('vm')
 //Scripts
-const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum } = require('@/lib/enum')
+const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum } = require('@/lib/enum')
 const buildInControllerConfig = require('@/config/buildInControllerConfig')
 //Path Define
 const exeDir = path.dirname(app.getPath('exe'))
@@ -20,7 +20,7 @@ const soundPath = app.isPackaged ? path.join(process.resourcesPath, 'assets', 'n
 const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js') : path.join(__dirname, '../src/preload.js')
 
 //Temp Varibles
-const defaultConfig = { path: '', resolution: resolutionEnum.R_4K, controller: '', comboKeys: [], sound: screenshotSoundEnum.NS2 }
+const defaultConfig = { path: '', resolution: resolutionEnum.R_4K, controller: '', comboKeys: [], sound: screenshotSoundEnum.NS2, screenshotWay: ScreenShotWayEnum.DesktopCapturer }
 let win, device;
 let lastFlag = false;
 let lastBuffer;
@@ -38,7 +38,7 @@ async function createWindow() {
   win = new BrowserWindow({
     title: 'Gamepad Full-ScreenShot Tool',
     width: 800,
-    height: 950,
+    height: 1000,
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../src/gamepad.ico'),
     webPreferences: {
@@ -155,6 +155,11 @@ ipcMain.handle('get-all-gamepad', () => {
 ipcMain.handle('set-screenshot-trigger', (_, active) => {
   screen_shotTrigger = active
 })
+
+ipcMain.handle('play-screenshot-sound', () => {
+  playScreenShotSound()
+})
+
 //#endregion
 
 //#region 配置文件相关
@@ -265,11 +270,14 @@ function update_KeyDownCheck(commonButtonMap, config) {
   if(!screen_shotTrigger) return
   if (flag != lastFlag && flag) {
     win.webContents.send('hotkey-triggered')
-    sound.play(soundPath)
   }
-
   lastFlag = flag
 }
+
+function playScreenShotSound() {
+  sound.play(soundPath)
+}
+
 //#endregion
 
 //#region 控制器设置用输入处理

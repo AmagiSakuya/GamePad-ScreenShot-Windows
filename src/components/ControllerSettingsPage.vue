@@ -1,58 +1,60 @@
 <template>
     <div class="settings-container">
-        <div class="setting-row">
-            <div class="setting-label">
-                <i class="fas fa-gamepad"></i>
-                <span>选择控制器</span>
-                <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
-                    <button class="btn btn-primary" @click="loadGamePadList">
-                        <span>刷新控制器列表</span>
-                    </button>
+        <div class="settings-content">
+            <div class="setting-row">
+                <div class="setting-label">
+                    <i class="fas fa-gamepad"></i>
+                    <span>选择控制器</span>
+                    <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
+                        <button class="btn btn-primary" @click="loadGamePadList">
+                            <span>刷新列表</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div class="setting-controls">
-                <select class="form-select" v-model="currentGamePad" @change="onCurrentGameSelectChanged">
-                    <option v-for="(value, index) in loadedGamePads" :key="index" :value="value">
-                        {{ value.product + ' vid:' + value.vendorId + ' pid:' + value.productId  }}</option>
-                </select>
+                <div class="setting-controls">
+                    <select class="form-select" v-model="currentGamePad" @change="onCurrentGameSelectChanged">
+                        <option v-for="(value, index) in loadedGamePads" :key="index" :value="value">
+                            {{ value.product + ' vid:' + value.vendorId + ' pid:' + value.productId }}</option>
+                    </select>
+                </div>
+
             </div>
 
-        </div>
-
-        <div class="setting-controls buffer-list-container">
-            <div class="buffer-table-wrapper">
-                <table class="buffer-table">
-                    <thead>
-                        <tr>
-                            <th class="buffer-index-header col-buffer">
-                                <div class="header-content">
-                                    <span class="header-desc">索引</span>
-                                </div>
-                            </th>
-                            <th v-for="bit in 8" :key="bit" class="bit-header">
-                                <div class="header-content">
-                                    <span class="bit-label">bit{{ 8 - bit }}</span>
-                                </div>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(binaryStr, index) in bufferDebugList" :key="index" class="buffer-row">
-                            <td class="buffer-index-cell col-buffer">
-                                <div class="index-content">
-                                    <span class="buffer-index">buffer[{{ index }}]</span>
-                                </div>
-                            </td>
-                            <td v-for="bitPos in 8" :key="bitPos" class="bit-cell"
-                                :class="getBitClass(binaryStr, bitPos)"
-                                :title="`bit${8 - bitPos}: ${getBitValue(binaryStr, bitPos)}`">
-                                <div class="bit-content">
-                                    <span class="bit-value">{{ getBitValue(binaryStr, bitPos) }}</span>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="setting-controls buffer-list-container">
+                <div class="buffer-table-wrapper">
+                    <table class="buffer-table">
+                        <thead>
+                            <tr>
+                                <th class="buffer-index-header col-buffer">
+                                    <div class="header-content">
+                                        <span class="header-desc">索引</span>
+                                    </div>
+                                </th>
+                                <th v-for="bit in 8" :key="bit" class="bit-header">
+                                    <div class="header-content">
+                                        <span class="bit-label">bit{{ 8 - bit }}</span>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(binaryStr, index) in bufferDebugList" :key="index" class="buffer-row">
+                                <td class="buffer-index-cell col-buffer">
+                                    <div class="index-content">
+                                        <span class="buffer-index">buffer[{{ index }}]</span>
+                                    </div>
+                                </td>
+                                <td v-for="bitPos in 8" :key="bitPos" class="bit-cell"
+                                    :class="getBitClass(binaryStr, bitPos)"
+                                    :title="`bit${8 - bitPos}: ${getBitValue(binaryStr, bitPos)}`">
+                                    <div class="bit-content">
+                                        <span class="bit-value">{{ getBitValue(binaryStr, bitPos) }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -80,17 +82,16 @@ export default {
         this.loadGamePadList()
         await window.electronAPI.onControllerSettingsDeviceError(this.onDeviceError)
     },
-    async beforeUnmount(){
+    async beforeUnmount() {
         await window.electronAPI.offControllerSettingsDeviceError()
     },
     async unmounted() {
-     
+
     },
     methods: {
         updateBufferDebug(bufferArray) {
             let m_list = []
-            if(!bufferArray) {
-                console.log(bufferArray)
+            if (!bufferArray) {
                 return;
             }
             bufferArray.map((buffer, index) => {
@@ -108,6 +109,10 @@ export default {
         },
         async loadGamePadList() {
             this.loadedGamePads = await window.electronAPI.getAllGamePad();
+            if (this.loadedGamePads.length > 0) {
+                this.currentGamePad = this.loadedGamePads[0]
+                this.initDevice(this.currentGamePad)
+            }
         },
         async initDevice(hidDevice) {
             if (timer) {

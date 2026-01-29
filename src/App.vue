@@ -6,9 +6,15 @@
         <i class="fas fa-home"></i>
         <span>截图设置</span>
       </button>
+
+      <button class="tab-btn" :class="{ active: activeTab === 'obs' }" @click="activeTab = 'obs'">
+        <i class="fas fa-obs"></i>
+        <span>OBS连接</span>
+      </button>
+
       <button class="tab-btn" :class="{ active: activeTab === 'debug' }" @click="activeTab = 'debug'">
         <i class="fas fa-bug"></i>
-        <span>控制器设置</span>
+        <span>控制器调试工具</span>
       </button>
     </div>
 
@@ -16,7 +22,12 @@
     <div class="tab-content">
       <!-- 首页内容 -->
       <div v-if="activeTab === 'home'" class="tab-pane">
-        <MainPage></MainPage>
+        <MainPage ref="mainPageRef" :compOBS="obsPageInstance" ></MainPage>
+      </div>
+
+      <!-- OBS连接 -->
+      <div v-show="activeTab === 'obs'" class="tab-pane">
+        <OBSConnectPage ref="obsPageRef"></OBSConnectPage>
       </div>
 
       <!-- Debug 页面内容 -->
@@ -30,23 +41,27 @@
 <script>
 import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
+import OBSConnectPage from '@/components/OBSConnectPage.vue'
+import { ref } from 'vue';
 
 export default {
   name: 'App',
   components: {
     MainPage,
+    OBSConnectPage,
     ControllerSettingsPage
   },
   data() {
     return {
       activeTab: 'home',
+      obsPageInstance:null
     }
   },
   async beforeMount() {
 
   },
   async mounted() {
-
+    this.obsPageInstance = this.$refs.obsPageRef;
   },
   unmounted() {
 

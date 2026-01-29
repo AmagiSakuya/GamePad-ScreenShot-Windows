@@ -18,8 +18,21 @@
         <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
       </div>
 
-      <!-- 2. 尺寸设置 -->
       <div class="setting-row">
+        <div class="setting-label">
+          <i class="fas fa-expand-alt"></i>
+          <span>截图方式</span>
+        </div>
+        <div class="setting-controls">
+          <select class="form-select" v-model="config.screenshotWay">
+            <option v-for="(value, index) in screenShotWayEnum" :key="index">{{ value }}</option>
+          </select>
+        </div>
+        <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
+      </div>
+
+      <!-- 2. 尺寸设置 -->
+      <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer" class="setting-row">
         <div class="setting-label">
           <i class="fas fa-expand-alt"></i>
           <span>截图尺寸</span>
@@ -101,26 +114,32 @@
 </template>
 
 <script>
-const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum } = require('@/lib/enum')
+const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum , ScreenShotWayEnum } = require('@/lib/enum')
 
 let timer;
 export default {
   name: 'MainPage',
   components: {},
+  props: {
+    compOBS: {
+      type: Object,
+      default: null
+    }
+  },
   data() {
     return {
-      desktopPath: "",
-      controllerDefine: [],
       controllerConfig: [],
       config: {
         path: '',
         resolution: '',
         controller: '',
         comboKeys: [],
-        sound: ''
+        sound: '',
+        screenshotWay : ''
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
+      screenShotWayEnum:ScreenShotWayEnum,
       buttonKeys: Object.keys(CommonButtonEnum),
       showBufferDebug: false,
       buffer: [],
@@ -137,17 +156,22 @@ export default {
     await window.electronAPI.setScreenShotTrigger(true)
     await this.reOpenDevice();
   },
-  async beforeUnmount(){
+  async beforeUnmount() {
     await window.electronAPI.offHotkeyTriggered()
     await window.electronAPI.offScreenShotDeviceError()
     await window.electronAPI.setScreenShotTrigger(false)
   },
   async unmounted() {
-   
+
   },
   methods: {
     async takeScreenshot() {
-      this.desktopPath = await window.electronAPI.screenShot()
+      if(this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer){
+          await window.electronAPI.screenShot()
+          window.electronAPI.playScreenshotSound()
+      }else if(this.config.screenshotWay == this.screenShotWayEnum.OBS){
+          this.compOBS.takeScreenshot(this.config)
+      }
     },
     async chooseFolder() {
       const folder = await window.electronAPI.selectFolder()
