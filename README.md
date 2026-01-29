@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>使用手柄快捷键进行全屏截图的 Windows 工具</strong>
+  <strong>使用手柄快捷键进行全屏截图 或 OBS截图的工具</strong>
 </p>
 
 <div align="center">
@@ -55,7 +55,7 @@
    - `deviceName`：界面显示名称
    - `vid` / `pid`：设备对应的 Vendor ID / Product ID
    - `buttons`：各按钮对应的 buffer 索引 与 bit 位索引
-3. 启动程序，切换到 第二个 Tab 页，选择需要配置的控制器
+3. 启动程序，切换到 控制器调试工具 选择控制器
 
 <p align="center">
   <img src="./images/2.jpg" alt="软件主界面" width="600" />
