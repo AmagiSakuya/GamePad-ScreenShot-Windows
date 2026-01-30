@@ -6,11 +6,6 @@
                 <div class="setting-label">
                     <i class="fas fa-gamepad"></i>
                     <span>选择控制器</span>
-                    <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
-                        <button class="btn btn-primary" @click="loadGamePadList">
-                            <span>刷新列表</span>
-                        </button>
-                    </div>
                 </div>
                 <div class="setting-controls">
                     <select class="form-select" v-model="currentGamePad" @change="onCurrentGameSelectChanged">
