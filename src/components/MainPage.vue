@@ -77,6 +77,9 @@
               <select class="form-select combo-select" v-model="config.comboKeys[index]">
                 <option v-for="(n, index) in 20" :key="index" :value="index">Button{{ index }}</option>
               </select>
+              <button v-show="loadedGamePads.length > 0" @click="automatedDetection(index)" class="btn btn-primary">
+                <span>{{ detectionIndex == -1 ? '识别' : detectionIndex == index ? '识别中' : '不可用' }}</span>
+              </button>
               <button @click="removeCombo(index)" class="btn btn-danger">
                 <span>删除</span>
               </button>
@@ -123,7 +126,7 @@ const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum } = require('@/li
 
 let rawDevices;
 let timer;
-
+let lastButtonsValue;
 export default {
   name: 'MainPage',
   components: {},
@@ -151,7 +154,8 @@ export default {
       loadedGamePads: [],
       currentGamePad: {},
       buttonsValuePreview: new Array(20).fill(false),
-      screenShoting : false
+      screenShoting : false,
+      detectionIndex : -1
     }
   },
   async mounted() {
@@ -241,6 +245,10 @@ export default {
         alert('没有添加快捷键')
         return;
       }
+      if(this.detectionIndex != -1){
+        alert('正在识别按键中');
+        return;
+      }
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]
       let success = await window.electronAPI.openSdl2Device(m_device)
@@ -254,6 +262,11 @@ export default {
     async onSDL2DeviceChanged() {
       if (this.listening) {
         alert('设备发生变化 已停止截图监听');
+      }
+      if (this.detectionIndex != -1) {
+        this.detectionIndex = -1;
+        await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+        return;
       }
       this.listening = false;
       await this.loadGamePadList();
@@ -271,12 +284,41 @@ export default {
           this.takeScreenshot();
         }
       }
+
+      if (!this.listening && this.detectionIndex != -1) {
+        for (let i = 0; i < this.buttonsValuePreview.length; i++) {
+          if (this.buttonsValuePreview[i] != lastButtonsValue[i]) {
+            this.config.comboKeys[this.detectionIndex] = i;
+            this.detectionIndex = -1;
+            await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+            break;
+          }
+        }
+      }
     },
     async stopListen() {
       this.listening = false;
     },
-    async onUserSelectedDeviceChange(){
+    async onUserSelectedDeviceChange() {
       this.loadConfig(this.currentGamePad.name)
+    },
+    async automatedDetection(detectionIndex) {
+      if (this.detectionIndex == -1) {
+        let m_device = rawDevices[this.currentGamePad._index]
+        let success = await window.electronAPI.openSdl2Device(m_device)
+        if (!success) {
+          alert('打开控制器失败')
+          return;
+        }
+        this.detectionIndex = detectionIndex;
+        lastButtonsValue = JSON.parse(JSON.stringify(this.buttonsValuePreview));
+        return;
+      }
+      if (this.detectionIndex == detectionIndex) {
+        this.detectionIndex = -1;
+        await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+        return;
+      }
     }
   }
 }
@@ -447,7 +489,7 @@ export default {
 
 .btn-primary:hover {
   background-color: #3a5795;
-  transform: translateY(-2px);
+  /* transform: translateY(-2px); */
   box-shadow: 0 5px 15px rgba(75, 108, 183, 0.2);
 }
 
@@ -458,14 +500,12 @@ export default {
 
 .btn-secondary:hover {
   background-color: #e2e8f0;
-  transform: translateY(-2px);
+  /* transform: translateY(-2px); */
 }
 
 .btn-danger {
   background-color: #fed7d7;
   color: #c53030;
-  padding: 8px 16px;
-  font-size: 0.85rem;
 }
 
 .btn-danger:hover {
@@ -532,7 +572,7 @@ export default {
 }
 
 .save-button:hover {
-  transform: translateY(-3px);
+  /* transform: translateY(-3px); */
   box-shadow: 0 8px 20px rgba(75, 108, 183, 0.3);
 }
 
@@ -558,10 +598,6 @@ export default {
   width: 100%;
 }
 
-.combo-row {
-  flex-direction: column;
-  align-items: flex-start;
-}
 
 .combo-select {
   max-width: 100%;
