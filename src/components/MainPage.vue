@@ -2,7 +2,7 @@
   <div class="settings-container">
     <div class="settings-content">
       <!-- 1. 路径设置 -->
-      <div class="setting-row">
+      <div v-show="!listening" class="setting-row">
         <div class="setting-label">
           <i class="fas fa-folder-open"></i>
           <span>截图保存路径</span>
@@ -18,7 +18,7 @@
         <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
       </div>
 
-      <div class="setting-row">
+      <div v-show="!listening" class="setting-row">
         <div class="setting-label">
           <i class="fas fa-expand-alt"></i>
           <span>截图方式</span>
@@ -32,7 +32,7 @@
       </div>
 
       <!-- 2. 尺寸设置 -->
-      <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer" class="setting-row">
+      <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
         <div class="setting-label">
           <i class="fas fa-expand-alt"></i>
           <span>截图尺寸</span>
@@ -46,27 +46,22 @@
       </div>
 
       <!-- 3. 控制器设置 -->
-      <div class="setting-row">
+      <div v-show="!listening" class="setting-row">
         <div class="setting-label">
           <i class="fas fa-gamepad"></i>
           <span>控制器</span>
-          <div v-if="!deviceOpen" class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
-            <button class="btn btn-primary" @click="reOpenDevice">
-              <span>重新连接</span>
-            </button>
-          </div>
         </div>
         <div class="setting-controls">
-          <select class="form-select" v-model="config.controller">
-            <option v-for="(value, index) in controllerConfig" :key="index" :value="value.deviceName">
-              {{ value.deviceName }}</option>
+          <select class="form-select" v-model="currentGamePad" @change="onUserSelectedDeviceChange">
+            <option v-for="(value, index) in loadedGamePads" :key="index" :value="value">
+              {{ value.name }}</option>
           </select>
         </div>
         <!-- <span class="hint-text">选择您使用的游戏控制器类型</span> -->
       </div>
 
       <!-- 4. 组合按键设置 -->
-      <div class="setting-row">
+      <div v-show="!listening" class="setting-row">
         <div class="setting-label">
           <i class="fas fa-keyboard"></i>
           <span>组合按键</span>
@@ -80,7 +75,7 @@
           <div class="combo-rows-container">
             <div v-for="(key, index) in config.comboKeys" :key="index" class="combo-row">
               <select class="form-select combo-select" v-model="config.comboKeys[index]">
-                <option v-for="(value, index) in buttonKeys" :key="index">{{ value }}</option>
+                <option v-for="(n, index) in 20" :key="index" :value="index">Button{{ index }}</option>
               </select>
               <button @click="removeCombo(index)" class="btn btn-danger">
                 <span>删除</span>
@@ -92,7 +87,7 @@
       </div>
 
       <!-- 5. 截图音频设置 -->
-      <div class="setting-row">
+      <div v-show="!listening" class="setting-row">
         <div class="setting-label">
           <i class="fas fa-volume-up"></i>
           <span>截图音频</span>
@@ -105,18 +100,30 @@
         <!-- <span class="hint-text">选择截图时播放的音效</span> -->
       </div>
 
-      <!-- 保存按钮 -->
-      <button class="save-button" @click="save">
-        <span>保存设置</span>
+      <div v-show="listening" class="setting-row">
+        <span>正在监听中</span>
+
+      </div>
+
+      <!-- 开始 -->
+      <button v-show="!listening" class="save-button" @click="startListen">
+        <span>启动</span>
       </button>
+
+      <button v-show="listening" class="save-button" @click="stopListen">
+        <span>停止</span>
+      </button>
+
     </div>
   </div>
 </template>
 
 <script>
-const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum , ScreenShotWayEnum } = require('@/lib/enum')
+const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum } = require('@/lib/enum')
 
+let rawDevices;
 let timer;
+
 export default {
   name: 'MainPage',
   components: {},
@@ -131,47 +138,47 @@ export default {
       controllerConfig: [],
       config: {
         path: '',
-        resolution: '',
-        controller: '',
+        resolution: resolutionEnum.R_1080P,
         comboKeys: [],
-        sound: '',
-        screenshotWay : ''
+        sound: screenshotSoundEnum.NS2,
+        screenshotWay: ScreenShotWayEnum.DesktopCapturer
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
-      screenShotWayEnum:ScreenShotWayEnum,
-      buttonKeys: Object.keys(CommonButtonEnum),
+      screenShotWayEnum: ScreenShotWayEnum,
       showBufferDebug: false,
-      buffer: [],
-      bufferDebugList: [],
-      deviceOpen: false
+      listening: false,
+      loadedGamePads: [],
+      currentGamePad: {},
+      buttonsValuePreview: new Array(20).fill(false),
+      screenShoting : false
     }
   },
-  async beforeMount() {
-    this.controllerConfig = await window.electronAPI.getControllerConfig();
-  },
   async mounted() {
-    await window.electronAPI.onHotkeyTriggered(this.takeScreenshot)
-    await window.electronAPI.onScreenShotDeviceError(this.onScreenShotDeviceError)
-    await window.electronAPI.setScreenShotTrigger(true)
-    await this.reOpenDevice();
+    await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged);
+    await window.electronAPI.onHotkeyTriggered(this.takeScreenshot);
+    await this.loadGamePadList();
+    timer = setInterval(this.getCurrentButtonsValue, 60);
   },
   async beforeUnmount() {
+    await window.electronAPI.offDeviceChanged()
     await window.electronAPI.offHotkeyTriggered()
-    await window.electronAPI.offScreenShotDeviceError()
-    await window.electronAPI.setScreenShotTrigger(false)
-  },
-  async unmounted() {
-
+    await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+    clearInterval(timer)
+    this.saveCurrentConfig()
   },
   methods: {
     async takeScreenshot() {
-      if(this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer){
-          await window.electronAPI.screenShot()
-          window.electronAPI.playScreenshotSound()
-      }else if(this.config.screenshotWay == this.screenShotWayEnum.OBS){
-          this.compOBS.takeScreenshot(this.config)
+      if (this.screenShoting) return;
+      this.screenShoting = true;
+      if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
+        var m_config = JSON.parse(JSON.stringify(this.config));
+        await window.electronAPI.screenShot(m_config)
+        window.electronAPI.playScreenshotSound()
+      } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
+        await this.compOBS.takeScreenshot(this.config)
       }
+      this.screenShoting = false;
     },
     async chooseFolder() {
       const folder = await window.electronAPI.selectFolder()
@@ -180,46 +187,96 @@ export default {
       }
     },
     addCombo() {
-      this.config.comboKeys.push(CommonButtonEnum.HOME)
+      this.config.comboKeys.push(0)
     },
     removeCombo(index) {
       this.config.comboKeys.splice(index, 1)
     },
-    async save() {
-      var stringData = JSON.stringify(this.config);
-      var pureObj = JSON.parse(stringData);
-      if (pureObj.path == "") {
-        alert('截图路径不可以为空')
-        return;
+    async saveCurrentConfig() {
+      if (this.currentGamePad && this.currentGamePad.name) {
+        const configStr = JSON.stringify(this.config);
+        let STORAGE_KEY = this.currentGamePad.name
+        localStorage.setItem(STORAGE_KEY, configStr);
       }
-      await window.electronAPI.saveConfig(pureObj)
-      let success = await this.initDevice();
-      if (success) {
-        alert('保存成功')
+    },
+    async loadConfig(deviceName) {
+      let STORAGE_KEY = deviceName
+      const savedConfig = localStorage.getItem(STORAGE_KEY);
+      if (savedConfig) {
+        this.config = JSON.parse(savedConfig);
+      } else {
+        this.resetConfig();
       }
     },
     async initDevice() {
-      if (timer) {
-        clearInterval(timer)
-        timer = null
-        this.bufferPreview = ''
+      return false
+    },
+    resetConfig() {
+      this.config = {
+        path: '',
+        resolution: resolutionEnum.R_1080P,
+        comboKeys: [],
+        sound: screenshotSoundEnum.NS2,
+        screenshotWay: ScreenShotWayEnum.DesktopCapturer
       }
-      if (!this.config.controller) return
-      let success = await window.electronAPI.initDevice()
-
-      this.deviceOpen = success
+    },
+    async loadGamePadList() {
+      rawDevices = await window.electronAPI.getAllGamePad()
+      this.loadedGamePads = rawDevices;
+      if (this.loadedGamePads.length > 0) {
+        this.currentGamePad = this.loadedGamePads[0]
+        this.loadConfig(this.currentGamePad.name)
+      } else {
+        this.resetConfig();
+      }
+    },
+    async startListen() {
+      //1.检查配置
+      var m_config = JSON.parse(JSON.stringify(this.config));
+      if (m_config.path == "") {
+        alert('截图路径不可以为空')
+        return;
+      }
+      if (m_config.comboKeys.length == 0) {
+        alert('没有添加快捷键')
+        return;
+      }
+      //尝试启动
+      let m_device = rawDevices[this.currentGamePad._index]
+      let success = await window.electronAPI.openSdl2Device(m_device)
       if (!success) {
-        alert('初始化设备失败 请确保控制已连接')
+        alert('打开控制器失败')
+        return;
       }
-      return success
+      this.saveCurrentConfig();
+      this.listening = true;
     },
-    async reOpenDevice() {
-      this.config = await window.electronAPI.readConfig();
-      await this.initDevice();
+    async onSDL2DeviceChanged() {
+      if (this.listening) {
+        alert('设备发生变化 已停止截图监听');
+      }
+      this.listening = false;
+      await this.loadGamePadList();
     },
-    onScreenShotDeviceError() {
-      alert('控制器连接已断开，请确保插上控制器后重启软件')
-      this.deviceOpen = false
+    async getCurrentButtonsValue() {
+      this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
+      if (this.listening) {
+        let flag = true;
+        for (let i = 0; i < this.config.comboKeys.length; i++) {
+          let m_index = this.config.comboKeys[i];
+          let buttonValue = this.buttonsValuePreview[m_index];
+          if (!buttonValue) flag = false
+        }
+        if (flag) {
+          this.takeScreenshot();
+        }
+      }
+    },
+    async stopListen() {
+      this.listening = false;
+    },
+    async onUserSelectedDeviceChange(){
+      this.loadConfig(this.currentGamePad.name)
     }
   }
 }

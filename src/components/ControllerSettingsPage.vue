@@ -1,6 +1,7 @@
 <template>
     <div class="settings-container">
         <div class="settings-content">
+
             <div class="setting-row">
                 <div class="setting-label">
                     <i class="fas fa-gamepad"></i>
@@ -14,46 +15,22 @@
                 <div class="setting-controls">
                     <select class="form-select" v-model="currentGamePad" @change="onCurrentGameSelectChanged">
                         <option v-for="(value, index) in loadedGamePads" :key="index" :value="value">
-                            {{ value.product + ' vid:' + value.vendorId + ' pid:' + value.productId }}</option>
+                            {{ value.name + ' ( VID:' + value.vendor + ' PID:' + value.product + ' )' }}</option>
                     </select>
                 </div>
 
             </div>
 
-            <div class="setting-controls buffer-list-container">
-                <div class="buffer-table-wrapper">
-                    <table class="buffer-table">
-                        <thead>
-                            <tr>
-                                <th class="buffer-index-header col-buffer">
-                                    <div class="header-content">
-                                        <span class="header-desc">索引</span>
-                                    </div>
-                                </th>
-                                <th v-for="bit in 8" :key="bit" class="bit-header">
-                                    <div class="header-content">
-                                        <span class="bit-label">bit{{ 8 - bit }}</span>
-                                    </div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(binaryStr, index) in bufferDebugList" :key="index" class="buffer-row">
-                                <td class="buffer-index-cell col-buffer">
-                                    <div class="index-content">
-                                        <span class="buffer-index">buffer[{{ index }}]</span>
-                                    </div>
-                                </td>
-                                <td v-for="bitPos in 8" :key="bitPos" class="bit-cell"
-                                    :class="getBitClass(binaryStr, bitPos)"
-                                    :title="`bit${8 - bitPos}: ${getBitValue(binaryStr, bitPos)}`">
-                                    <div class="bit-content">
-                                        <span class="bit-value">{{ getBitValue(binaryStr, bitPos) }}</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="setting-row button-preview-row">
+                <div class="buttons-grid">
+                    <h2>按键状态</h2>
+                    <div class="buttons-row">
+                        <div class="button-item" v-for="(button, index) in buttonsValuePreview" :key="index">
+                            <div class="button-label">Button{{ index }}</div>
+                            <div class="button-state" :class="button ? 'button-pressed' : 'button-released'"
+                                tabindex="0"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -61,6 +38,8 @@
 </template>
 
 <script>
+
+let rawDevices;
 let timer;
 export default {
     name: 'ControllerSettingsPage',
@@ -70,78 +49,52 @@ export default {
     data() {
         return {
             activeTab: 'home',
-            bufferDebugList: [],
             loadedGamePads: [],
-            currentGamePad: {}
+            currentGamePad: {},
+            buttonsValuePreview: new Array(20).fill(false)
         }
     },
     async beforeMount() {
 
     },
     async mounted() {
-        this.loadGamePadList()
-        await window.electronAPI.onControllerSettingsDeviceError(this.onDeviceError)
+        await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged)
+        await this.loadGamePadList()
+        timer = setInterval(this.getCurrentButtonsValue, 60);
     },
     async beforeUnmount() {
-        await window.electronAPI.offControllerSettingsDeviceError()
+        await window.electronAPI.offDeviceChanged()
+        await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+        clearInterval(timer)
     },
     async unmounted() {
 
     },
     methods: {
-        updateBufferDebug(bufferArray) {
-            let m_list = []
-            if (!bufferArray) {
-                return;
-            }
-            bufferArray.map((buffer, index) => {
-                m_list.push(buffer.toString(2).padStart(8, '0'))
-            });
-            this.bufferDebugList = m_list;
-        },
-        getBitValue(binaryStr, bitPos) {
-            const index = bitPos - 1;
-            return binaryStr[index];
-        },
-        getBitClass(binaryStr, bitPos) {
-            const bitValue = this.getBitValue(binaryStr, bitPos);
-            return bitValue === '1' ? 'bit-1' : 'bit-0';
-        },
         async loadGamePadList() {
-            this.loadedGamePads = await window.electronAPI.getAllGamePad();
+            rawDevices = await window.electronAPI.getAllGamePad()
+            this.loadedGamePads = rawDevices;
             if (this.loadedGamePads.length > 0) {
                 this.currentGamePad = this.loadedGamePads[0]
-                this.initDevice(this.currentGamePad)
+                this.initDevice(rawDevices[0])
             }
         },
         async initDevice(hidDevice) {
-            if (timer) {
-                clearInterval(timer)
-                timer = null
-            }
-            if (!hidDevice) return
-            console.log(hidDevice)
-            let success = await window.electronAPI.initControllerSettingsDevice(hidDevice.vendorId, hidDevice.productId)
-
-            this.deviceOpen = success
+            let success = await window.electronAPI.openSdl2Device(hidDevice)
             if (!success) {
-                alert('初始化设备失败 请确保控制已连接')
-            } else {
-
-                timer = setInterval(async () => {
-                    this.buffer = await window.electronAPI.getLastControllerSettingUseBuffer()
-                    this.updateBufferDebug(this.buffer);
-                }, 60);
+                alert('打开控制器失败')
             }
-
-            return success
         },
-        onCurrentGameSelectChanged() {
-            this.initDevice(this.currentGamePad)
+        async onSDL2DeviceChanged() {
+            await this.loadGamePadList();
         },
-        onDeviceError() {
-            this.loadGamePadList()
-            //alert('控制器连接已断开，请确保插上控制器后重启软件')
+        async onCurrentGameSelectChanged() {
+            await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+            let m_device = rawDevices[this.currentGamePad._index]
+            await this.initDevice(m_device)
+        },
+        async getCurrentButtonsValue() {
+            this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
         }
     }
 }
@@ -228,135 +181,6 @@ export default {
     opacity: 0.9;
 }
 
-.bit-label {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.bit-position {
-    font-size: 10px;
-    opacity: 0.9;
-}
-
-.buffer-row {
-    border-bottom: 1px solid #eef2f7;
-    background: white;
-    transition: all 0.2s ease;
-}
-
-.buffer-row:hover {
-    background: linear-gradient(135deg, #f6f9ff 0%, #edf2ff 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.buffer-row:last-child {
-    border-bottom: none;
-}
-
-.buffer-index-cell {
-    padding: 12px 8px;
-    text-align: center;
-    background: #f8fafc;
-    border-right: 1px solid #eef2f7;
-    transition: background-color 0.2s ease;
-}
-
-.buffer-row:hover .buffer-index-cell {
-    background: #e3f2fd;
-}
-
-.index-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.buffer-index {
-    font-weight: 700;
-    color: #4f46e5;
-    font-size: 14px;
-    font-family: 'JetBrains Mono', 'Courier New', monospace;
-}
-
-.buffer-sequence {
-    font-size: 11px;
-    color: #64748b;
-    background: #e2e8f0;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-weight: 500;
-}
-
-.bit-cell {
-    padding: 14px 2px;
-    text-align: center;
-    border-right: 1px solid #eef2f7;
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.bit-cell:last-child {
-    border-right: none;
-}
-
-.bit-cell::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: currentColor;
-    opacity: 0.05;
-    z-index: 1;
-}
-
-.bit-cell.bit-0 {
-    color: #94a3b8;
-    background: #f8fafc;
-}
-
-.bit-cell.bit-1 {
-    color: #3b82f6;
-    background: #eff6ff;
-}
-
-.bit-cell.bit-0:hover {
-    background: #f1f5f9;
-    color: #64748b;
-}
-
-.bit-cell.bit-1:hover {
-    background: #dbeafe;
-    color: #1d4ed8;
-}
-
-.bit-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-}
-
-.bit-value {
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'JetBrains Mono', 'Courier New', monospace;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.buffer-table tfoot {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-}
-
 .summary-cell {
     padding: 12px 16px;
     text-align: center;
@@ -375,12 +199,71 @@ export default {
     font-weight: 500;
 }
 
-.bit-count {
-    font-size: 12px;
-    color: #64748b;
-    margin-left: 8px;
-    background: #e2e8f0;
-    padding: 2px 8px;
-    border-radius: 12px;
+.buttons-grid {
+    flex: 1;
+    min-width: 300px;
+    max-width: 800px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 25px;
+    /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 690px;
+}
+
+.buttons-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 32px;
+    margin-bottom: 15px;
+}
+
+.button-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 80px;
+}
+
+.button-label {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    color: #ccc;
+    text-align: center;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.button-state {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+.button-pressed {
+    background: linear-gradient(145deg, #a8e6cf, #7ed9b2);
+    color: #1b4332;
+    box-shadow: 0 8px 20px rgba(168, 230, 207, 0.3);
+    border: 2px solid #a8e6cf;
+}
+
+.button-released {
+    background: linear-gradient(145deg, #f5f5f5, #e0e0e0);
+    color: #616161;
+    border: 2px solid #e0e0e0;
+}
+.button-preview-row{
+    align-items: center;
 }
 </style>

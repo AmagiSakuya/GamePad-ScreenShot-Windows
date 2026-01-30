@@ -4,27 +4,15 @@ import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
-const HID = require('node-hid')
+import sdl from '@kmamal/sdl'
 const sound = require('sound-play')
 const fs = require('fs')
 const path = require('path')
 const vm = require('vm')
 //Scripts
 const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum } = require('@/lib/enum')
-const buildInControllerConfig = require('@/config/buildInControllerConfig')
 //Path Define
-const exeDir = path.dirname(app.getPath('exe'))
-const configPath = app.isPackaged ? path.join(exeDir, 'userConfig.json') : path.join(app.getAppPath(), 'userConfig.json')
-const controllerConfigPath = app.isPackaged ? path.join(exeDir, 'controllerConfig.json') : path.join(app.getAppPath(), 'controllerConfig.json')
-const soundPath = app.isPackaged ? path.join(process.resourcesPath, 'assets', 'ns2截图音.mp3') : path.join(__dirname, '../src/assets/ns2截图音.mp3')
 const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js') : path.join(__dirname, '../src/preload.js')
-
-//Temp Varibles
-const defaultConfig = { path: '', resolution: resolutionEnum.R_4K, controller: '', comboKeys: [], sound: screenshotSoundEnum.NS2, screenshotWay: ScreenShotWayEnum.DesktopCapturer }
-let win, device;
-let lastFlag = false;
-let lastBuffer;
-let screen_shotTrigger;
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -32,6 +20,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 //#region app
+let win;
 
 async function createWindow() {
   // Create the browser window.
@@ -116,163 +105,65 @@ if (isDevelopment) {
 
 //#endregion
 
-//#region ipc注册 
 
-//选择文件夹
-ipcMain.handle('select-folder', async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ['openDirectory']
-  })
-  return result.canceled ? null : result.filePaths[0]
-})
 
-ipcMain.handle('read-config', async () => {
-  return await getConfig()
-})
 
-ipcMain.handle('read-controller-config', async () => {
-  return await getControllerConfig()
-})
-
-ipcMain.handle('save-config', async (_, data) => {
-  fs.writeFileSync(configPath, JSON.stringify(data, null, 2))
-})
-
-ipcMain.handle('init-device', async () => {
-  var m_config = await getConfig()
-  var success = await initHidDevice(m_config)
-  return success
-})
-
-ipcMain.handle('get-last-buffer', () => {
-  return lastBuffer
-})
+//#region SDL2方法
+let device_instance;
+let buttons = new Array(20).fill(false);
 
 ipcMain.handle('get-all-gamepad', () => {
-  return getAllGamepads()
+  return sdl.joystick.devices
 })
 
-ipcMain.handle('set-screenshot-trigger', (_, active) => {
-  screen_shotTrigger = active
+ipcMain.handle('open-sdl2-device', async (_, device) => {
+  try {
+
+    device_instance = sdl.joystick.openDevice(sdl.joystick.devices[device._index]);
+    buttons = new Array(20).fill(false);
+
+    device_instance.on('buttonDown', (data) => {
+      buttons[data.button] = true;
+    })
+
+    device_instance.on('buttonUp', (data) => {
+      buttons[data.button] = false;
+    })
+
+  } catch (err) {
+    console.error('打开控制器失败', err);
+    return false
+  }
+  return true;
 })
+
+ipcMain.handle('remove-sdl2-device-instance-all-listeners', async (_, device) => {
+  if (device_instance) {
+    buttons = new Array(20).fill(false);
+    device_instance.removeAllListeners();
+  }
+})
+
+ipcMain.handle('get-current-buttons-value', async () => {
+  return buttons;
+})
+
+sdl.joystick.on('deviceAdd', (device) => {
+  win.webContents.send('device-changed')
+})
+
+sdl.joystick.on('deviceRemove', (device) => {
+  win.webContents.send('device-changed')
+})
+//#endregion
+
+
+//#region 截图音频
+const soundPath = app.isPackaged ? path.join(process.resourcesPath, 'assets', 'ns2截图音.mp3') : path.join(__dirname, '../src/assets/ns2截图音.mp3')
 
 ipcMain.handle('play-screenshot-sound', () => {
   playScreenShotSound()
 })
-
-//#endregion
-
-//#region 配置文件相关
-
-async function getConfig() {
-  if (!fs.existsSync(configPath)) {
-    fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2))
-    return defaultConfig
-  }
-  var res = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
-  return res
-}
-
-async function getControllerConfig() {
-  if (!fs.existsSync(controllerConfigPath)) {
-    fs.writeFileSync(controllerConfigPath, JSON.stringify(buildInControllerConfig, null, 2))
-    return buildInControllerConfig
-  }
-  var res = JSON.parse(fs.readFileSync(controllerConfigPath, 'utf-8'))
-  return res
-}
-
-async function getControllerSingleConfig(deviceName) {
-  let controllerConfig = await getControllerConfig();
-  for (let i = 0; i < controllerConfig.length; i++) {
-    if (controllerConfig[i].deviceName === deviceName) return controllerConfig[i]
-  }
-}
-
-//#endregion
-
-//#region node hid 手柄相关方法
-function getAllGamepads() {
-  const devices = HID.devices();
-
-  // 常见筛选条件：usagePage = 1 (Generic Desktop)
-  const gamepads = devices.filter(d =>
-    d.usagePage === 0x01 &&
-    (d.usage === 0x04 || d.usage === 0x05) // Joystick / Gamepad
-  );
-
-  return gamepads;
-}
-
-//#endregion
-
-//#region 截图用主程的输入处理
-async function initHidDevice(configData) {
-  lastBuffer = void 0
-  //尝试销毁上一个
-  if (device) {
-    try {
-      device.close()
-      device = null
-    } catch (err) {
-      console.error('关闭设备时出错:', err)
-      return false
-    }
-  }
-  lastFlag = false
-  try {
-    let m_config = await getControllerSingleConfig(configData.controller);
-    device = new HID.HID(m_config.vid, m_config.pid)
-
-    device.on("data", function (data) {
-      lastBuffer = data
-      update_KeyDownCheck(parseData(data, m_config), configData)
-    })
-
-    device.on('error', err => {
-      //showWarning('警告', '控制器连接已断开，请确保插上控制器后重启软件')
-      win.webContents.send('screenshot-device-err')
-      // 一定要 try-catch
-      try {
-        device.close();
-      } catch { }
-      device = null
-    });
-    return true
-  } catch (e) {
-    console.error(`${e}`)
-    console.error(`无法读取设备：${configData.controller}`)
-    return false
-  }
-}
-
-function parseData(data, controlleConfig) {
-  var resMap = {};
-
-  var keys = Object.keys(controlleConfig.buttons);
-
-  for (let i = 0; i < keys.length; i++) {
-    resMap[keys[i]] = data[controlleConfig.buttons[keys[i]].buffer] & (1 << controlleConfig.buttons[keys[i]].bit)
-  }
-
-  return resMap
-}
-
-function update_KeyDownCheck(commonButtonMap, config) {
-  var flag = true
-  if (config.comboKeys.length == 0) flag = false
-
-  for (let i = 0; i < config.comboKeys.length; i++) {
-    var selectedItem = config.comboKeys[i]
-    if (!commonButtonMap[selectedItem]) flag = false
-  }
-
-  if(!screen_shotTrigger) return
-  if (flag != lastFlag && flag) {
-    win.webContents.send('hotkey-triggered')
-  }
-  lastFlag = flag
-}
 
 function playScreenShotSound() {
   sound.play(soundPath)
@@ -280,61 +171,12 @@ function playScreenShotSound() {
 
 //#endregion
 
-//#region 控制器设置用输入处理
-let controllerSettingsDevice;
-let lastControllerSettingsDeviceBuffer;
 
-async function initControllerSettingsDevice(vid,pid) {
-  lastControllerSettingsDeviceBuffer = void 0
-  //尝试销毁上一个
-  if (controllerSettingsDevice) {
-    try {
-      controllerSettingsDevice.close()
-      controllerSettingsDevice = null
-    } catch (err) {
-      console.error('关闭设备时出错:', err)
-      return false
-    }
-  }
-
-  try {
-    controllerSettingsDevice = new HID.HID(vid, pid)
-    controllerSettingsDevice.on("data", function (data) {
-      lastControllerSettingsDeviceBuffer = data
-    })
-
-    controllerSettingsDevice.on('error', err => {
-      //showWarning('警告', '控制器连接已断开，请确保插上控制器后重启软件')
-      win.webContents.send('controller-settings-device-err')
-      // 一定要 try-catch
-      try {
-        controllerSettingsDevice.close();
-      } catch { }
-      controllerSettingsDevice = null
-    });
-    return true
-  } catch (e) {
-    console.error(`${e}`)
-  }
-}
-
-ipcMain.handle('get-last-controller-settings-buffer', () => {
-  return lastControllerSettingsDeviceBuffer
+//#region  Win32
+ipcMain.handle('select-folder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  })
+  return result.canceled ? null : result.filePaths[0]
 })
-
-ipcMain.handle('init-controller-settings-device', async (_, vid, pid) => {
-  return await initControllerSettingsDevice(vid, pid)
-})
-
-//#endregion
-
-//#region  Win
-function showWarning(title, msg) {
-  dialog.showMessageBox({
-    type: 'warning',        // none | info | error | question | warning
-    title: title,
-    message: msg,
-    buttons: ['确定'],
-  });
-}
 //#endregion
