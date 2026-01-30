@@ -41,7 +41,7 @@
                 </div>
             </div> -->
 
-            <div v-show="isConnected" class="setting-row" @change="refreshList">
+            <div v-show="isConnected" class="setting-row">
                 <div class="setting-label">
                     <i class="fas fa-expand-alt"></i>
                     <span>选择场景</span>
@@ -53,21 +53,6 @@
                     </select>
                 </div>
             </div>
-
-
-            <!-- <div v-show="isConnected && !obsConfig.sourceFromScene" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-expand-alt"></i>
-                    <span>选择源</span>
-                </div>
-                <div class="setting-controls">
-                    <select class="form-select" v-model="selectedSource">
-                        <option v-for="(value, index) in screenshotableSources" :key="index" :value="value">{{
-                            value.inputName }}</option>
-                    </select>
-                </div>
-            </div> -->
-
 
             <button v-if="!isConnected" class="save-button" @click="connectOBS">
                 <span>连接服务</span>
@@ -99,8 +84,7 @@ export default {
             isConnected: false,
             screenshotableSources: [],
             sceneList: [],
-            selectedScene: void 0,
-            selectedSource: void 0
+            selectedScene: void 0
         }
     },
     async beforeMount() {
@@ -140,9 +124,6 @@ export default {
             this.screenshotableSources = await this.getScreenshotableSources();
             if (this.sceneList.length > 0) {
                 this.selectedScene = this.sceneList[0]
-            }
-            if (this.screenshotableSources.length > 0) {
-                this.selectedSource = this.screenshotableSources[0]
             }
         },
         async disconnectOBS() {
