@@ -178,7 +178,9 @@ export default {
       if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
         var m_config = JSON.parse(JSON.stringify(this.config));
         await window.electronAPI.screenShot(m_config)
-        window.electronAPI.playScreenshotSound()
+        if(this.config.sound != screenshotSoundEnum.None){
+          window.electronAPI.playScreenshotSound()
+        }
       } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
         await this.compOBS.takeScreenshot(this.config)
       }

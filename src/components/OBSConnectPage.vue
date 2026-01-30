@@ -84,7 +84,7 @@
 import { OBSWebSocket } from 'obs-websocket-js';
 const obs = new OBSWebSocket();
 const STORAGE_KEY = 'obs_config_data';
-
+const { screenshotSoundEnum } = require('@/lib/enum')
 export default {
     name: 'OBSConnectPage',
     components: {
@@ -178,7 +178,10 @@ export default {
                     imageHeight: baseHeight,               // 可选：缩放高度
                     imageCompressionQuality: -1      // 可选：压缩质量 (JPEG 为 1-100, PNG 为 0-9)
                 });
-                window.electronAPI.playScreenshotSound()
+                if (config.sound != screenshotSoundEnum.None) {
+                    window.electronAPI.playScreenshotSound()
+                }
+
                 //console.log('📸 截图已保存:', response.imageFilePath);
             } catch (error) {
                 alert('OBS截图出错' + error.message)
