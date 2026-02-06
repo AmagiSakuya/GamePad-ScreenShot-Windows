@@ -5,7 +5,6 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
-const sound = require('sound-play')
 const fs = require('fs')
 const path = require('path')
 const vm = require('vm')
@@ -164,21 +163,6 @@ ipcMain.handle('get-device-instance-button-number', async () => {
 })
 
 //#endregion
-
-
-//#region 截图音频
-const soundPath = app.isPackaged ? path.join(process.resourcesPath, 'assets', 'ns2截图音.mp3') : path.join(__dirname, '../src/assets/ns2截图音.mp3')
-
-ipcMain.handle('play-screenshot-sound', () => {
-  playScreenShotSound()
-})
-
-function playScreenShotSound() {
-  sound.play(soundPath)
-}
-
-//#endregion
-
 
 //#region  Win32
 ipcMain.handle('select-folder', async () => {

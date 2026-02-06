@@ -103,9 +103,21 @@
         <!-- <span class="hint-text">选择截图时播放的音效</span> -->
       </div>
 
+     <div v-show="!listening" class="setting-row">
+        <div class="setting-label">
+          <i class="fas fa-volume-up"></i>
+          <span>音量</span>
+        </div>
+        <div class="setting-controls">
+          <select class="form-select" v-model="config.soundPower">
+            <option v-for="(value, index) in volumeOptions" :key="index" :value="value">{{ value * 100 + '%' }}</option>
+          </select>
+        </div>
+        <!-- <span class="hint-text">选择截图时播放的音效</span> -->
+      </div>
+
       <div v-show="listening" class="setting-row">
         <span>正在监听中</span>
-
       </div>
 
       <!-- 开始 -->
@@ -123,6 +135,8 @@
 
 <script>
 const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum } = require('@/lib/enum')
+import { Howl } from 'howler'
+import ns2SoundSrc from '@/assets/ns2截图音.mp3'
 
 let rawDevices;
 let timer;
@@ -144,6 +158,7 @@ export default {
         resolution: resolutionEnum.R_1080P,
         comboKeys: [],
         sound: screenshotSoundEnum.NS2,
+        soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer
       },
       screenshotSoundEnum: screenshotSoundEnum,
@@ -154,8 +169,9 @@ export default {
       loadedGamePads: [],
       currentGamePad: {},
       buttonsValuePreview: new Array(20).fill(false),
-      screenShoting : false,
-      detectionIndex : -1
+      screenShoting: false,
+      detectionIndex: -1,
+      volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5]
     }
   },
   async mounted() {
@@ -178,8 +194,9 @@ export default {
       if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
         var m_config = JSON.parse(JSON.stringify(this.config));
         await window.electronAPI.screenShot(m_config)
-        if(this.config.sound != screenshotSoundEnum.None){
-          window.electronAPI.playScreenshotSound()
+        if (this.config.sound == screenshotSoundEnum.NS2) {
+          let sound = new Howl({ src: [ns2SoundSrc], volume: this.config.soundPower })
+          sound.play();
         }
       } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
         await this.compOBS.takeScreenshot(this.config)
@@ -223,6 +240,7 @@ export default {
         resolution: resolutionEnum.R_1080P,
         comboKeys: [],
         sound: screenshotSoundEnum.NS2,
+        soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer
       }
     },
@@ -670,4 +688,5 @@ input:checked+.slider:before {
   min-width: 150px;
   width: 150px;
 }
+
 </style>

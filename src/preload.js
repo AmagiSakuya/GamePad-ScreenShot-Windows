@@ -57,7 +57,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     selectFolder: () => ipcRenderer.invoke('select-folder'),
     copyText: (text) => clipboard.writeText(text),
     getAllGamePad: () => ipcRenderer.invoke('get-all-gamepad'),
-    playScreenshotSound: () => ipcRenderer.invoke('play-screenshot-sound'),
     openSdl2Device: (device) => ipcRenderer.invoke('open-sdl2-device', device),
     removeSdl2DeviceInstanceAllListeners: () => ipcRenderer.invoke('remove-sdl2-device-instance-all-listeners'),
     getCurrentButtonsValue: () => ipcRenderer.invoke('get-current-buttons-value'),

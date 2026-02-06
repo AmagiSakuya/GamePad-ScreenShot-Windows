@@ -18,9 +18,9 @@
     "@kmamal/sdl": "^0.11.13",
     "core-js": "^3.8.3",
     "fs": "^0.0.1-security",
+    "howler": "^2.2.4",
     "node-hid": "^3.2.0",
     "obs-websocket-js": "^5.0.7",
-    "sound-play": "^1.1.0",
     "vue": "^3.2.13"
   },
   "devDependencies": {

@@ -20,14 +20,10 @@ module.exports = defineConfig({
           "target": ["dir"]
         },
         asarUnpack: [
-          'preload.js',
-          '**/*.mp3'
+          'preload.js'
         ],
         extraResources: [
-          {
-            from: 'src/assets/ns2截图音.mp3',
-            to: 'assets/ns2截图音.mp3'
-          }
+          
         ]
       }
     }
