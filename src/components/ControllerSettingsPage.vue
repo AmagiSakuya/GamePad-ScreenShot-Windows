@@ -21,8 +21,8 @@
                     <h2>按键状态</h2>
                     <div class="buttons-row">
                         <div class="button-item" v-for="(button, index) in buttonsValuePreview" :key="index">
-                            <div class="button-label">Button{{ index }}</div>
-                            <div class="button-state" :class="button ? 'button-pressed' : 'button-released'"
+                            <div v-show="index < deviceInstanceButtonCount" class="button-label">Button{{ index }}</div>
+                            <div v-show="index < deviceInstanceButtonCount" class="button-state" :class="button ? 'button-pressed' : 'button-released'"
                                 tabindex="0"></div>
                         </div>
                     </div>
@@ -46,7 +46,8 @@ export default {
             activeTab: 'home',
             loadedGamePads: [],
             currentGamePad: {},
-            buttonsValuePreview: new Array(20).fill(false)
+            buttonsValuePreview: new Array(20).fill(false),
+            deviceInstanceButtonCount:0
         }
     },
     async beforeMount() {
@@ -76,9 +77,13 @@ export default {
         },
         async initDevice(hidDevice) {
             let success = await window.electronAPI.openSdl2Device(hidDevice)
+            let num = 0;
             if (!success) {
                 alert('打开控制器失败')
+            } else {
+                num = await window.electronAPI.getDeviceInstanceButtonNumber();
             }
+            this.deviceInstanceButtonCount = num;
         },
         async onSDL2DeviceChanged() {
             await this.loadGamePadList();

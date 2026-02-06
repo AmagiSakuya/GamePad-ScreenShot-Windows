@@ -155,6 +155,14 @@ sdl.joystick.on('deviceAdd', (device) => {
 sdl.joystick.on('deviceRemove', (device) => {
   win.webContents.send('device-changed')
 })
+
+ipcMain.handle('get-device-instance-button-number', async () => {
+  if (device_instance) {
+    return device_instance.buttons.length
+  }
+  return 0
+})
+
 //#endregion
 
 

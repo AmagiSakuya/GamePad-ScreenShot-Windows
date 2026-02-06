@@ -61,4 +61,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openSdl2Device: (device) => ipcRenderer.invoke('open-sdl2-device', device),
     removeSdl2DeviceInstanceAllListeners: () => ipcRenderer.invoke('remove-sdl2-device-instance-all-listeners'),
     getCurrentButtonsValue: () => ipcRenderer.invoke('get-current-buttons-value'),
+    getDeviceInstanceButtonNumber: () => ipcRenderer.invoke('get-device-instance-button-number'),
 })
