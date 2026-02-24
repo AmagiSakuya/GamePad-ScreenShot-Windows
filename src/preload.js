@@ -42,10 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
                 break
         }
 
-        const filePath = path.join(
-            config.path,
-            `Screenshot_${Date.now()}.${config.imageFormat}`
-        )
+        const filePath = path.join(config.path,`${config.calcedFileName}.${config.imageFormat}`)
 
         fs.writeFileSync(filePath, buffer)
 

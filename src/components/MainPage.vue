@@ -68,6 +68,21 @@
 
         </div>
 
+        <!-- 文件名自定义 -->
+        <div v-show="!listening" class="setting-row">
+          <div class="setting-label">
+            <i class="fas fa-folder-open"></i>
+            <span>保存文件名</span>
+            <span class="hint-text"> 可用字段 : ( {{ availableFields.join(' | ')  }}  )</span> 
+          </div>
+          <div class="setting-controls">
+            <div class="input-wrapper">
+              <input type="text" class="form-input" placeholder="Screenshot FileName Template" v-model="config.fileNameTemplate">
+            </div>
+          </div>
+          <span class="hint-text">文件名预览：{{ formatFileName(config.fileNameTemplate) }}.{{ config.imageFormat }}</span>
+        </div>
+
         <!--  控制器设置 -->
         <div v-show="!listening" class="setting-row">
           <div class="setting-label">
@@ -191,7 +206,8 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
-        imageFormat: 'jpg'
+        imageFormat: 'jpg',
+        fileNameTemplate: 'Screenshot_%timestamp%'
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
@@ -204,7 +220,8 @@ export default {
       screenShoting: false,
       detectionIndex: -1,
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
-      saveImageFormateOptions: ['jpg', 'png']
+      saveImageFormateOptions: ['jpg', 'png'],
+      availableFields : ['timestamp', 'datetime' , 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss']
     }
   },
   async mounted() {
@@ -226,6 +243,7 @@ export default {
       this.screenShoting = true;
       if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
         var m_config = JSON.parse(JSON.stringify(this.config));
+        m_config.calcedFileName = this.formatFileName(m_config.fileNameTemplate);
         await window.electronAPI.screenShot(m_config)
         if (this.config.sound == screenshotSoundEnum.NS2) {
           let sound = new Howl({ src: [ns2SoundSrc], volume: this.config.soundPower })
@@ -275,7 +293,8 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
-        imageFormat: 'jpg'
+        imageFormat: 'jpg',
+        fileNameTemplate:'Screenshot_%timestamp%'
       }
     },
     async loadGamePadList() {
@@ -373,6 +392,20 @@ export default {
         await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
         return;
       }
+    },
+    formatFileName(template) {
+      const now = new Date();
+      const replacements = {
+        '%timestamp%': now.getTime(),
+        '%datetime%':now.getFullYear() + '_' + String(now.getMonth() + 1).padStart(2, '0') + '_' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + '_' + String(now.getMinutes()).padStart(2, '0') + '_' + String(now.getSeconds()).padStart(2, '0'),
+        '%YYYY%': now.getFullYear(),
+        '%MM%': String(now.getMonth() + 1).padStart(2, '0'),
+        '%DD%': String(now.getDate()).padStart(2, '0'),
+        '%hh%': String(now.getHours()).padStart(2, '0'),
+        '%mm%': String(now.getMinutes()).padStart(2, '0'),
+        '%ss%': String(now.getSeconds()).padStart(2, '0')
+      };
+      return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%%|%hh%|%mm%|%ss%/g, match => replacements[match] || match);
     }
   }
 }
@@ -750,5 +783,8 @@ input:checked+.slider:before {
 
 .setting-row-horizontal .setting-row {
   flex: 1;
+}
+.setting-label .hint-text{
+  margin-left: 5px;
 }
 </style>
