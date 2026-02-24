@@ -1,125 +1,136 @@
 <template>
   <div class="settings-container">
-    <div class="settings-content">
-      <!-- 1. 路径设置 -->
-      <div v-show="!listening" class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-folder-open"></i>
-          <span>截图保存路径</span>
-        </div>
-        <div class="setting-controls">
-          <div class="input-wrapper">
-            <input type="text" class="form-input" placeholder="请选择文件夹路径" v-model="config.path">
+    <div class="settings-content-scroll">
+      <div class="settings-content">
+       <div class="setting-row-horizontal">
+          <!-- 截图方式设置 -->
+          <div v-show="!listening" class="setting-row">
+            <div class="setting-label">
+              <i class="fas fa-expand-alt"></i>
+              <span>截图方式</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.screenshotWay">
+                <option v-for="(value, index) in screenShotWayEnum" :key="index">{{ value }}</option>
+              </select>
+            </div>
+            <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
           </div>
-          <button class="btn btn-primary" @click="chooseFolder">
-            <span>选择</span>
-          </button>
-        </div>
-        <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
-      </div>
 
-      <div v-show="!listening" class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-expand-alt"></i>
-          <span>截图方式</span>
+          <!-- 尺寸设置 -->
+          <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
+            <div class="setting-label">
+              <i class="fas fa-expand-alt"></i>
+              <span>截图尺寸</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.resolution">
+                <option v-for="(value, index) in resolutionEnum" :key="index">{{ value }}</option>
+              </select>
+            </div>
+            <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
+          </div>
         </div>
-        <div class="setting-controls">
-          <select class="form-select" v-model="config.screenshotWay">
-            <option v-for="(value, index) in screenShotWayEnum" :key="index">{{ value }}</option>
-          </select>
-        </div>
-        <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
-      </div>
-
-      <!-- 2. 尺寸设置 -->
-      <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-expand-alt"></i>
-          <span>截图尺寸</span>
-        </div>
-        <div class="setting-controls">
-          <select class="form-select" v-model="config.resolution">
-            <option v-for="(value, index) in resolutionEnum" :key="index">{{ value }}</option>
-          </select>
-        </div>
-        <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
-      </div>
-
-      <!-- 3. 控制器设置 -->
-      <div v-show="!listening" class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-gamepad"></i>
-          <span>控制器</span>
-        </div>
-        <div class="setting-controls">
-          <select class="form-select" v-model="currentGamePad" @change="onUserSelectedDeviceChange">
-            <option v-for="(value, index) in loadedGamePads" :key="index" :value="value">
-              {{ value.name }}</option>
-          </select>
-        </div>
-        <!-- <span class="hint-text">选择您使用的游戏控制器类型</span> -->
-      </div>
-
-      <!-- 4. 组合按键设置 -->
-      <div v-show="!listening" class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-keyboard"></i>
-          <span>组合按键</span>
-          <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
-            <button class="btn btn-success" @click="addCombo">
-              <span>添加按键</span>
+        
+        <!--路径设置 -->
+        <div v-show="!listening" class="setting-row">
+          <div class="setting-label">
+            <i class="fas fa-folder-open"></i>
+            <span>截图保存路径</span>
+          </div>
+          <div class="setting-controls">
+            <div class="input-wrapper">
+              <input type="text" class="form-input" placeholder="请选择文件夹路径" v-model="config.path">
+            </div>
+            <button class="btn btn-primary" @click="chooseFolder">
+              <span>选择</span>
             </button>
           </div>
+          <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
         </div>
-        <div class="setting-controls">
-          <div class="combo-rows-container">
-            <div v-for="(key, index) in config.comboKeys" :key="index" class="combo-row">
-              <select class="form-select combo-select" v-model="config.comboKeys[index]">
-                <option v-for="(n, index) in 20" :key="index" :value="index">Button{{ index }}</option>
-              </select>
-              <button v-show="loadedGamePads.length > 0" @click="automatedDetection(index)" class="btn btn-primary">
-                <span>{{ detectionIndex == -1 ? '识别' : detectionIndex == index ? '识别中' : '不可用' }}</span>
-              </button>
-              <button @click="removeCombo(index)" class="btn btn-danger">
-                <span>删除</span>
+        <!--  控制器设置 -->
+        <div v-show="!listening" class="setting-row">
+          <div class="setting-label">
+            <i class="fas fa-gamepad"></i>
+            <span>控制器</span>
+          </div>
+          <div class="setting-controls">
+            <select class="form-select" v-model="currentGamePad" @change="onUserSelectedDeviceChange">
+              <option v-for="(value, index) in loadedGamePads" :key="index" :value="value">
+                {{ value.name }}</option>
+            </select>
+          </div>
+          <!-- <span class="hint-text">选择您使用的游戏控制器类型</span> -->
+        </div>
+
+        <!-- 组合按键设置 -->
+        <div v-show="!listening" class="setting-row">
+          <div class="setting-label">
+            <i class="fas fa-keyboard"></i>
+            <span>组合按键</span>
+            <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
+              <button class="btn btn-success" @click="addCombo">
+                <span>添加按键</span>
               </button>
             </div>
           </div>
+          <div class="setting-controls">
+            <div class="combo-rows-container">
+              <div v-for="(key, index) in config.comboKeys" :key="index" class="combo-row">
+                <select class="form-select combo-select" v-model="config.comboKeys[index]">
+                  <option v-for="(n, index) in 20" :key="index" :value="index">Button{{ index }}</option>
+                </select>
+                <button v-show="loadedGamePads.length > 0" @click="automatedDetection(index)" class="btn btn-primary">
+                  <span>{{ detectionIndex == -1 ? '识别' : detectionIndex == index ? '识别中' : '不可用' }}</span>
+                </button>
+                <button @click="removeCombo(index)" class="btn btn-danger">
+                  <span>删除</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- 移除原来在这里的action-buttons -->
         </div>
-        <!-- 移除原来在这里的action-buttons -->
-      </div>
 
-      <!-- 5. 截图音频设置 -->
-      <div v-show="!listening" class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-volume-up"></i>
-          <span>截图音频</span>
-        </div>
-        <div class="setting-controls">
-          <select class="form-select" v-model="config.sound">
-            <option v-for="(value, index) in screenshotSoundEnum" :key="index">{{ value }}</option>
-          </select>
-        </div>
-        <!-- <span class="hint-text">选择截图时播放的音效</span> -->
-      </div>
+       <div class="setting-row-horizontal">
+          <!-- 截图音频设置 -->
+          <div v-show="!listening" class="setting-row">
+            <div class="setting-label">
+              <i class="fas fa-volume-up"></i>
+              <span>截图音频</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.sound">
+                <option v-for="(value, index) in screenshotSoundEnum" :key="index">{{ value }}</option>
+              </select>
+            </div>
+            <!-- <span class="hint-text">选择截图时播放的音效</span> -->
+          </div>
 
-     <div v-show="!listening" class="setting-row">
-        <div class="setting-label">
-          <i class="fas fa-volume-up"></i>
-          <span>音量</span>
+          <!-- 截图音量设置 -->
+          <div v-show="!listening && config.sound != screenshotSoundEnum.None" class="setting-row">
+            <div class="setting-label">
+              <i class="fas fa-volume-up"></i>
+              <span>截图音量</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.soundPower">
+                <option v-for="(value, index) in volumeOptions" :key="index" :value="value">{{ value * 100 + '%' }}
+                </option>
+              </select>
+            </div>
+            <!-- <span class="hint-text">选择截图时播放的音效</span> -->
+          </div>
         </div>
-        <div class="setting-controls">
-          <select class="form-select" v-model="config.soundPower">
-            <option v-for="(value, index) in volumeOptions" :key="index" :value="value">{{ value * 100 + '%' }}</option>
-          </select>
+
+        <div v-show="listening" class="setting-row">
+          <span class="setting-row-listening-tip">正在监听中</span>
         </div>
-        <!-- <span class="hint-text">选择截图时播放的音效</span> -->
-      </div>
 
-      <div v-show="listening" class="setting-row">
-        <span>正在监听中</span>
       </div>
+    </div>
 
+    <div class="settings-footer-btn">
       <!-- 开始 -->
       <button v-show="!listening" class="save-button" @click="startListen">
         <span>启动</span>
@@ -128,8 +139,8 @@
       <button v-show="listening" class="save-button" @click="stopListen">
         <span>停止</span>
       </button>
-
     </div>
+
   </div>
 </template>
 
@@ -265,7 +276,7 @@ export default {
         alert('没有添加快捷键')
         return;
       }
-      if(this.detectionIndex != -1){
+      if (this.detectionIndex != -1) {
         alert('正在识别按键中');
         return;
       }
@@ -347,15 +358,15 @@ export default {
 <style>
 .settings-container {
   background-color: white;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 10%);
   width: 100%;
-  overflow: hidden;
   transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  max-height: 100%;
+  padding-bottom: 32px;
 }
-
-/* .settings-container:hover {
-  transform: translateY(-5px);
-} */
 
 .settings-header {
   background: linear-gradient(to right, #4b6cb7, #182848);
@@ -377,7 +388,13 @@ export default {
 }
 
 .settings-content {
-  padding: 0 32px 32px 32px;
+  padding: 0 32px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.settings-content-scroll {
+  overflow: auto;
 }
 
 .setting-row {
@@ -630,6 +647,9 @@ export default {
   text-overflow: ellipsis;
 }
 
+.settings-footer-btn {
+  padding: 0 32px;
+}
 
 
 /* 开关样式保持不变 */
@@ -689,4 +709,22 @@ input:checked+.slider:before {
   width: 150px;
 }
 
+.setting-row-listening-tip {
+  display: block;
+  width: 100%;
+  user-select: none;
+}
+
+.setting-row-horizontal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.setting-row-horizontal .setting-row {
+  flex: 1;
+}
 </style>

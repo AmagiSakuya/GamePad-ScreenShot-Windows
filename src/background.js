@@ -25,8 +25,8 @@ async function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
     title: 'Gamepad Full-ScreenShot Tool',
-    width: 800,
-    height: 1000,
+    width: 700,
+    height: 900,
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../src/gamepad.ico'),
     webPreferences: {

@@ -22,7 +22,7 @@
     <div class="tab-content">
       <!-- 首页内容 -->
       <div v-if="activeTab === 'home'" class="tab-pane">
-        <MainPage ref="mainPageRef" :compOBS="obsPageInstance" ></MainPage>
+        <MainPage ref="mainPageRef" :compOBS="obsPageInstance"></MainPage>
       </div>
 
       <!-- OBS连接 -->
@@ -54,7 +54,7 @@ export default {
   data() {
     return {
       activeTab: 'home',
-      obsPageInstance:null
+      obsPageInstance: null
     }
   },
   async beforeMount() {
@@ -80,6 +80,7 @@ export default {
   text-align: center;
   color: #2c3e50;
   width: 100%;
+  height: 100%;
 }
 
 * {
@@ -89,12 +90,20 @@ export default {
   font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
+html {
+  height: 100%;
+  margin: 0;
+  /* 顺便去掉 body 默认的外边距 */
+}
+
 body {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 /* 滚动条样式 */
@@ -128,7 +137,7 @@ tbody {
   display: block;
   max-height: 600px;
   /* 设置tbody的最大高度 */
-  overflow-y: auto;
+  /* overflow-y: auto; */
   /* 垂直滚动条 */
   overflow-x: hidden;
 }
@@ -138,6 +147,7 @@ tbody {
   background: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
   padding: 0 20px;
+  height: 45px;
 }
 
 .tab-btn {
@@ -167,13 +177,16 @@ tbody {
 }
 
 .tab-content {
-  flex: 1;
-  overflow: auto;
   background: white;
+  height: calc(100% - 45px);
 }
 
 .tab-pane {
-  padding: 20px;
+  /* padding: 20px; */
+  height: 100%;
+}
+
+.app-container {
   height: 100%;
 }
 </style>

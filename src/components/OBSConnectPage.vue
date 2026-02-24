@@ -1,67 +1,58 @@
 <template>
     <div class="settings-container">
-        <div class="settings-content">
-            <!-- 服务器地址 -->
-            <div v-show="!isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-folder-open"></i>
-                    <span>OBS服务连接地址</span>
-                </div>
-                <div class="setting-controls">
-                    <div class="input-wrapper">
-                        <input type="text" class="form-input" placeholder="ws://127.0.0.1:4455"
-                            v-model="obsConfig.server">
+        <div class="settings-content-scroll">
+            <div class="settings-content">
+                <!-- 服务器地址 -->
+                <div v-show="!isConnected" class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-folder-open"></i>
+                        <span>OBS服务连接地址</span>
+                    </div>
+                    <div class="setting-controls">
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" placeholder="ws://127.0.0.1:4455"
+                                v-model="obsConfig.server">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 服务器密码 -->
-            <div v-show="!isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-folder-open"></i>
-                    <span>OBS服务连接密码</span>
-                </div>
-                <div class="setting-controls">
-                    <div class="input-wrapper">
-                        <input type="text" class="form-input" placeholder="" v-model="obsConfig.pwd">
+                <!-- 服务器密码 -->
+                <div v-show="!isConnected" class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-folder-open"></i>
+                        <span>OBS服务连接密码</span>
+                    </div>
+                    <div class="setting-controls">
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" placeholder="" v-model="obsConfig.pwd">
+                        </div>
                     </div>
                 </div>
+
+                <div v-show="isConnected" class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-expand-alt"></i>
+                        <span>选择场景</span>
+                    </div>
+                    <div class="setting-controls">
+                        <select class="form-select" v-model="selectedScene">
+                            <option v-for="(value, index) in sceneList" :key="index" :value="value">{{ value.sceneName
+                                }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <button v-if="!isConnected" class="save-button" @click="connectOBS">
+                    <span>连接服务</span>
+                </button>
+
+                <button v-if="isConnected" class="save-button" @click="disconnectOBS">
+                    <span>断开连接</span>
+                </button>
             </div>
-
-            <!-- <div v-show="isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-expand-alt"></i>
-                    <span>截图来源</span>
-                </div>
-                <div class="setting-controls">
-                    <select class="form-select" v-model="obsConfig.sourceFromScene">
-                        <option :value="true">场景</option>
-                        <option :value="false">源</option>
-                    </select>
-                </div>
-            </div> -->
-
-            <div v-show="isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-expand-alt"></i>
-                    <span>选择场景</span>
-                </div>
-                <div class="setting-controls">
-                    <select class="form-select" v-model="selectedScene">
-                        <option v-for="(value, index) in sceneList" :key="index" :value="value">{{ value.sceneName }}
-                        </option>
-                    </select>
-                </div>
-            </div>
-
-            <button v-if="!isConnected" class="save-button" @click="connectOBS">
-                <span>连接服务</span>
-            </button>
-
-            <button v-if="isConnected" class="save-button" @click="disconnectOBS">
-                <span>断开连接</span>
-            </button>
         </div>
+
     </div>
 </template>
 

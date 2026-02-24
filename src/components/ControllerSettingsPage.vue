@@ -1,7 +1,6 @@
 <template>
     <div class="settings-container">
         <div class="settings-content">
-
             <div class="setting-row">
                 <div class="setting-label">
                     <i class="fas fa-gamepad"></i>
