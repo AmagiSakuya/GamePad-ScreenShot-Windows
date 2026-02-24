@@ -2,7 +2,7 @@
   <div class="settings-container">
     <div class="settings-content-scroll">
       <div class="settings-content">
-       <div class="setting-row-horizontal">
+        <div class="setting-row-horizontal">
           <!-- 截图方式设置 -->
           <div v-show="!listening" class="setting-row">
             <div class="setting-label">
@@ -31,23 +31,43 @@
             <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
           </div>
         </div>
-        
-        <!--路径设置 -->
-        <div v-show="!listening" class="setting-row">
-          <div class="setting-label">
-            <i class="fas fa-folder-open"></i>
-            <span>截图保存路径</span>
-          </div>
-          <div class="setting-controls">
-            <div class="input-wrapper">
-              <input type="text" class="form-input" placeholder="请选择文件夹路径" v-model="config.path">
+
+        <div class="setting-row-horizontal">
+          <!--路径设置 -->
+          <div v-show="!listening" class="setting-row">
+            <div class="setting-label">
+              <i class="fas fa-folder-open"></i>
+              <span>保存路径</span>
+              <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
+                <button class="btn btn-primary" @click="chooseFolder">
+                  <span>选择</span>
+                </button>
+              </div>
             </div>
-            <button class="btn btn-primary" @click="chooseFolder">
-              <span>选择</span>
-            </button>
+            <div class="setting-controls">
+              <div class="input-wrapper">
+                <input type="text" class="form-input" placeholder="请选择文件夹路径" v-model="config.path">
+              </div>
+            </div>
+            <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
           </div>
-          <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
+
+          <div v-show="!listening" class="setting-row">
+            <div class="setting-label">
+                <i class="fas fa-folder-open"></i>
+              <span>图片格式</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.imageFormat">
+                <option v-for="(value, index) in saveImageFormateOptions" :key="index" :value="value">
+                  {{ value }}</option>
+              </select>
+            </div>
+            <!-- <span class="hint-text">选择您使用的游戏控制器类型</span> -->
+          </div>
+
         </div>
+
         <!--  控制器设置 -->
         <div v-show="!listening" class="setting-row">
           <div class="setting-label">
@@ -92,12 +112,12 @@
           <!-- 移除原来在这里的action-buttons -->
         </div>
 
-       <div class="setting-row-horizontal">
+        <div class="setting-row-horizontal">
           <!-- 截图音频设置 -->
           <div v-show="!listening" class="setting-row">
             <div class="setting-label">
               <i class="fas fa-volume-up"></i>
-              <span>截图音频</span>
+              <span>音频</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.sound">
@@ -111,7 +131,7 @@
           <div v-show="!listening && config.sound != screenshotSoundEnum.None" class="setting-row">
             <div class="setting-label">
               <i class="fas fa-volume-up"></i>
-              <span>截图音量</span>
+              <span>音量</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.soundPower">
@@ -170,7 +190,8 @@ export default {
         comboKeys: [],
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
-        screenshotWay: ScreenShotWayEnum.DesktopCapturer
+        screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        imageFormat: 'jpg'
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
@@ -182,7 +203,8 @@ export default {
       buttonsValuePreview: new Array(20).fill(false),
       screenShoting: false,
       detectionIndex: -1,
-      volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5]
+      volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
+      saveImageFormateOptions: ['jpg', 'png']
     }
   },
   async mounted() {
@@ -252,7 +274,8 @@ export default {
         comboKeys: [],
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
-        screenshotWay: ScreenShotWayEnum.DesktopCapturer
+        screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        imageFormat: 'jpg'
       }
     },
     async loadGamePadList() {
@@ -430,9 +453,9 @@ export default {
 
 /* 调整按钮样式以适应标题行 */
 .setting-label .btn {
-  padding: 4px 12px;
+  padding: 4px 15px;
   font-size: 13px;
-  height: 28px;
+  height: 30px;
 }
 
 .setting-label .hint-text {
@@ -442,7 +465,7 @@ export default {
 
 .setting-label i {
   color: #4b6cb7;
-  width: 20px;
+  width: 3px;
   text-align: center;
 }
 
@@ -624,11 +647,12 @@ export default {
 .setting-row {
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: 5px;
 }
 
 .setting-label {
   width: 100%;
+  height: 30px;
 }
 
 .setting-controls {

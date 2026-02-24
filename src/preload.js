@@ -31,11 +31,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
         })
 
         const img = sources[0].thumbnail
-        const buffer = img.toJPEG(100)
+       
+        let buffer;
+        switch (config.imageFormat) {
+            case 'jpg':
+                buffer = img.toJPEG(100)
+                break
+            case 'png':
+                buffer = img.toPNG()
+                break
+        }
 
         const filePath = path.join(
             config.path,
-            `Screenshot_${Date.now()}.jpg`
+            `Screenshot_${Date.now()}.${config.imageFormat}`
         )
 
         fs.writeFileSync(filePath, buffer)
