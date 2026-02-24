@@ -23,4 +23,10 @@ const ScreenShotWayEnum = {
     OBS: 'OBS', 
 }
 
-module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum }
+const ScreenShotSaveWayEnum = {
+    FileOnly: '文件',
+    CilpboardOnly: '剪切板',
+    FileAndCilpboard: '文件 + 剪切板'
+}
+
+module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum , ScreenShotSaveWayEnum }

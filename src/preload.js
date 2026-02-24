@@ -1,5 +1,5 @@
-const { contextBridge, ipcRenderer, desktopCapturer, clipboard } = require('electron')
-const { resolutionEnum } = require('../src/lib/enum')
+const { contextBridge, ipcRenderer, desktopCapturer, clipboard, nativeImage } = require('electron')
+const { resolutionEnum , ScreenShotSaveWayEnum } = require('../src/lib/enum')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
@@ -30,21 +30,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
             thumbnailSize: size
         })
 
-        const img = sources[0].thumbnail
-       
-        let buffer;
-        switch (config.imageFormat) {
-            case 'jpg':
-                buffer = img.toJPEG(100)
-                break
-            case 'png':
-                buffer = img.toPNG()
-                break
+        let filePath = null;
+         const img = sources[0].thumbnail
+
+            let buffer;
+            switch (config.imageFormat) {
+                case 'jpg':
+                    buffer = img.toJPEG(100)
+                    break
+                case 'png':
+                    buffer = img.toPNG()
+                    break
+            }
+
+        if (config.screenShotSaveWay != ScreenShotSaveWayEnum.CilpboardOnly) {
+            filePath = path.join(config.path, `${config.calcedFileName}.${config.imageFormat}`)
+            fs.writeFileSync(filePath, buffer)
         }
 
-        const filePath = path.join(config.path,`${config.calcedFileName}.${config.imageFormat}`)
-
-        fs.writeFileSync(filePath, buffer)
+        if (config.screenShotSaveWay != ScreenShotSaveWayEnum.FileOnly) {
+            const image = nativeImage.createFromBuffer(buffer);
+            clipboard.writeImage(image);
+        }
 
         return filePath
     },

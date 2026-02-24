@@ -33,8 +33,21 @@
         </div>
 
         <div class="setting-row-horizontal">
+          
+          <div v-show="!listening" class="setting-row" >
+            <div class="setting-label">
+                <i class="fas fa-folder-open"></i>
+              <span>保存形式</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.screenShotSaveWay">
+                <option v-for="(value, index) in screenShotSaveWayEnum" :key="index" :value="value"> {{ value }}</option>
+              </select>
+            </div>
+          </div>
+
           <!--路径设置 -->
-          <div v-show="!listening" class="setting-row">
+          <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row" style="flex: 2;">
             <div class="setting-label">
               <i class="fas fa-folder-open"></i>
               <span>保存路径</span>
@@ -51,8 +64,8 @@
             </div>
             <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
           </div>
-
-          <div v-show="!listening" class="setting-row">
+          <!-- 保存格式 -->
+          <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row" style="flex: 0.5;">
             <div class="setting-label">
                 <i class="fas fa-folder-open"></i>
               <span>图片格式</span>
@@ -69,7 +82,7 @@
         </div>
 
         <!-- 文件名自定义 -->
-        <div v-show="!listening" class="setting-row">
+        <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row">
           <div class="setting-label">
             <i class="fas fa-folder-open"></i>
             <span>保存文件名</span>
@@ -180,7 +193,7 @@
 </template>
 
 <script>
-const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum } = require('@/lib/enum')
+const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum , ScreenShotSaveWayEnum } = require('@/lib/enum')
 import { Howl } from 'howler'
 import ns2SoundSrc from '@/assets/ns2截图音.mp3'
 
@@ -206,12 +219,14 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate: 'Screenshot_%timestamp%'
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
       screenShotWayEnum: ScreenShotWayEnum,
+      screenShotSaveWayEnum: ScreenShotSaveWayEnum,
       showBufferDebug: false,
       listening: false,
       loadedGamePads: [],
@@ -221,7 +236,7 @@ export default {
       detectionIndex: -1,
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
       saveImageFormateOptions: ['jpg', 'png'],
-      availableFields : ['timestamp', 'datetime' , 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss']
+      availableFields: ['timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss']
     }
   },
   async mounted() {
@@ -293,6 +308,7 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate:'Screenshot_%timestamp%'
       }
@@ -321,6 +337,9 @@ export default {
       if (this.detectionIndex != -1) {
         alert('正在识别按键中');
         return;
+      }
+      if (this.config.fileNameTemplate.trim() == '') {
+        this.config.fileNameTemplate = 'Screenshot_%timestamp%'
       }
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]
