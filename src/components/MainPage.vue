@@ -307,6 +307,10 @@ export default {
       if (this.config.screenShotSaveWay == null || this.config.screenShotSaveWay == undefined || this.config.screenShotSaveWay.trim() == '') {
         this.config.screenShotSaveWay = ScreenShotSaveWayEnum.FileOnly
       }
+
+      if (this.config.imageFormat == null || this.config.imageFormat == undefined || this.config.imageFormat.trim() == '') {
+        this.config.imageFormat = 'jpg'
+      }
       //#endregion
 
       
