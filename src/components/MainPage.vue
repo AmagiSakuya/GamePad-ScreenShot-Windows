@@ -291,11 +291,26 @@ export default {
     async loadConfig(deviceName) {
       let STORAGE_KEY = deviceName
       const savedConfig = localStorage.getItem(STORAGE_KEY);
+
       if (savedConfig) {
         this.config = JSON.parse(savedConfig);
       } else {
         this.resetConfig();
       }
+
+      
+      //#region  升级老配置
+      if (this.config.fileNameTemplate == null || this.config.fileNameTemplate == undefined || this.config.fileNameTemplate.trim() == '') {
+        this.config.fileNameTemplate = 'Screenshot_%timestamp%'
+      }
+
+      if (this.config.screenShotSaveWay == null || this.config.screenShotSaveWay == undefined || this.config.screenShotSaveWay.trim() == '') {
+        this.config.screenShotSaveWay = ScreenShotSaveWayEnum.FileOnly
+      }
+      //#endregion
+
+      
+
     },
     async initDevice() {
       return false
@@ -337,9 +352,6 @@ export default {
       if (this.detectionIndex != -1) {
         alert('正在识别按键中');
         return;
-      }
-      if (this.config.fileNameTemplate.trim() == '') {
-        this.config.fileNameTemplate = 'Screenshot_%timestamp%'
       }
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]
@@ -413,6 +425,9 @@ export default {
       }
     },
     formatFileName(template) {
+      if(template == null || template == undefined || template.trim() == '') {
+        return '';
+      }
       const now = new Date();
       const replacements = {
         '%timestamp%': now.getTime(),
