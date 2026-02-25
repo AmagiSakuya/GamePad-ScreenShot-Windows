@@ -4,17 +4,22 @@
     <div class="tabs-header">
       <button class="tab-btn" :class="{ active: activeTab === 'home' }" @click="activeTab = 'home'">
         <i class="fas fa-home"></i>
-        <span>截图设置</span>
+        <span>{{ $t('screenshotSettings') }}</span>
       </button>
 
       <button class="tab-btn" :class="{ active: activeTab === 'obs' }" @click="activeTab = 'obs'">
         <i class="fas fa-obs"></i>
-        <span>OBS连接</span>
+        <span>{{ $t('obsConnect') }}</span>
       </button>
 
       <button class="tab-btn" :class="{ active: activeTab === 'debug' }" @click="activeTab = 'debug'">
         <i class="fas fa-bug"></i>
-        <span>控制器调试工具</span>
+        <span>{{  $t('gamepadTester') }}</span>
+      </button>
+
+      <button class="tab-btn" :class="{ active: activeTab === 'system' }" @click="activeTab = 'system'">
+        <i class="fas fa-system"></i>
+        <span>{{ $t('systemSettings') }}</span>
       </button>
     </div>
 
@@ -34,6 +39,12 @@
       <div v-if="activeTab === 'debug'" class="tab-pane">
         <ControllerSettingsPage></ControllerSettingsPage>
       </div>
+
+      <!-- 系统设置 -->
+      <div v-if="activeTab === 'system'" class="tab-pane">
+        <SystemSettingsPage></SystemSettingsPage>
+      </div>
+
     </div>
   </div>
 </template>
@@ -42,6 +53,8 @@
 import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
+import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
+
 import { ref } from 'vue';
 
 export default {
@@ -49,7 +62,8 @@ export default {
   components: {
     MainPage,
     OBSConnectPage,
-    ControllerSettingsPage
+    ControllerSettingsPage,
+    SystemSettingsPage
   },
   data() {
     return {

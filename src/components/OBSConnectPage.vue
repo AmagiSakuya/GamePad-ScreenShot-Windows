@@ -6,7 +6,7 @@
                 <div v-show="!isConnected" class="setting-row">
                     <div class="setting-label">
                         <i class="fas fa-folder-open"></i>
-                        <span>OBS服务连接地址</span>
+                        <span>{{ $t('OBSPage.obsAddress') }}</span>
                     </div>
                     <div class="setting-controls">
                         <div class="input-wrapper">
@@ -20,7 +20,7 @@
                 <div v-show="!isConnected" class="setting-row">
                     <div class="setting-label">
                         <i class="fas fa-folder-open"></i>
-                        <span>OBS服务连接密码</span>
+                        <span>{{ $t('OBSPage.obsPassword') }}</span>
                     </div>
                     <div class="setting-controls">
                         <div class="input-wrapper">
@@ -32,7 +32,7 @@
                 <div v-show="isConnected" class="setting-row">
                     <div class="setting-label">
                         <i class="fas fa-expand-alt"></i>
-                        <span>选择场景</span>
+                        <span>{{ $t('OBSPage.selectScene') }}</span>
                     </div>
                     <div class="setting-controls">
                         <select class="form-select" v-model="selectedScene">
@@ -44,11 +44,11 @@
                 </div>
 
                 <button v-if="!isConnected" class="save-button" @click="connectOBS">
-                    <span>连接服务</span>
+                    <span>{{ $t('OBSPage.connectService') }}</span>
                 </button>
 
                 <button v-if="isConnected" class="save-button" @click="disconnectOBS">
-                    <span>断开连接</span>
+                    <span>{{ $t('OBSPage.disconnect') }}</span>
                 </button>
             </div>
         </div>

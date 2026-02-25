@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -20,6 +20,9 @@ protocol.registerSchemesAsPrivileged([
 
 //#region app
 let win;
+let tray;
+
+app.requestSingleInstanceLock();
 
 async function createWindow() {
   // Create the browser window.
@@ -38,6 +41,16 @@ async function createWindow() {
     }
   })
 
+
+  // --- 拦截关闭事件 ---
+  win.on('close', (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault(); // 阻止默认的关闭行为
+      win.hide();      // 隐藏窗口
+    }
+    return false;
+  });
+
   win.on('page-title-updated', (e) => {
     e.preventDefault()
   })
@@ -53,18 +66,45 @@ async function createWindow() {
   }
 }
 
+// 创建系统托盘
+function createTray() {
+  // 图标路径，建议使用 16x16 或 32x32 的图片
+  tray = new Tray(path.join(__dirname, '../src/gamepad.ico'));
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示界面',
+      click: () => win.show()
+    },
+    {
+      label: '退出程序',
+      click: () => {
+        app.isQuiting = true; // 设置一个标记位，允许真正退出
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setToolTip('GamePad Screenshot Tool');
+  tray.setContextMenu(contextMenu);
+
+  // 点击托盘图标重新打开界面
+  tray.on('click', () => {
+    win.isVisible() ? win.focus() : win.show();
+  });
+}
+
+
 app.on('will-quit', () => {
-  globalShortcut.unregisterAll()
+  //globalShortcut.unregisterAll()
 })
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
@@ -85,6 +125,7 @@ app.on('ready', async () => {
     }
   }
   createWindow()
+  createTray()
 })
 
 // Exit cleanly on request from parent process in development mode.

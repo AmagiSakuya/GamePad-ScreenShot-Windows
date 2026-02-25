@@ -5,8 +5,8 @@ const resolutionEnum = {
 }
 
 const screenshotSoundEnum = {
-    None: "静音",
-    NS2: "Nintendo Switch 2"
+    None: "None",
+    NS2: "NS2"
 }
 
 const CommonButtonEnum = {
@@ -24,9 +24,9 @@ const ScreenShotWayEnum = {
 }
 
 const ScreenShotSaveWayEnum = {
-    FileOnly: '文件',
-    CilpboardOnly: '剪切板',
-    FileAndCilpboard: '文件 + 剪切板'
+    FileOnly: 'file',
+    CilpboardOnly: 'clipboard',
+    FileAndCilpboard: 'fileAndClipboard'
 }
 
 module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum , ScreenShotSaveWayEnum }

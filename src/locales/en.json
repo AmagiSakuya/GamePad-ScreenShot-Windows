@@ -1,0 +1,51 @@
+{
+    "screenshotSettings": "ScreenShot",
+    "obsConnect": "OBS Connect",
+    "gamepadTester": "Gamepad Tester",
+    "systemSettings": "System Settings",
+    "screenshotSource": "Source",
+    "thumbnailSize": "Image Size",
+    "savingMode": "Saving Mode",
+    "savePath": "Save Path",
+    "select": "Select",
+    "selectFolderPath": "Select Path",
+    "imageFormat": "Format",
+    "saveFileName": "Filename",
+    "availableFields": "Available Fields",
+    "fileNamePreview": "Preview",
+    "controller": "Controller",
+    "keyCombo": "Shortcut",
+    "addKey": "Add Key",
+    "recognize": "Identify",
+    "recognizing": "Identifying...",
+    "unavailable": "N/A",
+    "delete": "Delete",
+    "audio": "Audio",
+    "volume": "Volume",
+    "listening": "Listening...",
+    "start": "Start",
+    "stop": "Stop",
+    "saveWay": {
+        "file": "File",
+        "clipboard": "Clipboard",
+        "fileAndClipboard": "File + Clipboard"
+    },
+    "screenshotSound": {
+        "None": "Mute",
+        "NS2": "Nintendo Switch 2"
+    },
+    "OBSPage": {
+        "obsAddress": "OBS Address",
+        "obsPassword": "OBS Password",
+        "selectScene": "Select Scene",
+        "connectService": "Connect OBS",
+        "disconnect": "Disconnect"
+    },
+    "GampadTesterPage": {
+        "selectController": "Select Controller",
+        "buttonState": "Button State"
+    },
+    "SystemSettingsPage": {
+        "language": "Language"
+    }
+}

@@ -21,7 +21,8 @@
     "howler": "^2.2.4",
     "node-hid": "^3.2.0",
     "obs-websocket-js": "^5.0.7",
-    "vue": "^3.2.13"
+    "vue": "^3.2.13",
+    "vue-i18n": "^11.2.8"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

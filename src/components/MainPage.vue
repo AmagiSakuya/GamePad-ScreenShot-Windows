@@ -7,7 +7,7 @@
           <div v-show="!listening" class="setting-row">
             <div class="setting-label">
               <i class="fas fa-expand-alt"></i>
-              <span>截图方式</span>
+              <span>{{ $t('screenshotSource') }}</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.screenshotWay">
@@ -21,7 +21,7 @@
           <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
             <div class="setting-label">
               <i class="fas fa-expand-alt"></i>
-              <span>截图尺寸</span>
+              <span>{{ $t('thumbnailSize') }}</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.resolution">
@@ -37,11 +37,11 @@
           <div v-show="!listening" class="setting-row" >
             <div class="setting-label">
                 <i class="fas fa-folder-open"></i>
-              <span>保存形式</span>
+              <span>{{ $t('savingMode') }}</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.screenShotSaveWay">
-                <option v-for="(value, index) in screenShotSaveWayEnum" :key="index" :value="value"> {{ value }}</option>
+                <option v-for="(value, index) in screenShotSaveWayEnum" :key="index" :value="value"> {{ $t(`saveWay.${value}`) }}</option>
               </select>
             </div>
           </div>
@@ -50,16 +50,16 @@
           <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row" style="flex: 2;">
             <div class="setting-label">
               <i class="fas fa-folder-open"></i>
-              <span>保存路径</span>
+              <span>{{ $t('savePath') }}</span>
               <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
                 <button class="btn btn-primary" @click="chooseFolder">
-                  <span>选择</span>
+                  <span>{{ $t('select') }}</span>
                 </button>
               </div>
             </div>
             <div class="setting-controls">
               <div class="input-wrapper">
-                <input type="text" class="form-input" placeholder="请选择文件夹路径" v-model="config.path">
+                <input type="text" class="form-input" :placeholder="$t('selectFolderPath')" v-model="config.path">
               </div>
             </div>
             <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
@@ -68,7 +68,7 @@
           <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row" style="flex: 0.5;">
             <div class="setting-label">
                 <i class="fas fa-folder-open"></i>
-              <span>图片格式</span>
+              <span>{{ $t('imageFormat') }}</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.imageFormat">
@@ -85,22 +85,22 @@
         <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row">
           <div class="setting-label">
             <i class="fas fa-folder-open"></i>
-            <span>保存文件名</span>
-            <span class="hint-text"> 可用字段 : ( {{ availableFields.join(' | ')  }}  )</span> 
+            <span>{{ $t('saveFileName') }}</span>
+            <span class="hint-text"> {{ $t('availableFields') }} : ( {{ availableFields.join(' | ')  }}  )</span> 
           </div>
           <div class="setting-controls">
             <div class="input-wrapper">
               <input type="text" class="form-input" placeholder="Screenshot FileName Template" v-model="config.fileNameTemplate">
             </div>
           </div>
-          <span class="hint-text">文件名预览：{{ formatFileName(config.fileNameTemplate) }}.{{ config.imageFormat }}</span>
+          <span class="hint-text">{{ $t('fileNamePreview') }}：{{ formatFileName(config.fileNameTemplate) }}.{{ config.imageFormat }}</span>
         </div>
 
         <!--  控制器设置 -->
         <div v-show="!listening" class="setting-row">
           <div class="setting-label">
             <i class="fas fa-gamepad"></i>
-            <span>控制器</span>
+            <span>{{ $t('controller') }}</span>
           </div>
           <div class="setting-controls">
             <select class="form-select" v-model="currentGamePad" @change="onUserSelectedDeviceChange">
@@ -115,10 +115,10 @@
         <div v-show="!listening" class="setting-row">
           <div class="setting-label">
             <i class="fas fa-keyboard"></i>
-            <span>组合按键</span>
+            <span>{{ $t('keyCombo') }}</span>
             <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
               <button class="btn btn-success" @click="addCombo">
-                <span>添加按键</span>
+                <span>{{ $t('addKey') }}</span>
               </button>
             </div>
           </div>
@@ -129,10 +129,10 @@
                   <option v-for="(n, index) in 20" :key="index" :value="index">Button{{ index }}</option>
                 </select>
                 <button v-show="loadedGamePads.length > 0" @click="automatedDetection(index)" class="btn btn-primary">
-                  <span>{{ detectionIndex == -1 ? '识别' : detectionIndex == index ? '识别中' : '不可用' }}</span>
+                  <span>{{ detectionIndex == -1 ? $t('recognize') : detectionIndex == index ? $t('recognizing') : $t('unavailable') }}</span>
                 </button>
                 <button @click="removeCombo(index)" class="btn btn-danger">
-                  <span>删除</span>
+                  <span>{{ $t('delete') }}</span>
                 </button>
               </div>
             </div>
@@ -145,11 +145,11 @@
           <div v-show="!listening" class="setting-row">
             <div class="setting-label">
               <i class="fas fa-volume-up"></i>
-              <span>音频</span>
+              <span>{{ $t('audio') }}</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.sound">
-                <option v-for="(value, index) in screenshotSoundEnum" :key="index">{{ value }}</option>
+                <option v-for="(value, index) in screenshotSoundEnum" :key="index">{{ $t(`screenshotSound.${value}`) }}</option>
               </select>
             </div>
             <!-- <span class="hint-text">选择截图时播放的音效</span> -->
@@ -159,7 +159,7 @@
           <div v-show="!listening && config.sound != screenshotSoundEnum.None" class="setting-row">
             <div class="setting-label">
               <i class="fas fa-volume-up"></i>
-              <span>音量</span>
+              <span>{{ $t('volume') }}</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.soundPower">
@@ -172,7 +172,7 @@
         </div>
 
         <div v-show="listening" class="setting-row">
-          <span class="setting-row-listening-tip">正在监听中</span>
+          <span class="setting-row-listening-tip">{{ $t('listening') }}</span>
         </div>
 
       </div>
@@ -181,11 +181,11 @@
     <div class="settings-footer-btn">
       <!-- 开始 -->
       <button v-show="!listening" class="save-button" @click="startListen">
-        <span>启动</span>
+        <span>{{ $t('start') }}</span>
       </button>
 
       <button v-show="listening" class="save-button" @click="stopListen">
-        <span>停止</span>
+        <span>{{ $t('stop') }}</span>
       </button>
     </div>
 

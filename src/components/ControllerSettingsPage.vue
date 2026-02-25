@@ -4,7 +4,7 @@
             <div class="setting-row">
                 <div class="setting-label">
                     <i class="fas fa-gamepad"></i>
-                    <span>选择控制器</span>
+                    <span>{{ $t('GampadTesterPage.selectController') }}</span>
                 </div>
                 <div class="setting-controls">
                     <select class="form-select" v-model="currentGamePad" @change="onCurrentGameSelectChanged">
@@ -17,12 +17,12 @@
 
             <div class="setting-row button-preview-row">
                 <div class="buttons-grid">
-                    <h2>按键状态</h2>
+                    <h2>{{ $t('GampadTesterPage.buttonState') }}</h2>
                     <div class="buttons-row">
                         <div class="button-item" v-for="(button, index) in buttonsValuePreview" :key="index">
                             <div v-show="index < deviceInstanceButtonCount" class="button-label">Button{{ index }}</div>
-                            <div v-show="index < deviceInstanceButtonCount" class="button-state" :class="button ? 'button-pressed' : 'button-released'"
-                                tabindex="0"></div>
+                            <div v-show="index < deviceInstanceButtonCount" class="button-state"
+                                :class="button ? 'button-pressed' : 'button-released'" tabindex="0"></div>
                         </div>
                     </div>
                 </div>
@@ -46,7 +46,7 @@ export default {
             loadedGamePads: [],
             currentGamePad: {},
             buttonsValuePreview: new Array(20).fill(false),
-            deviceInstanceButtonCount:0
+            deviceInstanceButtonCount: 0
         }
     },
     async beforeMount() {
@@ -262,7 +262,8 @@ export default {
     color: #616161;
     border: 2px solid #e0e0e0;
 }
-.button-preview-row{
+
+.button-preview-row {
     align-items: center;
 }
 </style>

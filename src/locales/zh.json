@@ -1,0 +1,51 @@
+{
+    "screenshotSettings": "截图设置",
+    "obsConnect": "OBS连接",
+    "gamepadTester": "控制器调试",
+    "systemSettings": "系统设置",
+    "screenshotSource": "截图来源",
+    "thumbnailSize": "保存尺寸",
+    "savingMode": "保存形式",
+    "savePath": "保存路径",
+    "select": "选择",
+    "selectFolderPath": "请选择文件夹路径",
+    "imageFormat": "图片格式",
+    "saveFileName": "保存文件名",
+    "availableFields": "可用字段",
+    "fileNamePreview": "文件名预览",
+    "controller": "控制器",
+    "keyCombo": "组合按键",
+    "addKey": "添加按键",
+    "recognize": "识别",
+    "recognizing": "识别中",
+    "unavailable": "不可用",
+    "delete": "删除",
+    "audio": "音频",
+    "volume": "音量",
+    "listening": "正在监听中",
+    "start": "启动",
+    "stop": "停止",
+    "saveWay": {
+        "file": "文件",
+        "clipboard": "剪切板",
+        "fileAndClipboard": "文件 + 剪切板"
+    },
+    "screenshotSound": {
+        "None": "静音",
+        "NS2": "Nintendo Switch 2"
+    },
+    "OBSPage": {
+        "obsAddress": "OBS 服务器地址",
+        "obsPassword": "OBS 服务器密码",
+        "selectScene": "选择场景",
+        "connectService": "连接OBS",
+        "disconnect": "断开连接"
+    },
+    "GampadTesterPage": {
+        "selectController": "选择控制器",
+        "buttonState": "按键状态"
+    },
+    "SystemSettingsPage": {
+        "language": "语言"
+    }
+}
