@@ -4,12 +4,15 @@ import { createI18n } from 'vue-i18n'
 import zh from './locales/zh.json'
 import en from './locales/en.json'
 
-
 const app = createApp(App)
+
+let localeKey = 'locale';
+
+const locale = await window.electronAPI.getStore(localeKey, 'zh');
 
 const i18n = createI18n({
     legacy: false, // 如果使用 Composition API，记得设为 false
-    locale: 'zh',
+    locale: locale,
     messages: {
         zh,
         en

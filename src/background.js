@@ -8,8 +8,11 @@ import sdl from '@kmamal/sdl'
 const fs = require('fs')
 const path = require('path')
 const vm = require('vm')
+
 //Scripts
 const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum } = require('@/lib/enum')
+const configStore = require('@/lib/configLoader')
+
 //Path Define
 const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js') : path.join(__dirname, '../src/preload.js')
 
@@ -145,9 +148,6 @@ if (isDevelopment) {
 
 //#endregion
 
-
-
-
 //#region SDL2方法
 let device_instance;
 let buttons = new Array(20).fill(false);
@@ -212,4 +212,15 @@ ipcMain.handle('select-folder', async () => {
   })
   return result.canceled ? null : result.filePaths[0]
 })
+//#endregion
+
+//#region store
+ipcMain.handle('set-store', (_, key, value) => {
+  configStore.set(key, value)
+})
+
+ipcMain.handle('get-store', (_, key, defaultValue) => {
+  return configStore.get(key, defaultValue)
+})
+
 //#endregion

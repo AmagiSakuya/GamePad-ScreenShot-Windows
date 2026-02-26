@@ -78,7 +78,7 @@ export default {
             let success = await window.electronAPI.openSdl2Device(hidDevice)
             let num = 0;
             if (!success) {
-                alert('打开控制器失败')
+                alert(this.$t('alertMsg.openGamepadFail'))
             } else {
                 num = await window.electronAPI.getDeviceInstanceButtonNumber();
             }

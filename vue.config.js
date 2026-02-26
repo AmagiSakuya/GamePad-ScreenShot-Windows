@@ -23,7 +23,7 @@ module.exports = defineConfig({
           'preload.js'
         ],
         extraResources: [
-          
+
         ]
       }
     }

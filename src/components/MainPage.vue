@@ -236,7 +236,7 @@ export default {
       detectionIndex: -1,
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
       saveImageFormateOptions: ['jpg', 'png'],
-      availableFields: ['timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss']
+      availableFields: ['timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss', 'cs', 'ms']
     }
   },
   async mounted() {
@@ -346,22 +346,26 @@ export default {
       //1.检查配置
       var m_config = JSON.parse(JSON.stringify(this.config));
       if (m_config.path == "") {
-        alert('截图路径不可以为空')
+        alert(this.$t('alertMsg.emptyPath'))
         return;
       }
       if (m_config.comboKeys.length == 0) {
-        alert('没有添加快捷键')
+        alert(this.$t('alertMsg.noKeyCombo'))
         return;
       }
       if (this.detectionIndex != -1) {
-        alert('正在识别按键中');
+        alert(this.$t('alertMsg.detectionInProgress'))
+        return;
+      }
+      if(this.isValidTemplate(this.config.fileNameTemplate) == false) {
+        alert(this.$t('alertMsg.invalidFileNameTemplate'))
         return;
       }
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]
       let success = await window.electronAPI.openSdl2Device(m_device)
       if (!success) {
-        alert('打开控制器失败')
+        alert(this.$t('alertMsg.openGamepadFail'))
         return;
       }
       this.saveCurrentConfig();
@@ -369,7 +373,7 @@ export default {
     },
     async onSDL2DeviceChanged() {
       if (this.listening) {
-        alert('设备发生变化 已停止截图监听');
+        alert(this.$t('alertMsg.deviceChangedCancelListening'));
       }
       if (this.detectionIndex != -1) {
         this.detectionIndex = -1;
@@ -415,7 +419,7 @@ export default {
         let m_device = rawDevices[this.currentGamePad._index]
         let success = await window.electronAPI.openSdl2Device(m_device)
         if (!success) {
-          alert('打开控制器失败')
+          alert(this.$t('alertMsg.openGamepadFail'))
           return;
         }
         this.detectionIndex = detectionIndex;
@@ -441,9 +445,22 @@ export default {
         '%DD%': String(now.getDate()).padStart(2, '0'),
         '%hh%': String(now.getHours()).padStart(2, '0'),
         '%mm%': String(now.getMinutes()).padStart(2, '0'),
-        '%ss%': String(now.getSeconds()).padStart(2, '0')
+        '%ss%': String(now.getSeconds()).padStart(2, '0'),
+        '%cs%': String(Math.floor(now.getMilliseconds() / 10)).padStart(2, '0'),
+        '%ms%': String(now.getMilliseconds()).padStart(3, '0')
       };
-      return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%%|%hh%|%mm%|%ss%/g, match => replacements[match] || match);
+      return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%|%hh%|%mm%|%ss%|%cs%|%ms%/g, match => replacements[match] || match);
+    },
+    isValidTemplate(template) {
+      // 只要包含以下任意一个占位符就算合法
+      const requiredTokens = [
+        '%datetime%',
+        '%ss%',
+        '%cs%',
+        '%ms%'
+      ];
+
+      return requiredTokens.some(token => template.includes(token));
     }
   }
 }

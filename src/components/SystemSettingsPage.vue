@@ -3,18 +3,18 @@
         <div class="settings-content-scroll">
             <div class="settings-content">
                 <div class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-gamepad"></i>
-                    <span> {{ $t('SystemSettingsPage.language') }} </span>
-                </div>
-                <div class="setting-controls">
-                    <select class="form-select" v-model="config.language" @change="onLanguageChanged">
-                        <option value="zh">中文</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
+                    <div class="setting-label">
+                        <i class="fas fa-gamepad"></i>
+                        <span> {{ $t('SystemSettingsPage.language') }} </span>
+                    </div>
+                    <div class="setting-controls">
+                        <select class="form-select" v-model="config.language" @change="onLanguageChanged">
+                            <option value="zh">中文</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
 
-            </div>
+                </div>
             </div>
         </div>
 
@@ -22,9 +22,10 @@
 </template>
 
 <script>
+let localeKey = 'locale';
 
 export default {
-    name: 'OBSConnectPage',
+    name: 'SystemSettingsPage',
     components: {
 
     },
@@ -42,14 +43,17 @@ export default {
 
     },
     async mounted() {
-
+        const locale = await window.electronAPI.getStore(localeKey, 'zh');
+        this.config.language = locale;
     },
     unmounted() {
 
     },
+    
     methods: {
-        onLanguageChanged() {
+        async onLanguageChanged() {
             this.$i18n.locale = this.config.language;
+            await window.electronAPI.setStore(localeKey, this.config.language);
         }
     }
 }
