@@ -256,20 +256,23 @@ export default {
     async takeScreenshot() {
       if (this.screenShoting) return;
       this.screenShoting = true;
+      var m_config = JSON.parse(JSON.stringify(this.config));
+      m_config.calcedFileName = this.formatFileName(m_config.fileNameTemplate);
+      let filePath;
       if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
-        var m_config = JSON.parse(JSON.stringify(this.config));
-        m_config.calcedFileName = this.formatFileName(m_config.fileNameTemplate);
-        let filePath = await window.electronAPI.screenShot(m_config)
-        if (filePath == void 0 || filePath == null) {
-          return;
-        }
-        if (this.config.sound == screenshotSoundEnum.NS2) {
-          let sound = new Howl({ src: [ns2SoundSrc], volume: this.config.soundPower })
-          sound.play();
-        }
+        filePath = await window.electronAPI.screenShot(m_config)
       } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
-        await this.compOBS.takeScreenshot(this.config)
+        filePath = await this.compOBS.takeScreenshot(m_config)
       }
+
+      if (filePath == void 0 || filePath == null) {
+        return;
+      }
+      if (this.config.sound == screenshotSoundEnum.NS2) {
+        let sound = new Howl({ src: [ns2SoundSrc], volume: this.config.soundPower })
+        sound.play();
+      }
+
       this.screenShoting = false;
     },
     async chooseFolder() {

@@ -130,14 +130,16 @@ export default {
                 alert('尚未连接OBS')
                 return
             }
-            let filepath = `${config.path}\\Screenshot_${Date.now()}.png`;
+            let filepath = `${config.path}\\${config.calcedFileName}.png`;
+            console.log(filepath);
+
             let finalSceneName;
             if (this.selectedScene == void 0 || this.selectedScene.sceneName == '') {
                 alert('没有选择正确的场景')
                 return
             }
             finalSceneName = this.selectedScene.sceneName;
-            console.log(finalSceneName);
+           
             try {
                 let videoSettings = await obs.call('GetVideoSettings');
                 let { baseWidth, baseHeight } = videoSettings;
@@ -150,10 +152,8 @@ export default {
                     imageHeight: baseHeight,               // 可选：缩放高度
                     imageCompressionQuality: -1      // 可选：压缩质量 (JPEG 为 1-100, PNG 为 0-9)
                 });
-                if (config.sound != screenshotSoundEnum.None) {
-                    window.electronAPI.playScreenshotSound()
-                }
-
+                
+                return filepath;
                 //console.log('📸 截图已保存:', response.imageFilePath);
             } catch (error) {
                 alert('OBS截图出错' + error.message)

@@ -91,7 +91,6 @@ export default {
     unmounted() {
 
     },
-
     methods: {
         async onLanguageChanged() {
             this.$i18n.locale = this.config.language;
