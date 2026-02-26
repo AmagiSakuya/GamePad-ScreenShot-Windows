@@ -23,7 +23,10 @@ module.exports = defineConfig({
           'preload.js'
         ],
         extraResources: [
-
+          {
+            from: "src/gamepad.ico",
+            to: "./" // 对应 process.resourcesPath
+          }
         ]
       }
     }

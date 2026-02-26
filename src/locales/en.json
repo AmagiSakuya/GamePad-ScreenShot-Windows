@@ -32,7 +32,6 @@
     },
     "alertMsg": {
         "emptyPath": "Screenshot path cannot be empty",
-        "invalidFileNameTemplate": "Invalid filename template. Must include at least a seconds placeholder (datetime, ss, cs, ms)",
         "noKeyCombo": "No hotkey added",
         "detectionInProgress": "Detecting key input...",
         "openGamepadFail": "Failed to open controller",
@@ -54,6 +53,11 @@
         "buttonState": "Button State"
     },
     "SystemSettingsPage": {
-        "language": "Language"
+        "language": "Language",
+        "closeType": "Close behavior",
+        "closeTypeEnum": {
+            "exit": "Exit application",
+            "tray": "Close to tray"
+        }
     }
 }

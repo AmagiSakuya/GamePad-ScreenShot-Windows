@@ -2,6 +2,7 @@
     <div class="settings-container">
         <div class="settings-content-scroll">
             <div class="settings-content">
+
                 <div class="setting-row">
                     <div class="setting-label">
                         <i class="fas fa-gamepad"></i>
@@ -15,6 +16,19 @@
                     </div>
 
                 </div>
+
+                <div class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-gamepad"></i>
+                        <span> {{ $t('SystemSettingsPage.closeType') }} </span>
+                    </div>
+                    <div class="setting-controls">
+                        <select class="form-select" v-model="config.closeType" @change="onCloseTypeChanged">
+                             <option v-for="(value, index) in CloseTypeEnum" :key="index" :value="value">{{ $t(`SystemSettingsPage.closeTypeEnum.${value}`) }}</option>
+                        </select>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -23,6 +37,7 @@
 
 <script>
 let localeKey = 'locale';
+let closeTypeKey = 'closeType';
 
 export default {
     name: 'SystemSettingsPage',
@@ -33,10 +48,12 @@ export default {
         return {
             config: {
                 language: 'zh',
-                bootAtWindowsStartup: false,
-                startListeningAtStartup: false,
-                silentStartup: false
-            }
+                closeType: 'exit'
+            },
+            CloseTypeEnum: [
+                'exit',
+                'tray'
+            ]
         }
     },
     async beforeMount() {
@@ -49,11 +66,14 @@ export default {
     unmounted() {
 
     },
-    
+
     methods: {
         async onLanguageChanged() {
             this.$i18n.locale = this.config.language;
             await window.electronAPI.setStore(localeKey, this.config.language);
+        },
+        async onCloseTypeChanged() {
+            await window.electronAPI.setStore(closeTypeKey, this.config.closeType);
         }
     }
 }

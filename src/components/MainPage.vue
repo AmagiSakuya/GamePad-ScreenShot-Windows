@@ -86,14 +86,14 @@
           <div class="setting-label">
             <i class="fas fa-folder-open"></i>
             <span>{{ $t('saveFileName') }}</span>
-            <span class="hint-text"> {{ $t('availableFields') }} : ( {{ availableFields.join(' | ')  }}  )</span> 
+            <span class="hint-text"  style="user-select: text;"> {{ $t('availableFields') }} : ( {{ availableFields.join(' | ')  }}  )</span> 
           </div>
           <div class="setting-controls">
             <div class="input-wrapper">
-              <input type="text" class="form-input" placeholder="Screenshot FileName Template" v-model="config.fileNameTemplate">
+              <input type="text" class="form-input" placeholder="Screenshot FileName Template" v-model="config.fileNameTemplate" style="user-select: text;">
             </div>
           </div>
-          <span class="hint-text">{{ $t('fileNamePreview') }}：{{ formatFileName(config.fileNameTemplate) }}.{{ config.imageFormat }}</span>
+          <span class="hint-text" style="user-select: text;">{{ $t('fileNamePreview') }}：{{ formatFileName(config.fileNameTemplate) }}.{{ config.imageFormat }}</span>
         </div>
 
         <!--  控制器设置 -->
@@ -357,10 +357,6 @@ export default {
         alert(this.$t('alertMsg.detectionInProgress'))
         return;
       }
-      if(this.isValidTemplate(this.config.fileNameTemplate) == false) {
-        alert(this.$t('alertMsg.invalidFileNameTemplate'))
-        return;
-      }
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]
       let success = await window.electronAPI.openSdl2Device(m_device)
@@ -450,17 +446,6 @@ export default {
         '%ms%': String(now.getMilliseconds()).padStart(3, '0')
       };
       return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%|%hh%|%mm%|%ss%|%cs%|%ms%/g, match => replacements[match] || match);
-    },
-    isValidTemplate(template) {
-      // 只要包含以下任意一个占位符就算合法
-      const requiredTokens = [
-        '%datetime%',
-        '%ss%',
-        '%cs%',
-        '%ms%'
-      ];
-
-      return requiredTokens.some(token => template.includes(token));
     }
   }
 }
@@ -741,6 +726,7 @@ export default {
 .setting-label {
   width: 100%;
   height: 30px;
+  user-select: none;
 }
 
 .setting-controls {
@@ -841,5 +827,6 @@ input:checked+.slider:before {
 }
 .setting-label .hint-text{
   margin-left: 5px;
+  user-select: none;
 }
 </style>

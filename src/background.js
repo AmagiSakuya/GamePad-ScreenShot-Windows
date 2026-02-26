@@ -25,7 +25,12 @@ protocol.registerSchemesAsPrivileged([
 let win;
 let tray;
 
-app.requestSingleInstanceLock();
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 如果获取锁失败，说明已有实例在运行，直接强制退出当前实例
+  app.quit();
+}
 
 async function createWindow() {
   // Create the browser window.
@@ -47,6 +52,12 @@ async function createWindow() {
 
   // --- 拦截关闭事件 ---
   win.on('close', (event) => {
+    let closeType = configStore.get('closeType', 'exit')
+
+    if (closeType === 'exit') {
+      app.isQuiting =  true;
+    }
+
     if (!app.isQuiting) {
       event.preventDefault(); // 阻止默认的关闭行为
       win.hide();      // 隐藏窗口
@@ -72,7 +83,8 @@ async function createWindow() {
 // 创建系统托盘
 function createTray() {
   // 图标路径，建议使用 16x16 或 32x32 的图片
-  tray = new Tray(path.join(__dirname, '../src/gamepad.ico'));
+  
+  tray = new Tray(getAssetPath('gamepad.ico'));
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -147,6 +159,13 @@ if (isDevelopment) {
 }
 
 //#endregion
+
+// 获取资源路径的函数
+function getAssetPath(...relativePaths) {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, ...relativePaths) // 打包后的路径
+    : path.join(__dirname, '../src', ...relativePaths);           // 开发环境路径
+}
 
 //#region SDL2方法
 let device_instance;

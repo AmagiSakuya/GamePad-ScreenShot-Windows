@@ -29,4 +29,5 @@ const ScreenShotSaveWayEnum = {
     FileAndCilpboard: 'fileAndClipboard'
 }
 
-module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum , ScreenShotSaveWayEnum }
+
+module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum }
