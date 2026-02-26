@@ -3,6 +3,19 @@ const { resolutionEnum , ScreenShotSaveWayEnum } = require('../src/lib/enum')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
+let filenameConflictResolutionKey = 'filenameConflictResolution';
+
+// 1. 加载语言包
+const messages = {
+  zh: require('./locales/zh.json'),
+  en: require('./locales/en.json')
+};
+
+// 2. 模拟 $t 函数
+function $t(key, locale = 'zh') {
+  // 支持 "menu.file.save" 这种嵌套路径
+  return key.split('.').reduce((obj, i) => (obj ? obj[i] : null), messages[locale]) || key;
+}
 
 contextBridge.exposeInMainWorld('electronAPI', {
     screenShot: async (config) => {
@@ -45,6 +58,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
         if (config.screenShotSaveWay != ScreenShotSaveWayEnum.CilpboardOnly) {
             filePath = path.join(config.path, `${config.calcedFileName}.${config.imageFormat}`)
+            
+            if (fs.existsSync(filePath)) {
+                let filenameConflictResolution = await ipcRenderer.invoke('get-store', filenameConflictResolutionKey, 'overwrite');
+                if (filenameConflictResolution === 'appendTimestamp') {
+                    const timestamp = Date.now();
+                    filePath = path.join(config.path, `${config.calcedFileName}_${timestamp}.${config.imageFormat}`)
+                }else if (filenameConflictResolution === 'notSave') {
+                    return null;
+                }else if (filenameConflictResolution === 'askEveryTime') {
+                    let res = await ipcRenderer.invoke('show-confirm-messageBox', $t('SystemSettingsPage.overwriteConfirm.title'), $t('SystemSettingsPage.overwriteConfirm.message'), filePath, [$t('SystemSettingsPage.overwriteConfirm.confirmButton'), $t('SystemSettingsPage.overwriteConfirm.cancelButton')]);
+                    if (!res) {
+                        return null;
+                    }
+                }
+            } 
+           
             fs.writeFileSync(filePath, buffer)
         }
 

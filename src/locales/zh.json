@@ -58,6 +58,19 @@
         "closeTypeEnum": {
             "exit": "退出软件",
             "tray": "隐藏到托盘"
+        },
+        "filenameConflictResolution":"文件名冲突策略",
+        "filenameConflictResolutionEnum": {
+            "overwrite": "覆盖",
+            "appendTimestamp": "追加时间戳",
+            "notSave": "不保存",
+            "askEveryTime": "每次询问"
+        },
+        "overwriteConfirm": {
+            "title": "文件已存在",
+            "message": "文件名冲突，是否覆盖已有文件？",
+            "confirmButton": "确认",
+            "cancelButton": "取消"
         }
     }
 }

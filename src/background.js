@@ -231,6 +231,20 @@ ipcMain.handle('select-folder', async () => {
   })
   return result.canceled ? null : result.filePaths[0]
 })
+
+ipcMain.handle('show-confirm-messageBox', async (_, title, message, detail, buttons) => {
+  const result = await dialog.showMessageBox({
+    type: 'question',          // 图标类型：question, info, warning, error
+    buttons: buttons,     // 按钮文本数组，索引从 0 开始
+    defaultId: 0,              // 默认聚焦的按钮索引
+    title: title,          // 对话框窗口标题
+    message: message, // 主提示内容
+    detail: detail,   // 额外详细说明
+    cancelId: 1,               // 用户点击关闭或按下 Esc 键时返回的索引
+  });
+
+  return result.response === 0; // 返回 true 表示用户点击了 "是"
+})
 //#endregion
 
 //#region store

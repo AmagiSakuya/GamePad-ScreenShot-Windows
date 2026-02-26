@@ -2,7 +2,7 @@
     <div class="settings-container">
         <div class="settings-content-scroll">
             <div class="settings-content">
-
+                <!-- 语言 -->
                 <div class="setting-row">
                     <div class="setting-label">
                         <i class="fas fa-gamepad"></i>
@@ -16,7 +16,7 @@
                     </div>
 
                 </div>
-
+                <!-- 关闭方案 -->
                 <div class="setting-row">
                     <div class="setting-label">
                         <i class="fas fa-gamepad"></i>
@@ -28,7 +28,18 @@
                         </select>
                     </div>
                 </div>
-
+                 <!-- 文件名冲突方案 -->
+                 <div class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-gamepad"></i>
+                        <span> {{ $t('SystemSettingsPage.filenameConflictResolution') }} </span>
+                    </div>
+                    <div class="setting-controls">
+                        <select class="form-select" v-model="config.filenameConflictResolution" @change="onFilenameConflictResolutionChanged">
+                             <option v-for="(value, index) in FilenameConflictResolution" :key="index" :value="value">{{ $t(`SystemSettingsPage.filenameConflictResolutionEnum.${value}`) }}</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -38,6 +49,7 @@
 <script>
 let localeKey = 'locale';
 let closeTypeKey = 'closeType';
+let filenameConflictResolutionKey = 'filenameConflictResolution';
 
 export default {
     name: 'SystemSettingsPage',
@@ -48,11 +60,18 @@ export default {
         return {
             config: {
                 language: 'zh',
-                closeType: 'exit'
+                closeType: 'exit',
+                filenameConflictResolution: 'overwrite'
             },
             CloseTypeEnum: [
                 'exit',
                 'tray'
+            ],
+            FilenameConflictResolution: [
+                'overwrite',
+                'appendTimestamp',
+                'notSave',
+                'askEveryTime'
             ]
         }
     },
@@ -61,7 +80,13 @@ export default {
     },
     async mounted() {
         const locale = await window.electronAPI.getStore(localeKey, 'zh');
+        const closeType = await window.electronAPI.getStore(closeTypeKey, 'exit');
+        const filenameConflictResolution = await window.electronAPI.getStore(filenameConflictResolutionKey, 'overwrite');
+        
         this.config.language = locale;
+        this.config.closeType = closeType;
+        this.config.filenameConflictResolution = filenameConflictResolution;
+  
     },
     unmounted() {
 
@@ -74,6 +99,9 @@ export default {
         },
         async onCloseTypeChanged() {
             await window.electronAPI.setStore(closeTypeKey, this.config.closeType);
+        },
+        async onFilenameConflictResolutionChanged() {
+            await window.electronAPI.setStore(filenameConflictResolutionKey, this.config.filenameConflictResolution);
         }
     }
 }

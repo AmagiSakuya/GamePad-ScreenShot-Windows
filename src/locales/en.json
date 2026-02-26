@@ -58,6 +58,19 @@
         "closeTypeEnum": {
             "exit": "Exit application",
             "tray": "Close to tray"
+        },
+        "filenameConflictResolution": "File name conflict resolution",
+        "filenameConflictResolutionEnum": {
+            "overwrite": "Overwrite",
+            "appendTimestamp": "Append timestamp",
+            "notSave": "Do not save",
+            "askEveryTime": "Ask every time"
+        },
+        "overwriteConfirm": {
+            "title": "File Already Exists",
+            "message": "File name conflict, do you want to overwrite the existing file?",
+            "confirmButton": "Confirm",
+            "cancelButton": "Cancel"
         }
     }
 }

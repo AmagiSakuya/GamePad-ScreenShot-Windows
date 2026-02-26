@@ -25,7 +25,7 @@ module.exports = defineConfig({
         extraResources: [
           {
             from: "src/gamepad.ico",
-            to: "./" // 对应 process.resourcesPath
+            to: "./" 
           }
         ]
       }

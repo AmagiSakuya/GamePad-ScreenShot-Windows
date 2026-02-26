@@ -149,7 +149,7 @@
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.sound">
-                <option v-for="(value, index) in screenshotSoundEnum" :key="index">{{ $t(`screenshotSound.${value}`) }}</option>
+                <option v-for="(value, index) in screenshotSoundEnum" :key="index" :value="value">{{ $t(`screenshotSound.${value}`) }}</option>
               </select>
             </div>
             <!-- <span class="hint-text">选择截图时播放的音效</span> -->
@@ -259,7 +259,10 @@ export default {
       if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
         var m_config = JSON.parse(JSON.stringify(this.config));
         m_config.calcedFileName = this.formatFileName(m_config.fileNameTemplate);
-        await window.electronAPI.screenShot(m_config)
+        let filePath = await window.electronAPI.screenShot(m_config)
+        if (filePath == void 0 || filePath == null) {
+          return;
+        }
         if (this.config.sound == screenshotSoundEnum.NS2) {
           let sound = new Howl({ src: [ns2SoundSrc], volume: this.config.soundPower })
           sound.play();
