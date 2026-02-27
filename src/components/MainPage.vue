@@ -90,7 +90,7 @@
           </div>
           <div class="setting-controls">
             <div class="input-wrapper">
-              <input type="text" class="form-input" placeholder="Screenshot FileName Template" v-model="config.fileNameTemplate" style="user-select: text;">
+              <input type="text" class="form-input" placeholder="Screenshot_%datetime%" v-model="config.fileNameTemplate" style="user-select: text;">
             </div>
           </div>
           <span class="hint-text" style="user-select: text;">{{ $t('fileNamePreview') }}：{{ formatFileName(config.fileNameTemplate) }}.{{ config.imageFormat }}</span>
