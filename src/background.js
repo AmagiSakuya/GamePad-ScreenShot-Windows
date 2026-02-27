@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -85,14 +85,14 @@ function createTray() {
   // 图标路径，建议使用 16x16 或 32x32 的图片
   
   tray = new Tray(getAssetPath('gamepad.ico'));
-
+// win.webContents.send('open-folder-triggered')
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '显示界面',
-      click: () => win.show()
+      label: $t('TrayMenu.openScreenshotFolder'),
+      click: () => win.webContents.send('open-folder-triggered')
     },
     {
-      label: '退出程序',
+      label: $t('TrayMenu.exit'),
       click: () => {
         app.isQuiting = true; // 设置一个标记位，允许真正退出
         app.quit();
@@ -158,9 +158,15 @@ if (isDevelopment) {
   }
 }
 
+
+ipcMain.on('restart-app', () => {
+  app.relaunch();
+  app.exit(0);
+});
 //#endregion
 
 //#region 多语言模拟
+let localeKey = 'locale';
 
 const messages = {
   zh: require('@/locales/zh.json'),
@@ -168,7 +174,8 @@ const messages = {
 };
 
 // 2. 模拟 $t 函数
-function $t(key, locale = 'zh') {
+function $t(key) {
+  let locale = configStore.get(localeKey, 'zh');
   // 支持 "menu.file.save" 这种嵌套路径
   return key.split('.').reduce((obj, i) => (obj ? obj[i] : null), messages[locale]) || key;
 }
@@ -203,7 +210,6 @@ ipcMain.handle('file-conflict-handle', async (_, config) => {
   return filePath;
 })
 //#endregion
-
 
 //#region SDL2方法
 let device_instance;
@@ -288,6 +294,13 @@ async function showConfirmMessageBox(title, message, detail, buttons) {
   return result.response === 0; // 返回 true 表示用户点击了 "是"
 }
 
+ipcMain.handle('open-folder', async (_, folderPath) => {
+  shell.openPath(folderPath).then((errorMessage) => {
+      if (errorMessage) {
+        console.error('打开文件失败:', errorMessage);
+      }
+    });
+})
 //#endregion
 
 //#region store

@@ -184,6 +184,10 @@
         <span>{{ $t('start') }}</span>
       </button>
 
+      <button v-show="listening" class="save-button" @click="openScreenShotFolder">
+        <span>{{ $t('openScreenshotFolder') }}</span>
+      </button>
+
       <button v-show="listening" class="save-button" @click="stopListen">
         <span>{{ $t('stop') }}</span>
       </button>
@@ -241,13 +245,16 @@ export default {
   },
   async mounted() {
     await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged);
-    await window.electronAPI.onHotkeyTriggered(this.takeScreenshot);
+    
+    await window.electronAPI.offOpenFolderTriggered();
+    await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
+
     await this.loadGamePadList();
     timer = setInterval(this.getCurrentButtonsValue, 60);
   },
   async beforeUnmount() {
     await window.electronAPI.offDeviceChanged()
-    await window.electronAPI.offHotkeyTriggered()
+    //
     await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
     clearInterval(timer)
     this.saveCurrentConfig()
@@ -458,6 +465,9 @@ export default {
         '%ms%': String(now.getMilliseconds()).padStart(3, '0')
       };
       return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%|%hh%|%mm%|%ss%|%cs%|%ms%/g, match => replacements[match] || match);
+    },
+    openScreenShotFolder() {
+      window.electronAPI.openFolder(this.config.path);
     }
   }
 }

@@ -95,6 +95,8 @@ export default {
         async onLanguageChanged() {
             this.$i18n.locale = this.config.language;
             await window.electronAPI.setStore(localeKey, this.config.language);
+            // 重启应用以应用语言更改
+            await window.electronAPI.restartApp();
         },
         async onCloseTypeChanged() {
             await window.electronAPI.setStore(closeTypeKey, this.config.closeType);

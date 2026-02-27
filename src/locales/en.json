@@ -25,6 +25,7 @@
     "listening": "Listening...",
     "start": "Start",
     "stop": "Stop",
+    "openScreenshotFolder": "Open Screenshot Folder",
     "saveWay": {
         "file": "File",
         "clipboard": "Clipboard",
@@ -76,5 +77,10 @@
             "confirmButton": "Confirm",
             "cancelButton": "Cancel"
         }
+    },
+    "TrayMenu": {
+        "openScreenshotFolder":"Open Screenshot Folder",
+        "show": "Show Main Window",
+        "exit": "Exit Application"
     }
 }

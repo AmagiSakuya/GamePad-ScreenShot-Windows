@@ -57,11 +57,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
         return filePath
     },
-    onHotkeyTriggered: (callback) => {
-        ipcRenderer.on('hotkey-triggered', callback)
+    onOpenFolderTriggered: (callback) => {
+        ipcRenderer.on('open-folder-triggered', callback)
     },
-    offHotkeyTriggered: () => {
-        ipcRenderer.removeAllListeners('hotkey-triggered')
+    offOpenFolderTriggered: () => {
+        ipcRenderer.removeAllListeners('open-folder-triggered')
     },
     onDeviceChanged: (callback) => {
         ipcRenderer.on('device-changed', callback)
@@ -80,4 +80,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getStore: (key, defaultValue) => ipcRenderer.invoke('get-store', key, defaultValue),
     showConfirmMessageBox: (title, message, detail, buttons) => ipcRenderer.invoke('show-confirm-messageBox', title, message, detail, buttons),
     fileConflictHandle: (config) => ipcRenderer.invoke('file-conflict-handle', config),
+    openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
+    restartApp: () => ipcRenderer.send('restart-app')
 })

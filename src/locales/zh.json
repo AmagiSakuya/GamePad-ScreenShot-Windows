@@ -25,6 +25,7 @@
     "listening": "正在监听中",
     "start": "启动",
     "stop": "停止",
+    "openScreenshotFolder": "打开截图文件夹",
     "saveWay": {
         "file": "文件",
         "clipboard": "剪切板",
@@ -76,5 +77,10 @@
             "confirmButton": "确认",
             "cancelButton": "取消"
         }
+    },
+    "TrayMenu": {
+        "openScreenshotFolder":"打开截图文件夹",
+        "show": "显示主界面",
+        "exit": "退出软件"
     }
 }
