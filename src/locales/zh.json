@@ -48,7 +48,7 @@
         "connectService": "连接OBS",
         "disconnect": "断开连接",
         "obsServiceNotFound":"未找到OBS Websocket服务",
-        "obsNotConnected":"尚未连接OBS",
+        "obsNotConnected":"无法连接到OBS",
         "invalidSceneSelected":"没有选择正确的场景",
         "obsScreenshotError":"OBS截图出错"
     },

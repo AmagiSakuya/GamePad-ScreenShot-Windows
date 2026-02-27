@@ -48,7 +48,7 @@
         "connectService": "Connect OBS",
         "disconnect": "Disconnect",
         "obsServiceNotFound": "OBS WebSocket service not found",
-        "obsNotConnected": "Not connected to OBS",
+        "obsNotConnected": "Cannot connected to OBS",
         "invalidSceneSelected": "No valid scene selected",
         "obsScreenshotError": "Failed to capture screenshot from OBS"
     },

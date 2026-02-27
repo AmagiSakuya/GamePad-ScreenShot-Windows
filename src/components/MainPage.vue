@@ -364,7 +364,8 @@ export default {
         alert(this.$t('alertMsg.detectionInProgress'))
         return;
       }
-      if ( this.config.screenShotSaveWay == ScreenShotSaveWayEnum.OBS && !this.compOBS.isConnected) {
+
+      if (this.config.screenshotWay == ScreenShotWayEnum.OBS && !this.compOBS.isConnected) {
         alert(this.$t('OBSPage.obsNotConnected'))
         return
       }
