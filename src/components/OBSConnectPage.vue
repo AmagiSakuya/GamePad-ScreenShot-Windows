@@ -89,13 +89,12 @@ export default {
         obs.on('ConnectionClosed', (error) => {
             console.log('🔌 连接已断开');
             this.isConnected = false;
-            alert(this.$t('OBSPage.obsNotConnected'))
             //this.compMain.stopListen();
         });
 
         // 连接过程中的底层错误
         obs.on('ConnectionError', (error) => {
-            //alert(this.$t('OBSPage.obsServiceNotFound'))
+            alert(this.$t('OBSPage.obsNotConnected'))
             console.error('❌ WebSocket 底层发生错误:', error.message);
             this.isConnected = false
         });
