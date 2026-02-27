@@ -266,6 +266,7 @@ export default {
       }
 
       if (filePath == void 0 || filePath == null) {
+        this.screenShoting = false;
         return;
       }
       if (this.config.sound == screenshotSoundEnum.NS2) {
@@ -362,6 +363,10 @@ export default {
       if (this.detectionIndex != -1) {
         alert(this.$t('alertMsg.detectionInProgress'))
         return;
+      }
+      if (!this.compOBS.isConnected) {
+        alert(this.$t('OBSPage.obsNotConnected'))
+        return
       }
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]

@@ -37,7 +37,7 @@
                     <div class="setting-controls">
                         <select class="form-select" v-model="selectedScene">
                             <option v-for="(value, index) in sceneList" :key="index" :value="value">{{ value.sceneName
-                                }}
+                            }}
                             </option>
                         </select>
                     </div>
@@ -66,6 +66,12 @@ export default {
     components: {
 
     },
+    props: {
+        compMain: {
+            type: Object,
+            default: null
+        }
+    },
     data() {
         return {
             obsConfig: {
@@ -82,12 +88,13 @@ export default {
         // 连接断开
         obs.on('ConnectionClosed', (error) => {
             console.log('🔌 连接已断开');
-            this.isConnected = false
+            this.isConnected = false;
+            //this.compMain.stopListen();
         });
 
         // 连接过程中的底层错误
         obs.on('ConnectionError', (error) => {
-            alert('未找到OBS Websocket服务')
+            alert(this.$t('OBSPage.obsServiceNotFound'))
             console.error('❌ WebSocket 底层发生错误:', error.message);
             this.isConnected = false
         });
@@ -127,36 +134,40 @@ export default {
         },
         async takeScreenshot(config) {
             if (!this.isConnected) {
-                alert('尚未连接OBS')
+                alert(this.$t('OBSPage.obsNotConnected'))
                 return
             }
-            let filepath = `${config.path}\\${config.calcedFileName}.png`;
-            console.log(filepath);
+
+            let filepath = await window.electronAPI.fileConflictHandle(config);
+
+            if (filepath == null) {
+                return;
+            }
 
             let finalSceneName;
             if (this.selectedScene == void 0 || this.selectedScene.sceneName == '') {
-                alert('没有选择正确的场景')
+                alert(this.$t('OBSPage.invalidSceneSelected'))
                 return
             }
             finalSceneName = this.selectedScene.sceneName;
-           
+
             try {
                 let videoSettings = await obs.call('GetVideoSettings');
                 let { baseWidth, baseHeight } = videoSettings;
 
                 let response = await obs.call('SaveSourceScreenshot', {
                     sourceName: finalSceneName,          // 你想要截图的源名称或场景名称
-                    imageFormat: 'png',              // 图片格式: jpg, png, bmp etc.
+                    imageFormat: config.imageFormat,              // 图片格式: jpg, png, bmp etc.
                     imageFilePath: filepath, // 保存的绝对路径 (注意权限)
                     imageWidth: baseWidth,                // 可选：缩放宽度
                     imageHeight: baseHeight,               // 可选：缩放高度
                     imageCompressionQuality: -1      // 可选：压缩质量 (JPEG 为 1-100, PNG 为 0-9)
                 });
-                
+
                 return filepath;
                 //console.log('📸 截图已保存:', response.imageFilePath);
             } catch (error) {
-                alert('OBS截图出错' + error.message)
+                alert(this.$t('OBSPage.obsScreenshotError') + error.message)
                 console.error('❌ 出错啦:', error.code, error.message);
             }
         },

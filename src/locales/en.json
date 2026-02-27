@@ -46,7 +46,11 @@
         "obsPassword": "OBS Password",
         "selectScene": "Select Scene",
         "connectService": "Connect OBS",
-        "disconnect": "Disconnect"
+        "disconnect": "Disconnect",
+        "obsServiceNotFound": "OBS WebSocket service not found",
+        "obsNotConnected": "Not connected to OBS",
+        "invalidSceneSelected": "No valid scene selected",
+        "obsScreenshotError": "Failed to capture screenshot from OBS"
     },
     "GampadTesterPage": {
         "selectController": "Select Controller",

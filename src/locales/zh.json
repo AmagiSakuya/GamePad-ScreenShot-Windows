@@ -46,7 +46,11 @@
         "obsPassword": "OBS 服务器密码",
         "selectScene": "选择场景",
         "connectService": "连接OBS",
-        "disconnect": "断开连接"
+        "disconnect": "断开连接",
+        "obsServiceNotFound":"未找到OBS Websocket服务",
+        "obsNotConnected":"尚未连接OBS",
+        "invalidSceneSelected":"没有选择正确的场景",
+        "obsScreenshotError":"OBS截图出错"
     },
     "GampadTesterPage": {
         "selectController": "选择控制器",

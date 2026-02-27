@@ -160,12 +160,50 @@ if (isDevelopment) {
 
 //#endregion
 
+//#region 多语言模拟
+
+const messages = {
+  zh: require('@/locales/zh.json'),
+  en: require('@/locales/en.json')
+};
+
+// 2. 模拟 $t 函数
+function $t(key, locale = 'zh') {
+  // 支持 "menu.file.save" 这种嵌套路径
+  return key.split('.').reduce((obj, i) => (obj ? obj[i] : null), messages[locale]) || key;
+}
+//#endregion
+
 // 获取资源路径的函数
 function getAssetPath(...relativePaths) {
   return app.isPackaged
     ? path.join(process.resourcesPath, ...relativePaths) // 打包后的路径
     : path.join(__dirname, '../src', ...relativePaths);           // 开发环境路径
 }
+
+//#region 文件名冲突处理 #fouced program name#
+let filenameConflictResolutionKey = 'filenameConflictResolution';
+
+ipcMain.handle('file-conflict-handle', async (_, config) => {
+  let filePath = path.join(config.path, `${config.calcedFileName}.${config.imageFormat}`);
+  if (fs.existsSync(filePath)) {
+    let filenameConflictResolution = configStore.get(filenameConflictResolutionKey, 'overwrite')
+    if (filenameConflictResolution === 'appendTimestamp') {
+      const timestamp = Date.now();
+      filePath = path.join(config.path, `${config.calcedFileName}_${timestamp}.${config.imageFormat}`)
+    } else if (filenameConflictResolution === 'notSave') {
+      return null;
+    } else if (filenameConflictResolution === 'askEveryTime') {
+      let res = await showConfirmMessageBox($t('SystemSettingsPage.overwriteConfirm.title'), $t('SystemSettingsPage.overwriteConfirm.message'), filePath, [$t('SystemSettingsPage.overwriteConfirm.confirmButton'), $t('SystemSettingsPage.overwriteConfirm.cancelButton')]);
+      if (!res) {
+        return null;
+      }
+    }
+  }
+  return filePath;
+})
+//#endregion
+
 
 //#region SDL2方法
 let device_instance;
@@ -233,6 +271,10 @@ ipcMain.handle('select-folder', async () => {
 })
 
 ipcMain.handle('show-confirm-messageBox', async (_, title, message, detail, buttons) => {
+  return showConfirmMessageBox(title, message, detail, buttons);
+})
+
+async function showConfirmMessageBox(title, message, detail, buttons) {
   const result = await dialog.showMessageBox({
     type: 'question',          // 图标类型：question, info, warning, error
     buttons: buttons,     // 按钮文本数组，索引从 0 开始
@@ -244,7 +286,8 @@ ipcMain.handle('show-confirm-messageBox', async (_, title, message, detail, butt
   });
 
   return result.response === 0; // 返回 true 表示用户点击了 "是"
-})
+}
+
 //#endregion
 
 //#region store

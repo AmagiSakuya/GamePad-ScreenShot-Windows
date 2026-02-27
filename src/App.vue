@@ -32,7 +32,7 @@
 
       <!-- OBS连接 -->
       <div v-show="activeTab === 'obs'" class="tab-pane">
-        <OBSConnectPage ref="obsPageRef"></OBSConnectPage>
+        <OBSConnectPage ref="obsPageRef" :compMain="mainPageInstance"></OBSConnectPage>
       </div>
 
       <!-- Debug 页面内容 -->
@@ -68,7 +68,8 @@ export default {
   data() {
     return {
       activeTab: 'home',
-      obsPageInstance: null
+      obsPageInstance: null,
+      mainPageInstance: null
     }
   },
   async beforeMount() {
@@ -76,6 +77,7 @@ export default {
   },
   async mounted() {
     this.obsPageInstance = this.$refs.obsPageRef;
+    this.mainPageInstance = this.$refs.mainPageRef;
   },
   unmounted() {
 
