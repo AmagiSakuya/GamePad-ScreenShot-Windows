@@ -86,14 +86,14 @@
           <div class="setting-label">
             <i class="fas fa-folder-open"></i>
             <span>{{ $t('saveFileName') }}</span>
-            <span class="hint-text"  style="user-select: text;"> {{ $t('availableFields') }} : ( {{ availableFields.join(' | ')  }}  )</span> 
+            <span class="hint-text"  style="user-select: text;"> {{ $t('availableFields') }} : ( {{ availableFields.join('、')  }}  )</span> 
           </div>
           <div class="setting-controls">
             <div class="input-wrapper">
               <input type="text" class="form-input" placeholder="Screenshot_%datetime%" v-model="config.fileNameTemplate" style="user-select: text;">
             </div>
           </div>
-          <span class="hint-text" style="user-select: text;">{{ $t('fileNamePreview') }}：{{ formatFileName(config.fileNameTemplate) }}.{{ config.imageFormat }}</span>
+          <span class="hint-text" style="user-select: text;margin-left: 5px;">{{ $t('fileNamePreview') }}：{{ formatFileName(config.fileNameTemplate, formatPreviewTicker) }}.{{ config.imageFormat }}</span>
         </div>
 
         <!--  控制器设置 -->
@@ -207,7 +207,9 @@ import ns2SoundSrc from '@/assets/ns2截图音.mp3'
 
 let rawDevices;
 let timer;
+let active_info_getter_timer;
 let lastButtonsValue;
+let activeWinInfoResult;
 export default {
   name: 'MainPage',
   components: {},
@@ -244,7 +246,8 @@ export default {
       detectionIndex: -1,
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
       saveImageFormateOptions: ['jpg', 'png'],
-      availableFields: ['timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss', 'cs', 'ms']
+      availableFields: ['activeWinTitle', 'activeWinOwner', 'timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss', 'cs', 'ms'],
+      formatPreviewTicker:0
     }
   },
   async mounted() {
@@ -254,13 +257,28 @@ export default {
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
 
     await this.loadGamePadList();
+
     timer = setInterval(this.getCurrentButtonsValue, 60);
+
+    active_info_getter_timer = setInterval(async () => {
+      if(!this.config.fileNameTemplate.includes('%activeWinTitle%') && !this.config.fileNameTemplate.includes('%activeWinOwner%')) {
+        return;
+      }
+      activeWinInfoResult = await window.electronAPI.getActiveWindowsInfo();
+      if (this.formatPreviewTicker > 1) {
+        this.formatPreviewTicker--;
+      } else {
+        this.formatPreviewTicker++;
+      }
+    }, 3000);
+
   },
   async beforeUnmount() {
     await window.electronAPI.offDeviceChanged()
     //
     await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
     clearInterval(timer)
+    clearInterval(active_info_getter_timer)
     this.saveCurrentConfig()
   },
   methods: {
@@ -451,10 +469,11 @@ export default {
         return;
       }
     },
-    formatFileName(template) {
+    formatFileName(template, ticker = 0) {
       if(template == null || template == undefined || template.trim() == '') {
         return '';
       }
+      //const activeWinInfo = await window.electronAPI.getActiveWinInfo();
       const now = new Date();
       const replacements = {
         '%timestamp%': now.getTime(),
@@ -466,9 +485,11 @@ export default {
         '%mm%': String(now.getMinutes()).padStart(2, '0'),
         '%ss%': String(now.getSeconds()).padStart(2, '0'),
         '%cs%': String(Math.floor(now.getMilliseconds() / 10)).padStart(2, '0'),
-        '%ms%': String(now.getMilliseconds()).padStart(3, '0')
+        '%ms%': String(now.getMilliseconds()).padStart(3, '0'),
+        '%activeWinTitle%': activeWinInfoResult ? activeWinInfoResult.title : 'UnknownWindow',
+        '%activeWinOwner%': activeWinInfoResult ? activeWinInfoResult.owner.name : 'UnknownOwner'
       };
-      return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%|%hh%|%mm%|%ss%|%cs%|%ms%/g, match => replacements[match] || match);
+      return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%|%hh%|%mm%|%ss%|%cs%|%ms%|%activeWinTitle%|%activeWinOwner%/g, match => replacements[match] || match);
     },
     openScreenShotFolder() {
       window.electronAPI.openFolder(this.config.path);
@@ -541,7 +562,11 @@ export default {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  width: 100%;
+  min-height: 30px;
+  user-select: none;
 }
+
 
 /* 确保按钮在标题行内正确显示 */
 .setting-label .action-buttons {
@@ -560,6 +585,7 @@ export default {
 .setting-label .hint-text {
   color: #666;
   font-size: 13px;
+  text-align: left;
 }
 
 .setting-label i {
@@ -752,12 +778,6 @@ export default {
   flex-direction: column;
   align-items: flex-start;
   gap: 5px;
-}
-
-.setting-label {
-  width: 100%;
-  height: 30px;
-  user-select: none;
 }
 
 .setting-controls {

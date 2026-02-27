@@ -81,5 +81,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showConfirmMessageBox: (title, message, detail, buttons) => ipcRenderer.invoke('show-confirm-messageBox', title, message, detail, buttons),
     fileConflictHandle: (config) => ipcRenderer.invoke('file-conflict-handle', config),
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
-    restartApp: () => ipcRenderer.send('restart-app')
+    restartApp: () => ipcRenderer.send('restart-app'),
+    getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info')
 })

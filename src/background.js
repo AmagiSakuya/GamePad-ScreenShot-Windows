@@ -3,6 +3,7 @@
 import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
+const activeWin = require('active-win');
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
 const fs = require('fs')
@@ -35,7 +36,7 @@ if (!gotTheLock) {
 async function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
-    title: 'Gamepad Full-ScreenShot Tool',
+    title: $t('gamepadScreenShotTool'),
     width: 700,
     height: 900,
     autoHideMenuBar: true,
@@ -310,6 +311,13 @@ ipcMain.handle('set-store', (_, key, value) => {
 
 ipcMain.handle('get-store', (_, key, defaultValue) => {
   return configStore.get(key, defaultValue)
+})
+
+//#endregion
+
+//#region 聚焦窗口信息
+ipcMain.handle('get-active-win-info', () => {
+  return activeWin();
 })
 
 //#endregion
