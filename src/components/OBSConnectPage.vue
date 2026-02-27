@@ -44,12 +44,15 @@
                 </div>
 
                 <button v-if="!isConnected" class="save-button" @click="connectOBS">
+                    <span class="icon">⚡</span>
                     <span>{{ $t('OBSPage.connectService') }}</span>
                 </button>
 
                 <button v-if="isConnected" class="save-button" @click="disconnectOBS">
+                    <span class="icon">🔌</span>
                     <span>{{ $t('OBSPage.disconnect') }}</span>
                 </button>
+
             </div>
         </div>
 
@@ -219,4 +222,7 @@ export default {
 }
 </script>
 
-<style></style>
+<style>
+
+
+</style>

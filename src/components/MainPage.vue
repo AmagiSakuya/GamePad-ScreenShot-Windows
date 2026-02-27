@@ -181,16 +181,20 @@
     <div class="settings-footer-btn">
       <!-- 开始 -->
       <button v-show="!listening" class="save-button" @click="startListen">
+        <span class="icon">▶</span> 
         <span>{{ $t('start') }}</span>
       </button>
 
-      <button v-show="listening" class="save-button" @click="openScreenShotFolder">
-        <span>{{ $t('openScreenshotFolder') }}</span>
-      </button>
-
-      <button v-show="listening" class="save-button" @click="stopListen">
-        <span>{{ $t('stop') }}</span>
-      </button>
+     <div v-show="listening" class="button-group">
+        <button class="save-button primary" @click="openScreenShotFolder">
+          <span class="icon">📂</span> 
+          {{ $t('openScreenshotFolder') }}
+        </button>
+        <button class="save-button" @click="stopListen">
+          <span class="icon">⏹</span> 
+          {{ $t('stop') }}
+        </button>
+      </div>
     </div>
 
   </div>
@@ -245,7 +249,7 @@ export default {
   },
   async mounted() {
     await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged);
-    
+
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
 
@@ -713,7 +717,7 @@ export default {
   padding: 16px 32px;
   font-size: 1.1rem;
   width: 100%;
-  background: linear-gradient(to right, #4b6cb7, #182848);
+  background: linear-gradient(to right, #4b6cb7, #4b6cb7);
   color: white;
   border: none;
   border-radius: 10px;
@@ -723,13 +727,18 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .save-button:hover {
   /* transform: translateY(-3px); */
   box-shadow: 0 8px 20px rgba(75, 108, 183, 0.3);
 }
+
+.save-button.primary {
+  background: linear-gradient(135deg, #414345 0%, #414345 100%);
+}
+
 
 .hint-text {
   font-size: 0.85rem;
@@ -851,4 +860,13 @@ input:checked+.slider:before {
   margin-left: 5px;
   user-select: none;
 }
+
+/* 按钮容器 */
+.button-group {
+  display: flex;
+  gap: 16px; 
+  width: 100%;
+  box-sizing: border-box;
+}
+
 </style>
