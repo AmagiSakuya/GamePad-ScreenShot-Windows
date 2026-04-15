@@ -37,7 +37,7 @@
                     <div class="setting-controls">
                         <select class="form-select" v-model="selectedScene">
                             <option v-for="(value, index) in sceneList" :key="index" :value="value">{{ value.sceneName
-                            }}
+                                }}
                             </option>
                         </select>
                     </div>
@@ -73,6 +73,10 @@ export default {
         compMain: {
             type: Object,
             default: null
+        },
+        windowsNotify: {
+            type: Function,
+            default: null
         }
     },
     data() {
@@ -97,7 +101,7 @@ export default {
 
         // 连接过程中的底层错误
         obs.on('ConnectionError', (error) => {
-            alert(this.$t('OBSPage.obsNotConnected'))
+            this.windowsNotify(this.$t('OBSPage.obsNotConnected'))
             console.error('❌ WebSocket 底层发生错误:', error.message);
             this.isConnected = false
         });
@@ -137,7 +141,7 @@ export default {
         },
         async takeScreenshot(config) {
             if (!this.isConnected) {
-                alert(this.$t('OBSPage.obsNotConnected'))
+                this.windowsNotify(this.$t('OBSPage.obsNotConnected'))
                 return
             }
 
@@ -149,7 +153,7 @@ export default {
 
             let finalSceneName;
             if (this.selectedScene == void 0 || this.selectedScene.sceneName == '') {
-                alert(this.$t('OBSPage.invalidSceneSelected'))
+                this.windowsNotify(this.$t('OBSPage.invalidSceneSelected'))
                 return
             }
             finalSceneName = this.selectedScene.sceneName;
@@ -170,7 +174,7 @@ export default {
                 return filepath;
                 //console.log('📸 截图已保存:', response.imageFilePath);
             } catch (error) {
-                alert(this.$t('OBSPage.obsScreenshotError') + error.message)
+                this.windowsNotify(this.$t('OBSPage.obsScreenshotError') + error.message)
                 console.error('❌ 出错啦:', error.code, error.message);
             }
         },
@@ -222,7 +226,4 @@ export default {
 }
 </script>
 
-<style>
-
-
-</style>
+<style></style>

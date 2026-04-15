@@ -14,7 +14,7 @@
 
       <button class="tab-btn" :class="{ active: activeTab === 'debug' }" @click="activeTab = 'debug'">
         <i class="fas fa-bug"></i>
-        <span>{{  $t('gamepadTester') }}</span>
+        <span>{{ $t('gamepadTester') }}</span>
       </button>
 
       <button class="tab-btn" :class="{ active: activeTab === 'system' }" @click="activeTab = 'system'">
@@ -27,12 +27,12 @@
     <div class="tab-content">
       <!-- 首页内容 -->
       <div v-if="activeTab === 'home'" class="tab-pane">
-        <MainPage ref="mainPageRef" :compOBS="obsPageInstance"></MainPage>
+        <MainPage ref="mainPageRef" :compOBS="obsPageInstance" :windowsNotify="windowsNotify"></MainPage>
       </div>
 
       <!-- OBS连接 -->
       <div v-show="activeTab === 'obs'" class="tab-pane">
-        <OBSConnectPage ref="obsPageRef" :compMain="mainPageInstance"></OBSConnectPage>
+        <OBSConnectPage ref="obsPageRef" :compMain="mainPageInstance" :windowsNotify="windowsNotify"></OBSConnectPage>
       </div>
 
       <!-- Debug 页面内容 -->
@@ -83,7 +83,11 @@ export default {
 
   },
   methods: {
-
+    windowsNotify(message) {
+      new Notification('', {
+        body: message
+      })
+    }
   }
 }
 </script>

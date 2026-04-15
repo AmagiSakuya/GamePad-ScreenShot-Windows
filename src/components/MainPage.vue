@@ -210,12 +210,18 @@ let timer;
 let active_info_getter_timer;
 let lastButtonsValue;
 let activeWinInfoResult;
+let autoListenResolutionKey = 'autoListenResolution';
+
 export default {
   name: 'MainPage',
   components: {},
   props: {
     compOBS: {
       type: Object,
+      default: null
+    },
+    windowsNotify: {
+      type: Function,
       default: null
     }
   },
@@ -256,7 +262,7 @@ export default {
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
 
-    await this.loadGamePadList();
+     await this.tryStartListen();
 
     timer = setInterval(this.getCurrentButtonsValue, 60);
 
@@ -334,7 +340,6 @@ export default {
         this.resetConfig();
       }
 
-      
       //#region  升级老配置
       if (this.config.fileNameTemplate == null || this.config.fileNameTemplate == undefined || this.config.fileNameTemplate.trim() == '') {
         this.config.fileNameTemplate = 'Screenshot_%timestamp%'
@@ -348,8 +353,6 @@ export default {
         this.config.imageFormat = 'jpg'
       }
       //#endregion
-
-      
 
     },
     async initDevice() {
@@ -407,18 +410,30 @@ export default {
       }
       this.saveCurrentConfig();
       this.listening = true;
+      this.windowsNotify(this.$t('alertMsg.listeningStarted'));
     },
     async onSDL2DeviceChanged() {
       if (this.listening) {
-        alert(this.$t('alertMsg.deviceChangedCancelListening'));
+        this.windowsNotify(this.$t('alertMsg.deviceChangedCancelListening'));
+        if (this.detectionIndex != -1) {
+          this.detectionIndex = -1;
+          await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+        }
+        this.listening = false;
+        await this.loadGamePadList();
+      } else {
+        await this.tryStartListen();
       }
-      if (this.detectionIndex != -1) {
-        this.detectionIndex = -1;
-        await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
-        return;
-      }
-      this.listening = false;
+    },
+    async tryStartListen() {
       await this.loadGamePadList();
+      if (this.loadedGamePads.length > 0) {
+        let res = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
+        console.log(res);
+        if (res == 'whenDeviceAvailable') {
+          await this.startListen();
+        }
+      }
     },
     async getCurrentButtonsValue() {
       this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
@@ -447,6 +462,7 @@ export default {
     },
     async stopListen() {
       this.listening = false;
+      this.windowsNotify(this.$t('alertMsg.listeningStopped'));
     },
     async onUserSelectedDeviceChange() {
       this.loadConfig(this.currentGamePad.name)

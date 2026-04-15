@@ -82,8 +82,8 @@ A utility that allows you to trigger **Full-screen screenshots** or **OBS screen
 - [x] Customizable filenames
 - [x] Copy to clipboard functionality
 - [x] Multi-language support
-- [ ] Add "Focused Window Title" as a custom field for file naming
-- [ ] Auto-start with Windows and auto-start listener on launch
+- [x] Add "Focused Window Title" as a custom field for file naming
+- [ ] Auto-start
 - [ ] Call Xbox Game Bar (Researching)
 
 ---

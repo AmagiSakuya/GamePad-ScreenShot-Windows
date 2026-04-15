@@ -37,7 +37,9 @@
         "noKeyCombo": "没有添加快捷键",
         "detectionInProgress": "正在识别按键中",
         "openGamepadFail": "打开控制器失败",
-        "deviceChangedCancelListening": "设备发生变化, 已停止截图监听"
+        "deviceChangedCancelListening": "设备发生变化, 已停止截图监听",
+        "listeningStarted": "开始监听",
+        "listeningStopped": "停止监听"
     },
     "screenshotSound": {
         "None": "静音",
@@ -77,6 +79,11 @@
             "message": "文件名冲突，是否覆盖已有文件？",
             "confirmButton": "确认",
             "cancelButton": "取消"
+        },
+        "autoListenResolution":"自动开始监听",
+        "autoListenResolutionEnum": {
+            "whenDeviceAvailable": "有已配置设备时",
+            "never": "从不"
         }
     },
     "TrayMenu": {

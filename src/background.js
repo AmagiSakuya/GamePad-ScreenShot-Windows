@@ -10,6 +10,10 @@ const fs = require('fs')
 const path = require('path')
 const vm = require('vm')
 
+if (process.platform === 'win32') {
+  app.setAppUserModelId('GamePad Screenshot Tool');
+}
+
 //Scripts
 const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum } = require('@/lib/enum')
 const configStore = require('@/lib/configLoader')
