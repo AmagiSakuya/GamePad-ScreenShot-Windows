@@ -93,7 +93,12 @@
         "proxy": "网络代理",
         "updateAvailable": "发现新版本",
         "updateNotAvailable": "当前已是最新版本",
-        "updateCheckFailed": "检查更新失败，请稍后重试"
+        "updateCheckFailed": "检查更新失败，请稍后重试",
+        "groupBasic": "基础设置",
+        "groupPolicy": "策略设置",
+        "groupUpdate": "更新设置",
+        "languageChinese": "中文",
+        "languageEnglish": "English"
     },
     "TrayMenu": {
         "openScreenshotFolder":"打开截图文件夹",

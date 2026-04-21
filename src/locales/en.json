@@ -93,7 +93,12 @@
         "proxy": "Network Proxy",
         "updateAvailable": "New version available",
         "updateNotAvailable": "Already up to date",
-        "updateCheckFailed": "Update check failed, please try again later"
+        "updateCheckFailed": "Update check failed, please try again later",
+        "groupBasic": "Basic Settings",
+        "groupPolicy": "Policy Settings",
+        "groupUpdate": "Update Settings",
+        "languageChinese": "中文",
+        "languageEnglish": "English"
     },
     "TrayMenu": {
         "openScreenshotFolder":"Open Screenshot Folder",

@@ -2,85 +2,33 @@
     <div class="settings-container">
         <div class="settings-content-scroll">
             <div class="settings-content">
-                <!-- 语言 -->
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <i class="fas fa-gamepad"></i>
-                        <span> {{ $t('SystemSettingsPage.language') }} </span>
+                <div class="setting-group" v-for="(group, index) in groups" :key="index">
+                    <div class="group-title" @click="toggleGroup(index)">
+                        <i :class="group.icon"></i>
+                        <span>{{ $t(`SystemSettingsPage.${group.key}`) }}</span>
+                        <span :class="group.collapsed ? 'collapse-icon-right' : 'collapse-icon-down'">{{ group.collapsed
+                            ? '▶' : '▼' }}</span>
                     </div>
-                    <div class="setting-controls">
-                        <select class="form-select" v-model="config.language" @change="onLanguageChanged">
-                            <option value="zh">中文</option>
-                            <option value="en">English</option>
-                        </select>
-                    </div>
-
-                </div>
-                <!-- 关闭方案 -->
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <i class="fas fa-gamepad"></i>
-                        <span> {{ $t('SystemSettingsPage.closeType') }} </span>
-                    </div>
-                    <div class="setting-controls">
-                        <select class="form-select" v-model="config.closeType" @change="onCloseTypeChanged">
-                             <option v-for="(value, index) in CloseTypeEnum" :key="index" :value="value">{{ $t(`SystemSettingsPage.closeTypeEnum.${value}`) }}</option>
-                        </select>
-                    </div>
-                </div>
-
-                 <!-- 文件名冲突方案 -->
-                 <div class="setting-row">
-                    <div class="setting-label">
-                        <i class="fas fa-gamepad"></i>
-                        <span> {{ $t('SystemSettingsPage.filenameConflictResolution') }} </span>
-                    </div>
-                    <div class="setting-controls">
-                        <select class="form-select" v-model="config.filenameConflictResolution" @change="onFilenameConflictResolutionChanged">
-                             <option v-for="(value, index) in FilenameConflictResolution" :key="index" :value="value">{{ $t(`SystemSettingsPage.filenameConflictResolutionEnum.${value}`) }}</option>
-                        </select>
-                    </div>
-                </div>
-
-                 <!-- 自动开始方案 -->
-                 <div class="setting-row">
-                    <div class="setting-label">
-                        <i class="fas fa-gamepad"></i>
-                        <span> {{ $t('SystemSettingsPage.autoListenResolution') }} </span>
-                    </div>
-                    <div class="setting-controls">
-                        <select class="form-select" v-model="config.autoListenResolution" @change="onAutoListenResolutionChanged">
-                             <option v-for="(value, index) in AutoListenResolution" :key="index" :value="value">{{ $t(`SystemSettingsPage.autoListenResolutionEnum.${value}`) }}</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 启动时检测更新 -->
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <i class="fas fa-sync"></i>
-                        <span> {{ $t('SystemSettingsPage.checkUpdateOnStartup') }} </span>
-                    </div>
-                    <div class="setting-controls" style="display: flex; align-items: center;">
-                        <select class="form-select" v-model="config.checkUpdateOnStartup" @change="onCheckUpdateOnStartupChanged" style="flex: 1; margin-right: 10px;">
-                            <option value="enabled">{{ $t('SystemSettingsPage.enabled') }}</option>
-                            <option value="disabled">{{ $t('SystemSettingsPage.disabled') }}</option>
-                        </select>
-                        <button class="btn btn-primary" @click="checkForUpdates">
-                            <span>{{ $t('SystemSettingsPage.checkUpdate') }}</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 网络代理 -->
-                <div class="setting-row">
-                    <div class="setting-label">
-                        <i class="fas fa-globe"></i>
-                        <span> {{ $t('SystemSettingsPage.proxy') }} </span>
-                    </div>
-                    <div class="setting-controls">
-                        <div class="input-wrapper">
-                            <input type="text" class="form-input" placeholder="192.168.1.1:8080" v-model="config.proxy" @change="onProxyChanged">
+                    <div class="group-content" v-show="!group.collapsed">
+                        <div class="setting-row" v-for="(setting, settingIndex) in group.settings" :key="settingIndex">
+                            <div class="setting-label">
+                                <i :class="setting.icon"></i>
+                                <span>{{ $t(`SystemSettingsPage.${setting.key}`) }}</span>
+                            </div>
+                            <div class="setting-controls" :class="{ 'setting-controls-inline': setting.inline }">
+                                <select v-if="setting.type === 'select'" class="form-select"
+                                    :value="config[setting.configKey]" @change="setting.handler">
+                                    <option v-for="(option, optionIndex) in setting.options" :key="optionIndex"
+                                        :value="option.value">{{ $t(option.label) }}</option>
+                                </select>
+                                <input v-if="setting.type === 'input'" type="text" class="form-input"
+                                    :placeholder="setting.placeholder" :value="config[setting.configKey]"
+                                    @input="e => { config[setting.configKey] = e.target.value; setting.handler.call(this, e); }">
+                                <button v-if="setting.type === 'button'" class="btn btn-primary compact"
+                                    @click="setting.handler">
+                                    <span>{{ $t(`SystemSettingsPage.${setting.key}`) }}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -120,6 +68,101 @@ export default {
                 checkUpdateOnStartup: 'enabled',
                 proxy: ''
             },
+            groups: [
+                {
+                    key: 'groupBasic',
+                    icon: 'fas fa-cog',
+                    collapsed: false,
+                    settings: [
+                        {
+                            key: 'language',
+                            icon: 'fas fa-language',
+                            type: 'select',
+                            configKey: 'language',
+                            handler: this.onLanguageChanged,
+                            options: [
+                                { value: 'zh', label: 'SystemSettingsPage.languageChinese' },
+                                { value: 'en', label: 'SystemSettingsPage.languageEnglish' }
+                            ]
+                        },
+                        {
+                            key: 'closeType',
+                            icon: 'fas fa-power-off',
+                            type: 'select',
+                            configKey: 'closeType',
+                            handler: this.onCloseTypeChanged,
+                            options: [
+                                { value: 'exit', label: 'SystemSettingsPage.closeTypeEnum.exit' },
+                                { value: 'tray', label: 'SystemSettingsPage.closeTypeEnum.tray' }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    key: 'groupPolicy',
+                    icon: 'fas fa-shield-alt',
+                    collapsed: false,
+                    settings: [
+                        {
+                            key: 'filenameConflictResolution',
+                            icon: 'fas fa-file-contract',
+                            type: 'select',
+                            configKey: 'filenameConflictResolution',
+                            handler: this.onFilenameConflictResolutionChanged,
+                            options: [
+                                { value: 'overwrite', label: 'SystemSettingsPage.filenameConflictResolutionEnum.overwrite' },
+                                { value: 'appendTimestamp', label: 'SystemSettingsPage.filenameConflictResolutionEnum.appendTimestamp' },
+                                { value: 'notSave', label: 'SystemSettingsPage.filenameConflictResolutionEnum.notSave' },
+                                { value: 'askEveryTime', label: 'SystemSettingsPage.filenameConflictResolutionEnum.askEveryTime' }
+                            ]
+                        },
+                        {
+                            key: 'autoListenResolution',
+                            icon: 'fas fa-play-circle',
+                            type: 'select',
+                            configKey: 'autoListenResolution',
+                            handler: this.onAutoListenResolutionChanged,
+                            options: [
+                                { value: 'whenDeviceAvailable', label: 'SystemSettingsPage.autoListenResolutionEnum.whenDeviceAvailable' },
+                                { value: 'never', label: 'SystemSettingsPage.autoListenResolutionEnum.never' }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    key: 'groupUpdate',
+                    icon: 'fas fa-cloud-download-alt',
+                    collapsed: false,
+                    settings: [
+                        {
+                            key: 'checkUpdateOnStartup',
+                            icon: 'fas fa-sync',
+                            type: 'select',
+                            configKey: 'checkUpdateOnStartup',
+                            handler: this.onCheckUpdateOnStartupChanged,
+                            inline: true,
+                            options: [
+                                { value: 'enabled', label: 'SystemSettingsPage.enabled' },
+                                { value: 'disabled', label: 'SystemSettingsPage.disabled' }
+                            ]
+                        },
+                        {
+                            key: 'checkUpdate',
+                            icon: 'fas fa-search',
+                            type: 'button',
+                            handler: this.checkForUpdates
+                        },
+                        {
+                            key: 'proxy',
+                            icon: 'fas fa-globe',
+                            type: 'input',
+                            configKey: 'proxy',
+                            handler: this.onProxyChanged,
+                            placeholder: '192.168.1.1:8080'
+                        }
+                    ]
+                }
+            ],
             CloseTypeEnum: [
                 'exit',
                 'tray'
@@ -199,10 +242,117 @@ export default {
                     this.windowsNotify(this.$t('SystemSettingsPage.updateCheckFailed'));
                 }
             }
+        },
+        toggleGroup(index) {
+            this.groups[index].collapsed = !this.groups[index].collapsed;
         }
     }
 }
 
 </script>
 
-<style></style>
+<style>
+.settings-container {
+    padding: 12px 14px;
+}
+
+.settings-content {
+    padding: 0;
+}
+
+.setting-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    background: #ffffff;
+}
+
+.group-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 8px 0;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.group-title:hover {
+    background-color: #f7fafc;
+}
+
+.group-title i:first-child {
+    margin-right: 8px;
+}
+
+.collapse-icon-right,
+.collapse-icon-down {
+    font-size: 0.8rem;
+    color: #718096;
+    transition: transform 0.2s;
+    user-select: none;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.group-content {
+    transition: all 0.3s ease;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    margin: 0;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.setting-row:last-child {
+    border-bottom: none;
+}
+
+.setting-label {
+    min-width: 140px;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-label i {
+    width: 18px;
+    text-align: center;
+}
+
+.setting-controls {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-controls.setting-controls-inline {
+    align-items: center;
+}
+
+.form-select,
+.form-input {
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.btn.compact {
+    padding: 8px 16px;
+    font-size: 0.92rem;
+    min-width: 100px;
+    white-space: nowrap;
+}
+</style>
