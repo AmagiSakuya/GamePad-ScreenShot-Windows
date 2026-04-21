@@ -17,7 +17,7 @@
                             </div>
                             <div class="setting-controls" :class="{ 'setting-controls-inline': setting.inline }">
                                 <select v-if="setting.type === 'select'" class="form-select"
-                                    :value="config[setting.configKey]" @change="setting.handler">
+                                    :value="config[setting.configKey]" @change="e => { config[setting.configKey] = e.target.value; setting.handler.call(this, e); }">
                                     <option v-for="(option, optionIndex) in setting.options" :key="optionIndex"
                                         :value="option.value">{{ $t(option.label) }}</option>
                                 </select>
