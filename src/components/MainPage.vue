@@ -175,10 +175,11 @@
           <span class="setting-row-listening-tip">{{ $t('listening') }}</span>
         </div>
 
-      </div>
+      </div>  
     </div>
 
     <div class="settings-footer-btn">
+      <div v-if="errorMessage" class="error-tip">{{ errorMessage }}</div>
       <!-- 开始 -->
       <button v-show="!listening" class="save-button" @click="startListen">
         <span class="icon">▶</span> 
@@ -253,7 +254,8 @@ export default {
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
       saveImageFormateOptions: ['jpg', 'png'],
       availableFields: ['activeWinTitle', 'activeWinOwner', 'timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss', 'cs', 'ms'],
-      formatPreviewTicker:0
+      formatPreviewTicker: 0,
+      errorMessage: ''
     }
   },
   async mounted() {
@@ -382,30 +384,31 @@ export default {
       }
     },
     async startListen() {
+      this.errorMessage = '';
       //1.检查配置
       var m_config = JSON.parse(JSON.stringify(this.config));
       if (m_config.path == "") {
-        alert(this.$t('alertMsg.emptyPath'))
+        this.errorMessage = this.$t('alertMsg.emptyPath')
         return;
       }
       if (m_config.comboKeys.length == 0) {
-        alert(this.$t('alertMsg.noKeyCombo'))
+        this.errorMessage = this.$t('alertMsg.noKeyCombo')
         return;
       }
       if (this.detectionIndex != -1) {
-        alert(this.$t('alertMsg.detectionInProgress'))
+        this.errorMessage = this.$t('alertMsg.detectionInProgress')
         return;
       }
 
       if (this.config.screenshotWay == ScreenShotWayEnum.OBS && !this.compOBS.isConnected) {
-        alert(this.$t('OBSPage.obsNotConnected'))
+        this.errorMessage = this.$t('OBSPage.obsNotConnected')
         return
       }
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]
       let success = await window.electronAPI.openSdl2Device(m_device)
       if (!success) {
-        alert(this.$t('alertMsg.openGamepadFail'))
+        this.errorMessage = this.$t('alertMsg.openGamepadFail')
         return;
       }
       this.saveCurrentConfig();
@@ -786,6 +789,17 @@ export default {
   color: #718096;
   margin-top: 6px;
   display: block;
+}
+
+.error-tip {
+  width: 100%;
+  color: #e53e3e;
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
 }
 
 
