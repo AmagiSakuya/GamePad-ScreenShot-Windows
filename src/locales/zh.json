@@ -84,7 +84,16 @@
         "autoListenResolutionEnum": {
             "whenDeviceAvailable": "有已配置设备时",
             "never": "从不"
-        }
+        },
+        "checkUpdateOnStartup": "启动时检测更新",
+        "enabled": "启用",
+        "disabled": "禁用",
+        "manualCheckUpdate": "手动检测更新",
+        "checkUpdate": "检测更新",
+        "proxy": "网络代理",
+        "updateAvailable": "发现新版本",
+        "updateNotAvailable": "当前已是最新版本",
+        "updateCheckFailed": "检查更新失败，请稍后重试"
     },
     "TrayMenu": {
         "openScreenshotFolder":"打开截图文件夹",

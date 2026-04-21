@@ -8,6 +8,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
 const fs = require('fs')
 const path = require('path')
+const https = require('https')
 const vm = require('vm')
 
 if (process.platform === 'win32') {
@@ -146,6 +147,19 @@ app.on('ready', async () => {
   }
   createWindow()
   createTray()
+
+  // 启动时检测更新
+  if (!isDevelopment) {
+    const checkOnStartup = configStore.get('checkUpdateOnStartup', 'enabled');
+    if (checkOnStartup === 'enabled') {
+      // 非阻塞检测，避免启动失败
+      setTimeout(() => {
+        checkForUpdates().catch(err => {
+          console.error('Startup update check failed:', err);
+        });
+      }, 1000); // 延迟1秒
+    }
+  }
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -316,6 +330,119 @@ ipcMain.handle('set-store', (_, key, value) => {
 ipcMain.handle('get-store', (_, key, defaultValue) => {
   return configStore.get(key, defaultValue)
 })
+
+//#endregion
+
+//#region 更新检测
+// 检查GitHub最新release
+function checkForUpdates() {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/AmagiSakuya/GamePad-ScreenShot-Windows/releases/latest',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'GamePad-ScreenShot-App',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    };
+
+    // 设置代理
+    const proxy = configStore.get('proxy', '');
+    if (proxy) {
+      process.env.HTTPS_PROXY = `http://${proxy}`;
+      process.env.HTTP_PROXY = `http://${proxy}`;
+    } else {
+      // 清空代理变量
+      process.env.HTTPS_PROXY = ``;
+      process.env.HTTP_PROXY = ``;
+    }
+
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          const release = JSON.parse(data);
+          // 使用标题而不是tag，标题格式为 vx.x.x
+          const titleMatch = release.name.match(/v(\d+\.\d+\.\d+)/);
+          const latestVersion = titleMatch ? titleMatch[1] : release.tag_name.replace('v', '');
+          
+          // 获取当前版本
+          let currentVersion;
+          try {
+            const packagePath = path.join(app.getAppPath(), 'package.json');
+            const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+            currentVersion = packageJson.version;
+          } catch (error) {
+            console.warn('Failed to read package.json:', error);
+            currentVersion = '0.0.0'; // 默认版本
+          }
+
+          const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
+
+          // 打印版本信息
+          //console.log(`当前版本: ${currentVersion}`);
+          //console.log(`最新版本: ${latestVersion}`);
+          //console.log(`是否有更新: ${hasUpdate}`);
+
+          resolve({
+            hasUpdate,
+            latestVersion,
+            currentVersion,
+            releaseUrl: release.html_url
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.setTimeout(10000, () => {
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
+
+    req.end();
+  });
+}
+
+// 版本比较函数
+function compareVersions(version1, version2) {
+  const v1 = version1.split('.').map(Number);
+  const v2 = version2.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
+    const num1 = v1[i] || 0;
+    const num2 = v2[i] || 0;
+
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+
+  return 0;
+}
+
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    return await checkForUpdates();
+  } catch (error) {
+    console.error('Check for updates failed:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('open-release-page', async (_, url) => {
+  shell.openExternal(url);
+});
 
 //#endregion
 

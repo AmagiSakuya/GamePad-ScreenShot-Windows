@@ -82,5 +82,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fileConflictHandle: (config) => ipcRenderer.invoke('file-conflict-handle', config),
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
     restartApp: () => ipcRenderer.send('restart-app'),
-    getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info')
+    getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info'),
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    openReleasePage: (url) => ipcRenderer.invoke('open-release-page', url)
 })

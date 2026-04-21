@@ -429,7 +429,6 @@ export default {
       await this.loadGamePadList();
       if (this.loadedGamePads.length > 0) {
         let res = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
-        console.log(res);
         if (res == 'whenDeviceAvailable') {
           await this.startListen();
         }

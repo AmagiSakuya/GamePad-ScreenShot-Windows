@@ -84,7 +84,16 @@
         "autoListenResolutionEnum": {
             "whenDeviceAvailable": "When Configured Device Available",
             "never": "Never"
-        }
+        },
+        "checkUpdateOnStartup": "Check for updates on startup",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "manualCheckUpdate": "Manual update check",
+        "checkUpdate": "Check for Updates",
+        "proxy": "Network Proxy",
+        "updateAvailable": "New version available",
+        "updateNotAvailable": "Already up to date",
+        "updateCheckFailed": "Update check failed, please try again later"
     },
     "TrayMenu": {
         "openScreenshotFolder":"Open Screenshot Folder",
