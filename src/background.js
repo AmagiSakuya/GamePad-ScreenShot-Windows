@@ -148,6 +148,10 @@ app.on('ready', async () => {
   createWindow()
   createTray()
 
+  // 设置开机自启动
+  const autoStart = configStore.get('autoStart', false);
+  app.setLoginItemSettings({ openAtLogin: autoStart });
+
   // 启动时检测更新
   if (!isDevelopment) {
     const checkOnStartup = configStore.get('checkUpdateOnStartup', 'enabled');
@@ -442,6 +446,10 @@ ipcMain.handle('check-for-updates', async () => {
 
 ipcMain.handle('open-release-page', async (_, url) => {
   shell.openExternal(url);
+});
+
+ipcMain.handle('set-auto-start', async (_, enabled) => {
+  app.setLoginItemSettings({ openAtLogin: enabled });
 });
 
 //#endregion

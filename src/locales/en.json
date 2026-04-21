@@ -67,6 +67,7 @@
             "exit": "Exit application",
             "tray": "Close to tray"
         },
+        "autoStart": "Auto Start on Boot",
         "filenameConflictResolution": "File name conflict resolution",
         "filenameConflictResolutionEnum": {
             "overwrite": "Overwrite",

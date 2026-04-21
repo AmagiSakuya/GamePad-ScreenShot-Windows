@@ -67,6 +67,7 @@
             "exit": "退出软件",
             "tray": "隐藏到托盘"
         },
+        "autoStart": "开机自启动",
         "filenameConflictResolution":"文件名冲突策略",
         "filenameConflictResolutionEnum": {
             "overwrite": "覆盖",

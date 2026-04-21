@@ -84,5 +84,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     restartApp: () => ipcRenderer.send('restart-app'),
     getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
-    openReleasePage: (url) => ipcRenderer.invoke('open-release-page', url)
+    openReleasePage: (url) => ipcRenderer.invoke('open-release-page', url),
+    setAutoStart: (enabled) => ipcRenderer.invoke('set-auto-start', enabled)
 })

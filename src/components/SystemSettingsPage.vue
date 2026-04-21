@@ -17,7 +17,7 @@
                             </div>
                             <div class="setting-controls" :class="{ 'setting-controls-inline': setting.inline }">
                                 <select v-if="setting.type === 'select'" class="form-select"
-                                    :value="config[setting.configKey]" @change="e => { config[setting.configKey] = e.target.value; setting.handler.call(this, e); }">
+                                    :value="config[setting.configKey]" @change="e => { config[setting.configKey] = setting.configKey === 'autoStart' ? (e.target.value === 'true') : e.target.value; setting.handler.call(this, e); }">
                                     <option v-for="(option, optionIndex) in setting.options" :key="optionIndex"
                                         :value="option.value">{{ $t(option.label) }}</option>
                                 </select>
@@ -46,6 +46,7 @@ let filenameConflictResolutionKey = 'filenameConflictResolution';
 let autoListenResolutionKey = 'autoListenResolution';
 let checkUpdateOnStartupKey = 'checkUpdateOnStartup';
 let proxyKey = 'proxy';
+let autoStartKey = 'autoStart';
 
 export default {
     name: 'SystemSettingsPage',
@@ -66,7 +67,8 @@ export default {
                 filenameConflictResolution: 'overwrite',
                 autoListenResolution: 'never',
                 checkUpdateOnStartup: 'enabled',
-                proxy: ''
+                proxy: '',
+                autoStart: false
             },
             groups: [
                 {
@@ -83,6 +85,17 @@ export default {
                             options: [
                                 { value: 'zh', label: 'SystemSettingsPage.languageChinese' },
                                 { value: 'en', label: 'SystemSettingsPage.languageEnglish' }
+                            ]
+                        },
+                        {
+                            key: 'autoStart',
+                            icon: 'fas fa-play-circle',
+                            type: 'select',
+                            configKey: 'autoStart',
+                            handler: this.onAutoStartChanged,
+                            options: [
+                                { value: true, label: 'SystemSettingsPage.enabled' },
+                                { value: false, label: 'SystemSettingsPage.disabled' }
                             ]
                         },
                         {
@@ -189,6 +202,7 @@ export default {
         const AutoListenResolution = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
         const checkUpdateOnStartup = await window.electronAPI.getStore(checkUpdateOnStartupKey, 'enabled');
         const proxy = await window.electronAPI.getStore(proxyKey, '');
+        const autoStart = await window.electronAPI.getStore(autoStartKey, false);
 
         this.config.language = locale;
         this.config.closeType = closeType;
@@ -196,6 +210,7 @@ export default {
         this.config.autoListenResolution = AutoListenResolution;
         this.config.checkUpdateOnStartup = checkUpdateOnStartup;
         this.config.proxy = proxy;
+        this.config.autoStart = autoStart === 'true' || autoStart === true;
     },
     unmounted() {
 
@@ -209,6 +224,11 @@ export default {
         },
         async onCloseTypeChanged() {
             await window.electronAPI.setStore(closeTypeKey, this.config.closeType);
+        },
+        async onAutoStartChanged() {
+            this.config.autoStart = this.config.autoStart === 'true' || this.config.autoStart === true;
+            await window.electronAPI.setStore(autoStartKey, this.config.autoStart);
+            await window.electronAPI.setAutoStart(this.config.autoStart);
         },
         async onFilenameConflictResolutionChanged() {
             await window.electronAPI.setStore(filenameConflictResolutionKey, this.config.filenameConflictResolution);
