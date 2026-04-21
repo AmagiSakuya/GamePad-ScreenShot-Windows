@@ -562,9 +562,12 @@ export default {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  padding: 20px 0;
+  padding: 11px 0;
   border-bottom: 1px solid #eef2f7;
   transition: background-color 0.2s;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
 }
 
 .setting-row:hover {
@@ -602,8 +605,10 @@ export default {
 
 .setting-label .hint-text {
   color: #666;
-  font-size: 13px;
+  font-size: 12px;
   text-align: left;
+  margin-left: 5px;
+  user-select: none;
 }
 
 .setting-label i {
@@ -803,12 +808,6 @@ export default {
 }
 
 
-.setting-row {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-}
-
 .setting-controls {
   width: 100%;
 }
@@ -904,10 +903,6 @@ input:checked+.slider:before {
 
 .setting-row-horizontal .setting-row {
   flex: 1;
-}
-.setting-label .hint-text{
-  margin-left: 5px;
-  user-select: none;
 }
 
 /* 按钮容器 */

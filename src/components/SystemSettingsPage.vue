@@ -325,14 +325,14 @@ export default {
     transition: all 0.3s ease;
 }
 
-.setting-row {
+/* .setting-row {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 10px 0;
     margin: 0;
     border-bottom: 1px solid #edf2f7;
-}
+} */
 
 .setting-row:last-child {
     border-bottom: none;
@@ -343,12 +343,7 @@ export default {
     color: #4a5568;
     display: flex;
     align-items: center;
-    gap: 10px;
-}
-
-.setting-label i {
-    width: 18px;
-    text-align: center;
+    /* gap: 10px; */
 }
 
 .setting-controls {
