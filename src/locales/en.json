@@ -84,8 +84,9 @@
         },
         "autoListenResolution":"Auto Start Listening",
         "autoListenResolutionEnum": {
-            "whenDeviceAvailable": "When Configured Device Available",
-            "never": "Never"
+            "never": "Never",
+            "whenDeviceAvailable": "On Device Change",
+            "onAppStart": "On App Start"
         },
         "checkUpdateOnStartup": "Check for updates on startup",
         "enabled": "Enabled",

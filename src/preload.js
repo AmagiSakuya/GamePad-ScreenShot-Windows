@@ -91,5 +91,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onStartListenFromTray: (callback) => ipcRenderer.on('start-listen-from-tray', callback),
     onStopListenFromTray: (callback) => ipcRenderer.on('stop-listen-from-tray', callback),
     updateTrayIcon: (isListening) => ipcRenderer.send('update-tray-icon', isListening),
+    updateTrayListeningState: (state) => ipcRenderer.send('update-listening-state', state),
     sendListenStatusChanged: () => ipcRenderer.send('listen-status-changed')
 })

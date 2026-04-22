@@ -84,8 +84,9 @@
         },
         "autoListenResolution":"自动开始监听",
         "autoListenResolutionEnum": {
-            "whenDeviceAvailable": "有已配置设备时",
-            "never": "从不"
+            "never": "从不",
+            "whenDeviceAvailable": "设备变化时",
+            "onAppStart": "当软件启动"
         },
         "checkUpdateOnStartup": "启动时检测更新",
         "enabled": "启用",

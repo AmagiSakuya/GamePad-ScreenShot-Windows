@@ -268,7 +268,7 @@ export default {
     window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
     window.electronAPI.onStopListenFromTray(this.onStopListenFromTray);
 
-     await this.tryStartListen();
+     await this.tryStartListen('appStart');
 
     timer = setInterval(this.getCurrentButtonsValue, 60);
 
@@ -424,6 +424,7 @@ export default {
       this.listening = true;
       this.windowsNotify(this.$t('alertMsg.listeningStarted'));
       window.electronAPI.updateTrayIcon(true);
+      window.electronAPI.updateTrayListeningState(true);
     },
     async onSDL2DeviceChanged() {
       if (this.listening) {
@@ -435,15 +436,16 @@ export default {
         this.listening = false;
         await this.loadGamePadList();
         window.electronAPI.sendListenStatusChanged();
+        window.electronAPI.updateTrayListeningState(false);
       } else {
         await this.tryStartListen();
       }
     },
-    async tryStartListen() {
+    async tryStartListen(from = 'deviceChange') {
       await this.loadGamePadList();
       if (this.loadedGamePads.length > 0) {
         let res = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
-        if (res == 'whenDeviceAvailable') {
+        if ((from === 'appStart' && res === 'onAppStart') || (from === 'deviceChange' && res === 'whenDeviceAvailable')) {
           await this.startListen();
         }
       }
@@ -477,6 +479,7 @@ export default {
       this.listening = false;
       this.windowsNotify(this.$t('alertMsg.listeningStopped'));
       window.electronAPI.updateTrayIcon(false);
+      window.electronAPI.updateTrayListeningState(false);
     },
     async onUserSelectedDeviceChange() {
       this.loadConfig(this.currentGamePad.name)

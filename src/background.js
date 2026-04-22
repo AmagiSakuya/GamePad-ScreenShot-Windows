@@ -104,12 +104,14 @@ function createTray() {
       },
       {
         label: $t('TrayMenu.startListen'),
+        visible: !isListening,
         click: () => {
           win.webContents.send('start-listen-from-tray');
         }
       },
       {
         label: $t('TrayMenu.stopListen'),
+        visible: isListening,
         click: () => {
           win.webContents.send('stop-listen-from-tray');
         }
@@ -137,6 +139,12 @@ function createTray() {
   // 监听图标更新事件
   ipcMain.on('update-tray-icon', (_, isListening) => {
     tray.setImage(isListening ? recordingIcon : normalIcon);
+  });
+
+  // 监听监听状态更新事件
+  ipcMain.on('update-listening-state', (_, state) => {
+    isListening = state;
+    updateMenu();
   });
 }
 

@@ -41,7 +41,7 @@
       </div>
 
       <!-- 系统设置 -->
-      <div v-if="activeTab === 'system'" class="tab-pane">
+      <div v-show="activeTab === 'system'" class="tab-pane">
         <SystemSettingsPage :windowsNotify="windowsNotify"></SystemSettingsPage>
       </div>
 

@@ -76,7 +76,7 @@ export default {
                 {
                     key: 'groupBasic',
                     icon: 'fas fa-cog',
-                    collapsed: true,
+                    collapsed: false,
                     settings: [
                         {
                             key: 'language',
@@ -95,17 +95,6 @@ export default {
                             type: 'select',
                             configKey: 'autoStart',
                             handler: this.onAutoStartChanged,
-                            options: [
-                                { value: true, label: 'SystemSettingsPage.enabled' },
-                                { value: false, label: 'SystemSettingsPage.disabled' }
-                            ]
-                        },
-                        {
-                            key: 'minimizeOnStartup',
-                            icon: 'fas fa-window-minimize',
-                            type: 'select',
-                            configKey: 'minimizeOnStartup',
-                            handler: this.onMinimizeOnStartupChanged,
                             options: [
                                 { value: true, label: 'SystemSettingsPage.enabled' },
                                 { value: false, label: 'SystemSettingsPage.disabled' }
@@ -143,14 +132,26 @@ export default {
                             ]
                         },
                         {
+                            key: 'minimizeOnStartup',
+                            icon: 'fas fa-window-minimize',
+                            type: 'select',
+                            configKey: 'minimizeOnStartup',
+                            handler: this.onMinimizeOnStartupChanged,
+                            options: [
+                                { value: true, label: 'SystemSettingsPage.enabled' },
+                                { value: false, label: 'SystemSettingsPage.disabled' }
+                            ]
+                        },
+                        {
                             key: 'autoListenResolution',
                             icon: 'fas fa-play-circle',
                             type: 'select',
                             configKey: 'autoListenResolution',
                             handler: this.onAutoListenResolutionChanged,
                             options: [
+                                { value: 'never', label: 'SystemSettingsPage.autoListenResolutionEnum.never' },
                                 { value: 'whenDeviceAvailable', label: 'SystemSettingsPage.autoListenResolutionEnum.whenDeviceAvailable' },
-                                { value: 'never', label: 'SystemSettingsPage.autoListenResolutionEnum.never' }
+                                { value: 'onAppStart', label: 'SystemSettingsPage.autoListenResolutionEnum.onAppStart' }
                             ]
                         }
                     ]
