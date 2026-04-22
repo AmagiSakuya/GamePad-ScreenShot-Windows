@@ -90,28 +90,53 @@ async function createWindow() {
 function createTray() {
   // 图标路径，建议使用 16x16 或 32x32 的图片
   
-  tray = new Tray(getAssetPath('gamepad.ico'));
+  const normalIcon = getAssetPath('gamepad.ico');
+  const recordingIcon = getAssetPath('assets', 'recording.ico');
+  
+  tray = new Tray(normalIcon);
 // win.webContents.send('open-folder-triggered')
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: $t('TrayMenu.openScreenshotFolder'),
-      click: () => win.webContents.send('open-folder-triggered')
-    },
-    {
-      label: $t('TrayMenu.exit'),
-      click: () => {
-        app.isQuiting = true; // 设置一个标记位，允许真正退出
-        app.quit();
+  let isListening = false; // 初始假设未监听
+  const updateMenu = () => {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: $t('TrayMenu.openScreenshotFolder'),
+        click: () => win.webContents.send('open-folder-triggered')
+      },
+      {
+        label: $t('TrayMenu.startListen'),
+        click: () => {
+          win.webContents.send('start-listen-from-tray');
+        }
+      },
+      {
+        label: $t('TrayMenu.stopListen'),
+        click: () => {
+          win.webContents.send('stop-listen-from-tray');
+        }
+      },
+      {
+        label: $t('TrayMenu.exit'),
+        click: () => {
+          app.isQuiting = true; // 设置一个标记位，允许真正退出
+          app.quit();
+        }
       }
-    }
-  ]);
+    ]);
+    tray.setContextMenu(contextMenu);
+  };
+
+  updateMenu();
 
   tray.setToolTip('GamePad Screenshot Tool');
-  tray.setContextMenu(contextMenu);
 
   // 点击托盘图标重新打开界面
   tray.on('click', () => {
     win.isVisible() ? win.focus() : win.show();
+  });
+
+  // 监听图标更新事件
+  ipcMain.on('update-tray-icon', (_, isListening) => {
+    tray.setImage(isListening ? recordingIcon : normalIcon);
   });
 }
 
@@ -151,6 +176,12 @@ app.on('ready', async () => {
   // 设置开机自启动
   const autoStart = configStore.get('autoStart', false);
   app.setLoginItemSettings({ openAtLogin: autoStart });
+
+  // 检查最小化启动
+  const minimizeOnStartup = configStore.get('minimizeOnStartup', false);
+  if (minimizeOnStartup) {
+    win.hide();
+  }
 
   // 启动时检测更新
   if (!isDevelopment) {
@@ -450,6 +481,14 @@ ipcMain.handle('open-release-page', async (_, url) => {
 
 ipcMain.handle('set-auto-start', async (_, enabled) => {
   app.setLoginItemSettings({ openAtLogin: enabled });
+});
+
+ipcMain.handle('start-listen-from-tray', async () => {
+  win.webContents.send('start-listen-from-tray');
+});
+
+ipcMain.handle('stop-listen-from-tray', async () => {
+  win.webContents.send('stop-listen-from-tray');
 });
 
 //#endregion

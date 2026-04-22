@@ -85,5 +85,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     openReleasePage: (url) => ipcRenderer.invoke('open-release-page', url),
-    setAutoStart: (enabled) => ipcRenderer.invoke('set-auto-start', enabled)
+    setAutoStart: (enabled) => ipcRenderer.invoke('set-auto-start', enabled),
+    startListenFromTray: () => ipcRenderer.invoke('start-listen-from-tray'),
+    stopListenFromTray: () => ipcRenderer.invoke('stop-listen-from-tray'),
+    onStartListenFromTray: (callback) => ipcRenderer.on('start-listen-from-tray', callback),
+    onStopListenFromTray: (callback) => ipcRenderer.on('stop-listen-from-tray', callback),
+    updateTrayIcon: (isListening) => ipcRenderer.send('update-tray-icon', isListening),
+    sendListenStatusChanged: () => ipcRenderer.send('listen-status-changed')
 })

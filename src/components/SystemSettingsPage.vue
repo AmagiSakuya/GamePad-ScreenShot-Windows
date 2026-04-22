@@ -47,6 +47,7 @@ let autoListenResolutionKey = 'autoListenResolution';
 let checkUpdateOnStartupKey = 'checkUpdateOnStartup';
 let proxyKey = 'proxy';
 let autoStartKey = 'autoStart';
+let minimizeOnStartupKey = 'minimizeOnStartup';
 
 export default {
     name: 'SystemSettingsPage',
@@ -68,13 +69,14 @@ export default {
                 autoListenResolution: 'never',
                 checkUpdateOnStartup: 'enabled',
                 proxy: '',
-                autoStart: false
+                autoStart: false,
+                minimizeOnStartup: false
             },
             groups: [
                 {
                     key: 'groupBasic',
                     icon: 'fas fa-cog',
-                    collapsed: false,
+                    collapsed: true,
                     settings: [
                         {
                             key: 'language',
@@ -99,6 +101,17 @@ export default {
                             ]
                         },
                         {
+                            key: 'minimizeOnStartup',
+                            icon: 'fas fa-window-minimize',
+                            type: 'select',
+                            configKey: 'minimizeOnStartup',
+                            handler: this.onMinimizeOnStartupChanged,
+                            options: [
+                                { value: true, label: 'SystemSettingsPage.enabled' },
+                                { value: false, label: 'SystemSettingsPage.disabled' }
+                            ]
+                        },
+                        {
                             key: 'closeType',
                             icon: 'fas fa-power-off',
                             type: 'select',
@@ -114,7 +127,7 @@ export default {
                 {
                     key: 'groupPolicy',
                     icon: 'fas fa-shield-alt',
-                    collapsed: false,
+                    collapsed: true,
                     settings: [
                         {
                             key: 'filenameConflictResolution',
@@ -145,7 +158,7 @@ export default {
                 {
                     key: 'groupUpdate',
                     icon: 'fas fa-cloud-download-alt',
-                    collapsed: false,
+                    collapsed: true,
                     settings: [
                         {
                             key: 'checkUpdateOnStartup',
@@ -171,7 +184,7 @@ export default {
                             type: 'input',
                             configKey: 'proxy',
                             handler: this.onProxyChanged,
-                            placeholder: '192.168.1.1:8080'
+                            placeholder: '127.0.0.1:8080'
                         }
                     ]
                 }
@@ -211,6 +224,8 @@ export default {
         this.config.checkUpdateOnStartup = checkUpdateOnStartup;
         this.config.proxy = proxy;
         this.config.autoStart = autoStart === 'true' || autoStart === true;
+        const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
+        this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
     },
     unmounted() {
 
@@ -229,6 +244,10 @@ export default {
             this.config.autoStart = this.config.autoStart === 'true' || this.config.autoStart === true;
             await window.electronAPI.setStore(autoStartKey, this.config.autoStart);
             await window.electronAPI.setAutoStart(this.config.autoStart);
+        },
+        async onMinimizeOnStartupChanged() {
+            this.config.minimizeOnStartup = this.config.minimizeOnStartup === 'true' || this.config.minimizeOnStartup === true;
+            await window.electronAPI.setStore(minimizeOnStartupKey, this.config.minimizeOnStartup);
         },
         async onFilenameConflictResolutionChanged() {
             await window.electronAPI.setStore(filenameConflictResolutionKey, this.config.filenameConflictResolution);

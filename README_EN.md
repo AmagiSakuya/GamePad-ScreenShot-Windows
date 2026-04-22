@@ -85,7 +85,7 @@ A utility that allows you to trigger **Full-screen screenshots** or **OBS screen
 - [x] Add "Focused Window Title" as a custom field for file naming
 - [x] Auto-start
 - [x] Update detection
-- [ ] Minimize on startup
+- [x] Minimize on startup
 
 ---
 

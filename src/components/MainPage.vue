@@ -264,6 +264,10 @@ export default {
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
 
+    // 添加托盘监听事件
+    window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
+    window.electronAPI.onStopListenFromTray(this.onStopListenFromTray);
+
      await this.tryStartListen();
 
     timer = setInterval(this.getCurrentButtonsValue, 60);
@@ -400,10 +404,15 @@ export default {
         return;
       }
 
+      //尝试连接OBS
       if (this.config.screenshotWay == ScreenShotWayEnum.OBS && !this.compOBS.isConnected) {
-        this.errorMessage = this.$t('OBSPage.obsNotConnected')
-        return
+        await this.compOBS.connectOBS();
+        if (!this.compOBS.isConnected) {
+          this.errorMessage = this.$t('OBSPage.obsNotConnected')
+          return;
+        }
       }
+
       //尝试启动
       let m_device = rawDevices[this.currentGamePad._index]
       let success = await window.electronAPI.openSdl2Device(m_device)
@@ -414,6 +423,7 @@ export default {
       this.saveCurrentConfig();
       this.listening = true;
       this.windowsNotify(this.$t('alertMsg.listeningStarted'));
+      window.electronAPI.updateTrayIcon(true);
     },
     async onSDL2DeviceChanged() {
       if (this.listening) {
@@ -424,6 +434,7 @@ export default {
         }
         this.listening = false;
         await this.loadGamePadList();
+        window.electronAPI.sendListenStatusChanged();
       } else {
         await this.tryStartListen();
       }
@@ -465,6 +476,7 @@ export default {
     async stopListen() {
       this.listening = false;
       this.windowsNotify(this.$t('alertMsg.listeningStopped'));
+      window.electronAPI.updateTrayIcon(false);
     },
     async onUserSelectedDeviceChange() {
       this.loadConfig(this.currentGamePad.name)
@@ -508,6 +520,17 @@ export default {
         '%activeWinOwner%': activeWinInfoResult ? activeWinInfoResult.owner.name : 'UnknownOwner'
       };
       return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%|%hh%|%mm%|%ss%|%cs%|%ms%|%activeWinTitle%|%activeWinOwner%/g, match => replacements[match] || match);
+    },
+    async onStartListenFromTray() {
+      if (this.listening) return; // 如果已经在监听，不做任何事
+      await this.startListen();
+      if (this.errorMessage) {
+        this.windowsNotify(this.errorMessage);
+      }
+    },
+    async onStopListenFromTray() {
+      if (!this.listening) return; // 如果没有在监听，不做任何事
+      this.stopListen();
     },
     openScreenShotFolder() {
       window.electronAPI.openFolder(this.config.path);

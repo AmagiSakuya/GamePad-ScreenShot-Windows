@@ -68,6 +68,7 @@
             "tray": "Close to tray"
         },
         "autoStart": "Auto Start on Boot",
+        "minimizeOnStartup": "Minimize on Startup",
         "filenameConflictResolution": "File name conflict resolution",
         "filenameConflictResolutionEnum": {
             "overwrite": "Overwrite",
@@ -103,6 +104,8 @@
     },
     "TrayMenu": {
         "openScreenshotFolder":"Open Screenshot Folder",
+        "startListen": "Start Listening",
+        "stopListen": "Stop Listening",
         "show": "Show Main Window",
         "exit": "Exit Application"
     }
