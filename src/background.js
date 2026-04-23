@@ -51,7 +51,9 @@ async function createWindow() {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: true,
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
-      preload: preloadPath
+      preload: preloadPath,
+      // 设置为 false 以禁用后台节流
+      backgroundThrottling: false
     }
   })
 

@@ -37,6 +37,10 @@ module.exports = defineConfig({
           {
             from: "src/gamepad.ico",
             to: "./" 
+          },
+          {
+            from: "src/assets/recording.ico",
+            to: "./assets/recording.ico" 
           }
         ]
       }
