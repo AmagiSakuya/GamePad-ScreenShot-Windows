@@ -1,67 +1,61 @@
 <template>
     <div class="settings-container">
-        <div class="settings-content">
-            <!-- 服务器地址 -->
-            <div v-show="!isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-folder-open"></i>
-                    <span>OBS服务连接地址</span>
-                </div>
-                <div class="setting-controls">
-                    <div class="input-wrapper">
-                        <input type="text" class="form-input" placeholder="ws://127.0.0.1:4455"
-                            v-model="obsConfig.server">
+        <div class="settings-content-scroll">
+            <div class="settings-content">
+                <!-- 服务器地址 -->
+                <div v-show="!isConnected" class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-folder-open"></i>
+                        <span>{{ $t('OBSPage.obsAddress') }}</span>
+                    </div>
+                    <div class="setting-controls">
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" placeholder="ws://127.0.0.1:4455"
+                                v-model="obsConfig.server">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 服务器密码 -->
-            <div v-show="!isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-folder-open"></i>
-                    <span>OBS服务连接密码</span>
-                </div>
-                <div class="setting-controls">
-                    <div class="input-wrapper">
-                        <input type="text" class="form-input" placeholder="" v-model="obsConfig.pwd">
+                <!-- 服务器密码 -->
+                <div v-show="!isConnected" class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-folder-open"></i>
+                        <span>{{ $t('OBSPage.obsPassword') }}</span>
+                    </div>
+                    <div class="setting-controls">
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" placeholder="" v-model="obsConfig.pwd">
+                        </div>
                     </div>
                 </div>
+
+                <div v-show="isConnected" class="setting-row">
+                    <div class="setting-label">
+                        <i class="fas fa-expand-alt"></i>
+                        <span>{{ $t('OBSPage.selectScene') }}</span>
+                    </div>
+                    <div class="setting-controls">
+                        <select class="form-select" v-model="selectedScene">
+                            <option v-for="(value, index) in sceneList" :key="index" :value="value">{{ value.sceneName
+                                }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <button v-if="!isConnected" class="save-button" @click="connectOBS">
+                    <span class="icon">⚡</span>
+                    <span>{{ $t('OBSPage.connectService') }}</span>
+                </button>
+
+                <button v-if="isConnected" class="save-button" @click="disconnectOBS">
+                    <span class="icon">🔌</span>
+                    <span>{{ $t('OBSPage.disconnect') }}</span>
+                </button>
+
             </div>
-
-            <!-- <div v-show="isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-expand-alt"></i>
-                    <span>截图来源</span>
-                </div>
-                <div class="setting-controls">
-                    <select class="form-select" v-model="obsConfig.sourceFromScene">
-                        <option :value="true">场景</option>
-                        <option :value="false">源</option>
-                    </select>
-                </div>
-            </div> -->
-
-            <div v-show="isConnected" class="setting-row">
-                <div class="setting-label">
-                    <i class="fas fa-expand-alt"></i>
-                    <span>选择场景</span>
-                </div>
-                <div class="setting-controls">
-                    <select class="form-select" v-model="selectedScene">
-                        <option v-for="(value, index) in sceneList" :key="index" :value="value">{{ value.sceneName }}
-                        </option>
-                    </select>
-                </div>
-            </div>
-
-            <button v-if="!isConnected" class="save-button" @click="connectOBS">
-                <span>连接服务</span>
-            </button>
-
-            <button v-if="isConnected" class="save-button" @click="disconnectOBS">
-                <span>断开连接</span>
-            </button>
         </div>
+
     </div>
 </template>
 
@@ -74,6 +68,16 @@ export default {
     name: 'OBSConnectPage',
     components: {
 
+    },
+    props: {
+        compMain: {
+            type: Object,
+            default: null
+        },
+        windowsNotify: {
+            type: Function,
+            default: null
+        }
     },
     data() {
         return {
@@ -91,12 +95,13 @@ export default {
         // 连接断开
         obs.on('ConnectionClosed', (error) => {
             console.log('🔌 连接已断开');
-            this.isConnected = false
+            this.isConnected = false;
+            //this.compMain.stopListen();
         });
 
         // 连接过程中的底层错误
         obs.on('ConnectionError', (error) => {
-            alert('未找到OBS Websocket服务')
+            this.windowsNotify(this.$t('OBSPage.obsNotConnected'))
             console.error('❌ WebSocket 底层发生错误:', error.message);
             this.isConnected = false
         });
@@ -136,36 +141,40 @@ export default {
         },
         async takeScreenshot(config) {
             if (!this.isConnected) {
-                alert('尚未连接OBS')
+                this.windowsNotify(this.$t('OBSPage.obsNotConnected'))
                 return
             }
-            let filepath = `${config.path}\\Screenshot_${Date.now()}.png`;
+
+            let filepath = await window.electronAPI.fileConflictHandle(config);
+
+            if (filepath == null) {
+                return;
+            }
+
             let finalSceneName;
             if (this.selectedScene == void 0 || this.selectedScene.sceneName == '') {
-                alert('没有选择正确的场景')
+                this.windowsNotify(this.$t('OBSPage.invalidSceneSelected'))
                 return
             }
             finalSceneName = this.selectedScene.sceneName;
-            console.log(finalSceneName);
+
             try {
                 let videoSettings = await obs.call('GetVideoSettings');
                 let { baseWidth, baseHeight } = videoSettings;
 
                 let response = await obs.call('SaveSourceScreenshot', {
                     sourceName: finalSceneName,          // 你想要截图的源名称或场景名称
-                    imageFormat: 'png',              // 图片格式: jpg, png, bmp etc.
+                    imageFormat: config.imageFormat,              // 图片格式: jpg, png, bmp etc.
                     imageFilePath: filepath, // 保存的绝对路径 (注意权限)
                     imageWidth: baseWidth,                // 可选：缩放宽度
                     imageHeight: baseHeight,               // 可选：缩放高度
                     imageCompressionQuality: -1      // 可选：压缩质量 (JPEG 为 1-100, PNG 为 0-9)
                 });
-                if (config.sound != screenshotSoundEnum.None) {
-                    window.electronAPI.playScreenshotSound()
-                }
 
+                return filepath;
                 //console.log('📸 截图已保存:', response.imageFilePath);
             } catch (error) {
-                alert('OBS截图出错' + error.message)
+                this.windowsNotify(this.$t('OBSPage.obsScreenshotError') + error.message)
                 console.error('❌ 出错啦:', error.code, error.message);
             }
         },

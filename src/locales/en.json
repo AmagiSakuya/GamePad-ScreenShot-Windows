@@ -1,0 +1,113 @@
+{
+    "gamepadScreenShotTool":"Gamepad ScreenShot Tool",
+    "screenshotSettings": "ScreenShot",
+    "obsConnect": "OBS Connect",
+    "gamepadTester": "Gamepad Tester",
+    "systemSettings": "System Settings",
+    "screenshotSource": "Source",
+    "thumbnailSize": "Image Size",
+    "savingMode": "Saving Mode",
+    "savePath": "Save Path",
+    "select": "Select",
+    "selectFolderPath": "Select Path",
+    "imageFormat": "Format",
+    "saveFileName": "Filename",
+    "availableFields": "Available Fields",
+    "fileNamePreview": "Preview",
+    "controller": "Controller",
+    "keyCombo": "Shortcut",
+    "addKey": "Add Key",
+    "recognize": "Identify",
+    "recognizing": "Identifying...",
+    "unavailable": "N/A",
+    "delete": "Delete",
+    "audio": "Audio",
+    "volume": "Volume",
+    "listening": "Listening...",
+    "start": "Start",
+    "stop": "Stop",
+    "openScreenshotFolder": "Open Screenshot Folder",
+    "saveWay": {
+        "file": "File",
+        "clipboard": "Clipboard",
+        "fileAndClipboard": "File + Clipboard"
+    },
+    "alertMsg": {
+        "emptyPath": "Screenshot path cannot be empty",
+        "noKeyCombo": "No hotkey added",
+        "detectionInProgress": "Detecting key input...",
+        "openGamepadFail": "Failed to open controller",
+        "deviceChangedCancelListening": "Device changed. Screenshot listening stopped",
+        "listeningStarted": "Started listening",
+        "listeningStopped": "Stopped listening"
+    },
+    "screenshotSound": {
+        "None": "Mute",
+        "NS2": "Nintendo Switch 2"
+    },
+    "OBSPage": {
+        "obsAddress": "OBS Address",
+        "obsPassword": "OBS Password",
+        "selectScene": "Select Scene",
+        "connectService": "Connect OBS",
+        "disconnect": "Disconnect",
+        "obsServiceNotFound": "OBS WebSocket service not found",
+        "obsNotConnected": "Cannot connected to OBS",
+        "invalidSceneSelected": "No valid scene selected",
+        "obsScreenshotError": "Failed to capture screenshot from OBS"
+    },
+    "GampadTesterPage": {
+        "selectController": "Select Controller",
+        "buttonState": "Button State"
+    },
+    "SystemSettingsPage": {
+        "language": "Language",
+        "closeType": "Close behavior",
+        "closeTypeEnum": {
+            "exit": "Exit application",
+            "tray": "Close to tray"
+        },
+        "autoStart": "Auto Start on Boot",
+        "minimizeOnStartup": "Minimize on Startup",
+        "filenameConflictResolution": "File name conflict resolution",
+        "filenameConflictResolutionEnum": {
+            "overwrite": "Overwrite",
+            "appendTimestamp": "Append timestamp",
+            "notSave": "Do not save",
+            "askEveryTime": "Ask every time"
+        },
+        "overwriteConfirm": {
+            "title": "File Already Exists",
+            "message": "File name conflict, do you want to overwrite the existing file?",
+            "confirmButton": "Confirm",
+            "cancelButton": "Cancel"
+        },
+        "autoListenResolution":"Auto Start Listening",
+        "autoListenResolutionEnum": {
+            "never": "Never",
+            "whenDeviceAvailable": "On Device Change",
+            "onAppStart": "On App Start"
+        },
+        "checkUpdateOnStartup": "Check for updates on startup",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "manualCheckUpdate": "Manual update check",
+        "checkUpdate": "Check for Updates",
+        "proxy": "Network Proxy",
+        "updateAvailable": "New version available",
+        "updateNotAvailable": "Already up to date",
+        "updateCheckFailed": "Update check failed, please try again later",
+        "groupBasic": "Basic Settings",
+        "groupPolicy": "Policy Settings",
+        "groupUpdate": "Update Settings",
+        "languageChinese": "中文",
+        "languageEnglish": "English"
+    },
+    "TrayMenu": {
+        "openScreenshotFolder":"Open Screenshot Folder",
+        "startListen": "Start Listening",
+        "stopListen": "Stop Listening",
+        "show": "Show Main Window",
+        "exit": "Exit Application"
+    }
+}

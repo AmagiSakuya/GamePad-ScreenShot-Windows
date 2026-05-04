@@ -1,0 +1,113 @@
+{
+    "gamepadScreenShotTool":"游戏手柄截图工具",
+    "screenshotSettings": "截图设置",
+    "obsConnect": "OBS连接",
+    "gamepadTester": "控制器调试",
+    "systemSettings": "系统设置",
+    "screenshotSource": "截图来源",
+    "thumbnailSize": "保存尺寸",
+    "savingMode": "保存形式",
+    "savePath": "保存路径",
+    "select": "选择",
+    "selectFolderPath": "请选择文件夹路径",
+    "imageFormat": "图片格式",
+    "saveFileName": "保存文件名",
+    "availableFields": "可用字段",
+    "fileNamePreview": "文件名预览",
+    "controller": "控制器",
+    "keyCombo": "组合按键",
+    "addKey": "添加按键",
+    "recognize": "识别",
+    "recognizing": "识别中",
+    "unavailable": "不可用",
+    "delete": "删除",
+    "audio": "音频",
+    "volume": "音量",
+    "listening": "正在监听中",
+    "start": "启动",
+    "stop": "停止",
+    "openScreenshotFolder": "打开截图文件夹",
+    "saveWay": {
+        "file": "文件",
+        "clipboard": "剪切板",
+        "fileAndClipboard": "文件 + 剪切板"
+    },
+    "alertMsg": {
+        "emptyPath": "截图路径不可以为空",
+        "noKeyCombo": "没有添加快捷键",
+        "detectionInProgress": "正在识别按键中",
+        "openGamepadFail": "打开控制器失败",
+        "deviceChangedCancelListening": "设备发生变化, 已停止截图监听",
+        "listeningStarted": "开始监听",
+        "listeningStopped": "停止监听"
+    },
+    "screenshotSound": {
+        "None": "静音",
+        "NS2": "Nintendo Switch 2"
+    },
+    "OBSPage": {
+        "obsAddress": "OBS 服务器地址",
+        "obsPassword": "OBS 服务器密码",
+        "selectScene": "选择场景",
+        "connectService": "连接OBS",
+        "disconnect": "断开连接",
+        "obsServiceNotFound":"未找到OBS Websocket服务",
+        "obsNotConnected":"无法连接到OBS",
+        "invalidSceneSelected":"没有选择正确的场景",
+        "obsScreenshotError":"OBS截图出错"
+    },
+    "GampadTesterPage": {
+        "selectController": "选择控制器",
+        "buttonState": "按键状态"
+    },
+    "SystemSettingsPage": {
+        "language": "语言",
+        "closeType": "关闭方式",
+        "closeTypeEnum": {
+            "exit": "退出软件",
+            "tray": "隐藏到托盘"
+        },
+        "autoStart": "开机自启动",
+        "minimizeOnStartup": "最小化启动",
+        "filenameConflictResolution":"文件名冲突策略",
+        "filenameConflictResolutionEnum": {
+            "overwrite": "覆盖",
+            "appendTimestamp": "追加时间戳",
+            "notSave": "不保存",
+            "askEveryTime": "每次询问"
+        },
+        "overwriteConfirm": {
+            "title": "文件已存在",
+            "message": "文件名冲突，是否覆盖已有文件？",
+            "confirmButton": "确认",
+            "cancelButton": "取消"
+        },
+        "autoListenResolution":"自动开始监听",
+        "autoListenResolutionEnum": {
+            "never": "从不",
+            "whenDeviceAvailable": "设备变化时",
+            "onAppStart": "当软件启动"
+        },
+        "checkUpdateOnStartup": "启动时检测更新",
+        "enabled": "启用",
+        "disabled": "禁用",
+        "manualCheckUpdate": "手动检测更新",
+        "checkUpdate": "检测更新",
+        "proxy": "网络代理",
+        "updateAvailable": "发现新版本",
+        "updateNotAvailable": "当前已是最新版本",
+        "updateCheckFailed": "检查更新失败，请稍后重试",
+        "groupBasic": "基础设置",
+        "groupPolicy": "策略设置",
+        "groupUpdate": "更新设置",
+        "languageChinese": "中文",
+        "languageEnglish": "English"
+    },
+    "TrayMenu": {
+        "openScreenshotFolder":"打开截图文件夹",
+        "startListen": "开始监听",
+        "stopListen": "停止监听",
+        "show": "显示主界面",
+        "exit": "退出软件"
+    }
+}

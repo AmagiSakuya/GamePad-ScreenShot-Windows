@@ -4,17 +4,22 @@
     <div class="tabs-header">
       <button class="tab-btn" :class="{ active: activeTab === 'home' }" @click="activeTab = 'home'">
         <i class="fas fa-home"></i>
-        <span>截图设置</span>
+        <span>{{ $t('screenshotSettings') }}</span>
       </button>
 
       <button class="tab-btn" :class="{ active: activeTab === 'obs' }" @click="activeTab = 'obs'">
         <i class="fas fa-obs"></i>
-        <span>OBS连接</span>
+        <span>{{ $t('obsConnect') }}</span>
       </button>
 
       <button class="tab-btn" :class="{ active: activeTab === 'debug' }" @click="activeTab = 'debug'">
         <i class="fas fa-bug"></i>
-        <span>控制器调试工具</span>
+        <span>{{ $t('gamepadTester') }}</span>
+      </button>
+
+      <button class="tab-btn" :class="{ active: activeTab === 'system' }" @click="activeTab = 'system'">
+        <i class="fas fa-system"></i>
+        <span>{{ $t('systemSettings') }}</span>
       </button>
     </div>
 
@@ -22,18 +27,24 @@
     <div class="tab-content">
       <!-- 首页内容 -->
       <div v-if="activeTab === 'home'" class="tab-pane">
-        <MainPage ref="mainPageRef" :compOBS="obsPageInstance" ></MainPage>
+        <MainPage ref="mainPageRef" :compOBS="obsPageInstance" :windowsNotify="windowsNotify"></MainPage>
       </div>
 
       <!-- OBS连接 -->
       <div v-show="activeTab === 'obs'" class="tab-pane">
-        <OBSConnectPage ref="obsPageRef"></OBSConnectPage>
+        <OBSConnectPage ref="obsPageRef" :compMain="mainPageInstance" :windowsNotify="windowsNotify"></OBSConnectPage>
       </div>
 
       <!-- Debug 页面内容 -->
       <div v-if="activeTab === 'debug'" class="tab-pane">
         <ControllerSettingsPage></ControllerSettingsPage>
       </div>
+
+      <!-- 系统设置 -->
+      <div v-show="activeTab === 'system'" class="tab-pane">
+        <SystemSettingsPage :windowsNotify="windowsNotify"></SystemSettingsPage>
+      </div>
+
     </div>
   </div>
 </template>
@@ -42,6 +53,8 @@
 import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
+import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
+
 import { ref } from 'vue';
 
 export default {
@@ -49,12 +62,14 @@ export default {
   components: {
     MainPage,
     OBSConnectPage,
-    ControllerSettingsPage
+    ControllerSettingsPage,
+    SystemSettingsPage
   },
   data() {
     return {
       activeTab: 'home',
-      obsPageInstance:null
+      obsPageInstance: null,
+      mainPageInstance: null
     }
   },
   async beforeMount() {
@@ -62,12 +77,39 @@ export default {
   },
   async mounted() {
     this.obsPageInstance = this.$refs.obsPageRef;
+    this.mainPageInstance = this.$refs.mainPageRef;
+
+    // 检查是否启用启动时更新检测
+    try {
+      const checkUpdateOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'disabled');
+      if (checkUpdateOnStartup === 'enabled') {
+        // 延迟一下再检测，避免影响应用启动
+        setTimeout(async () => {
+          try {
+            const result = await window.electronAPI.checkForUpdates();
+            if (result.hasUpdate) {
+              // 自动打开浏览器进入发布页面
+              await window.electronAPI.openReleasePage(result.releaseUrl);
+              this.windowsNotify(`${this.$t('SystemSettingsPage.updateAvailable')}: ${result.latestVersion}`);
+            }
+          } catch (error) {
+            console.error('Startup update check failed:', error);
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Failed to check startup update setting:', error);
+    }
   },
   unmounted() {
 
   },
   methods: {
-
+    windowsNotify(message) {
+      new Notification('', {
+        body: message
+      })
+    }
   }
 }
 </script>
@@ -80,6 +122,7 @@ export default {
   text-align: center;
   color: #2c3e50;
   width: 100%;
+  height: 100%;
 }
 
 * {
@@ -89,12 +132,20 @@ export default {
   font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
+html {
+  height: 100%;
+  margin: 0;
+  /* 顺便去掉 body 默认的外边距 */
+}
+
 body {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 /* 滚动条样式 */
@@ -128,7 +179,7 @@ tbody {
   display: block;
   max-height: 600px;
   /* 设置tbody的最大高度 */
-  overflow-y: auto;
+  /* overflow-y: auto; */
   /* 垂直滚动条 */
   overflow-x: hidden;
 }
@@ -138,6 +189,7 @@ tbody {
   background: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
   padding: 0 20px;
+  height: 45px;
 }
 
 .tab-btn {
@@ -167,13 +219,16 @@ tbody {
 }
 
 .tab-content {
-  flex: 1;
-  overflow: auto;
   background: white;
+  height: calc(100% - 45px);
 }
 
 .tab-pane {
-  padding: 20px;
+  /* padding: 20px; */
+  height: 100%;
+}
+
+.app-container {
   height: 100%;
 }
 </style>

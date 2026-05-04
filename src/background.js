@@ -1,15 +1,24 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
+const activeWin = require('active-win');
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
 const fs = require('fs')
 const path = require('path')
+const https = require('https')
 const vm = require('vm')
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('GamePad Screenshot Tool');
+}
+
 //Scripts
 const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum } = require('@/lib/enum')
+const configStore = require('@/lib/configLoader')
+
 //Path Define
 const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js') : path.join(__dirname, '../src/preload.js')
 
@@ -20,13 +29,21 @@ protocol.registerSchemesAsPrivileged([
 
 //#region app
 let win;
+let tray;
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 如果获取锁失败，说明已有实例在运行，直接强制退出当前实例
+  app.quit();
+}
 
 async function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
-    title: 'Gamepad Full-ScreenShot Tool',
-    width: 800,
-    height: 1000,
+    title: $t('gamepadScreenShotTool'),
+    width: 700,
+    height: 900,
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../src/gamepad.ico'),
     webPreferences: {
@@ -34,9 +51,27 @@ async function createWindow() {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: true,
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
-      preload: preloadPath
+      preload: preloadPath,
+      // 设置为 false 以禁用后台节流
+      backgroundThrottling: false
     }
   })
+
+
+  // --- 拦截关闭事件 ---
+  win.on('close', (event) => {
+    let closeType = configStore.get('closeType', 'exit')
+
+    if (closeType === 'exit') {
+      app.isQuiting =  true;
+    }
+
+    if (!app.isQuiting) {
+      event.preventDefault(); // 阻止默认的关闭行为
+      win.hide();      // 隐藏窗口
+    }
+    return false;
+  });
 
   win.on('page-title-updated', (e) => {
     e.preventDefault()
@@ -53,18 +88,79 @@ async function createWindow() {
   }
 }
 
+// 创建系统托盘
+function createTray() {
+  // 图标路径，建议使用 16x16 或 32x32 的图片
+  
+  const normalIcon = getAssetPath('gamepad.ico');
+  const recordingIcon = getAssetPath('assets', 'recording.ico');
+  
+  tray = new Tray(normalIcon);
+// win.webContents.send('open-folder-triggered')
+  let isListening = false; // 初始假设未监听
+  const updateMenu = () => {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: $t('TrayMenu.openScreenshotFolder'),
+        click: () => win.webContents.send('open-folder-triggered')
+      },
+      {
+        label: $t('TrayMenu.startListen'),
+        visible: !isListening,
+        click: () => {
+          win.webContents.send('start-listen-from-tray');
+        }
+      },
+      {
+        label: $t('TrayMenu.stopListen'),
+        visible: isListening,
+        click: () => {
+          win.webContents.send('stop-listen-from-tray');
+        }
+      },
+      {
+        label: $t('TrayMenu.exit'),
+        click: () => {
+          app.isQuiting = true; // 设置一个标记位，允许真正退出
+          app.quit();
+        }
+      }
+    ]);
+    tray.setContextMenu(contextMenu);
+  };
+
+  updateMenu();
+
+  tray.setToolTip('GamePad Screenshot Tool');
+
+  // 点击托盘图标重新打开界面
+  tray.on('click', () => {
+    win.isVisible() ? win.focus() : win.show();
+  });
+
+  // 监听图标更新事件
+  ipcMain.on('update-tray-icon', (_, isListening) => {
+    tray.setImage(isListening ? recordingIcon : normalIcon);
+  });
+
+  // 监听监听状态更新事件
+  ipcMain.on('update-listening-state', (_, state) => {
+    isListening = state;
+    updateMenu();
+  });
+}
+
+
 app.on('will-quit', () => {
-  globalShortcut.unregisterAll()
+  //globalShortcut.unregisterAll()
 })
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
@@ -85,6 +181,30 @@ app.on('ready', async () => {
     }
   }
   createWindow()
+  createTray()
+
+  // 设置开机自启动
+  const autoStart = configStore.get('autoStart', false);
+  app.setLoginItemSettings({ openAtLogin: autoStart });
+
+  // 检查最小化启动
+  const minimizeOnStartup = configStore.get('minimizeOnStartup', false);
+  if (minimizeOnStartup) {
+    win.hide();
+  }
+
+  // 启动时检测更新
+  if (!isDevelopment) {
+    const checkOnStartup = configStore.get('checkUpdateOnStartup', 'enabled');
+    if (checkOnStartup === 'enabled') {
+      // 非阻塞检测，避免启动失败
+      setTimeout(() => {
+        checkForUpdates().catch(err => {
+          console.error('Startup update check failed:', err);
+        });
+      }, 1000); // 延迟1秒
+    }
+  }
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -102,10 +222,58 @@ if (isDevelopment) {
   }
 }
 
+
+ipcMain.on('restart-app', () => {
+  app.relaunch();
+  app.exit(0);
+});
 //#endregion
 
+//#region 多语言模拟
+let localeKey = 'locale';
 
+const messages = {
+  zh: require('@/locales/zh.json'),
+  en: require('@/locales/en.json')
+};
 
+// 2. 模拟 $t 函数
+function $t(key) {
+  let locale = configStore.get(localeKey, 'zh');
+  // 支持 "menu.file.save" 这种嵌套路径
+  return key.split('.').reduce((obj, i) => (obj ? obj[i] : null), messages[locale]) || key;
+}
+//#endregion
+
+// 获取资源路径的函数
+function getAssetPath(...relativePaths) {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, ...relativePaths) // 打包后的路径
+    : path.join(__dirname, '../src', ...relativePaths);           // 开发环境路径
+}
+
+//#region 文件名冲突处理 #fouced program name#
+let filenameConflictResolutionKey = 'filenameConflictResolution';
+
+ipcMain.handle('file-conflict-handle', async (_, config) => {
+  let filePath = path.join(config.path, `${config.calcedFileName}.${config.imageFormat}`);
+  if (fs.existsSync(filePath)) {
+    let filenameConflictResolution = configStore.get(filenameConflictResolutionKey, 'overwrite')
+    if (filenameConflictResolution === 'appendTimestamp') {
+      const timestamp = Date.now();
+      filePath = path.join(config.path, `${config.calcedFileName}_${timestamp}.${config.imageFormat}`)
+    } else if (filenameConflictResolution === 'notSave') {
+      return null;
+    } else if (filenameConflictResolution === 'askEveryTime') {
+      let res = await showConfirmMessageBox($t('SystemSettingsPage.overwriteConfirm.title'), $t('SystemSettingsPage.overwriteConfirm.message'), filePath, [$t('SystemSettingsPage.overwriteConfirm.confirmButton'), $t('SystemSettingsPage.overwriteConfirm.cancelButton')]);
+      if (!res) {
+        return null;
+      }
+    }
+  }
+  return filePath;
+})
+//#endregion
 
 //#region SDL2方法
 let device_instance;
@@ -171,4 +339,173 @@ ipcMain.handle('select-folder', async () => {
   })
   return result.canceled ? null : result.filePaths[0]
 })
+
+ipcMain.handle('show-confirm-messageBox', async (_, title, message, detail, buttons) => {
+  return showConfirmMessageBox(title, message, detail, buttons);
+})
+
+async function showConfirmMessageBox(title, message, detail, buttons) {
+  const result = await dialog.showMessageBox({
+    type: 'question',          // 图标类型：question, info, warning, error
+    buttons: buttons,     // 按钮文本数组，索引从 0 开始
+    defaultId: 0,              // 默认聚焦的按钮索引
+    title: title,          // 对话框窗口标题
+    message: message, // 主提示内容
+    detail: detail,   // 额外详细说明
+    cancelId: 1,               // 用户点击关闭或按下 Esc 键时返回的索引
+  });
+
+  return result.response === 0; // 返回 true 表示用户点击了 "是"
+}
+
+ipcMain.handle('open-folder', async (_, folderPath) => {
+  shell.openPath(folderPath).then((errorMessage) => {
+      if (errorMessage) {
+        console.error('打开文件失败:', errorMessage);
+      }
+    });
+})
+//#endregion
+
+//#region store
+ipcMain.handle('set-store', (_, key, value) => {
+  configStore.set(key, value)
+})
+
+ipcMain.handle('get-store', (_, key, defaultValue) => {
+  return configStore.get(key, defaultValue)
+})
+
+//#endregion
+
+//#region 更新检测
+// 检查GitHub最新release
+function checkForUpdates() {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/AmagiSakuya/GamePad-ScreenShot-Windows/releases/latest',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'GamePad-ScreenShot-App',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    };
+
+    // 设置代理
+    const proxy = configStore.get('proxy', '');
+    if (proxy) {
+      process.env.HTTPS_PROXY = `http://${proxy}`;
+      process.env.HTTP_PROXY = `http://${proxy}`;
+    } else {
+      // 清空代理变量
+      process.env.HTTPS_PROXY = ``;
+      process.env.HTTP_PROXY = ``;
+    }
+
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          const release = JSON.parse(data);
+          // 使用标题而不是tag，标题格式为 vx.x.x
+          const titleMatch = release.name.match(/v(\d+\.\d+\.\d+)/);
+          const latestVersion = titleMatch ? titleMatch[1] : release.tag_name.replace('v', '');
+          
+          // 获取当前版本
+          let currentVersion;
+          try {
+            const packagePath = path.join(app.getAppPath(), 'package.json');
+            const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+            currentVersion = packageJson.version;
+          } catch (error) {
+            console.warn('Failed to read package.json:', error);
+            currentVersion = '0.0.0'; // 默认版本
+          }
+
+          const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
+
+          // 打印版本信息
+          //console.log(`当前版本: ${currentVersion}`);
+          //console.log(`最新版本: ${latestVersion}`);
+          //console.log(`是否有更新: ${hasUpdate}`);
+
+          resolve({
+            hasUpdate,
+            latestVersion,
+            currentVersion,
+            releaseUrl: release.html_url
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.setTimeout(10000, () => {
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
+
+    req.end();
+  });
+}
+
+// 版本比较函数
+function compareVersions(version1, version2) {
+  const v1 = version1.split('.').map(Number);
+  const v2 = version2.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
+    const num1 = v1[i] || 0;
+    const num2 = v2[i] || 0;
+
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+
+  return 0;
+}
+
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    return await checkForUpdates();
+  } catch (error) {
+    console.error('Check for updates failed:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('open-release-page', async (_, url) => {
+  shell.openExternal(url);
+});
+
+ipcMain.handle('set-auto-start', async (_, enabled) => {
+  app.setLoginItemSettings({ openAtLogin: enabled });
+});
+
+ipcMain.handle('start-listen-from-tray', async () => {
+  win.webContents.send('start-listen-from-tray');
+});
+
+ipcMain.handle('stop-listen-from-tray', async () => {
+  win.webContents.send('stop-listen-from-tray');
+});
+
+//#endregion
+
+//#region 聚焦窗口信息
+ipcMain.handle('get-active-win-info', () => {
+  return activeWin();
+})
+
 //#endregion

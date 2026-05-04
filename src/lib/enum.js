@@ -5,8 +5,8 @@ const resolutionEnum = {
 }
 
 const screenshotSoundEnum = {
-    None: "静音",
-    NS2: "Nintendo Switch 2"
+    None: "None",
+    NS2: "NS2"
 }
 
 const CommonButtonEnum = {
@@ -23,4 +23,11 @@ const ScreenShotWayEnum = {
     OBS: 'OBS', 
 }
 
-module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum }
+const ScreenShotSaveWayEnum = {
+    FileOnly: 'file',
+    CilpboardOnly: 'clipboard',
+    FileAndCilpboard: 'fileAndClipboard'
+}
+
+
+module.exports = { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum }

@@ -1,8 +1,8 @@
 {
   "name": "gamepad-screenshot",
-  "version": "0.9.3",
+  "version": "0.9.8",
   "author": "AmagiSakuya",
-  "description": "A Simple Gamepad Full-ScreenShot Tool",
+  "description": "A Simple Gamepad ScreenShot Tool",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -16,12 +16,14 @@
   "main": "background.js",
   "dependencies": {
     "@kmamal/sdl": "^0.11.13",
+    "active-win": "^8.2.1",
     "core-js": "^3.8.3",
     "fs": "^0.0.1-security",
     "howler": "^2.2.4",
-    "node-hid": "^3.2.0",
     "obs-websocket-js": "^5.0.7",
-    "vue": "^3.2.13"
+    "path-browserify": "^1.0.1",
+    "vue": "^3.2.13",
+    "vue-i18n": "^11.2.8"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

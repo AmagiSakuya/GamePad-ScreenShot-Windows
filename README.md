@@ -1,6 +1,10 @@
 # 🎮 GamePad-ScreenShot
 
 <p align="center">
+  <a href="README.md">简体中文</a> | <a href="README_EN.md">English</a>
+</p>
+
+<p align="center">
   <img src="./src/gamepad.ico" alt="GamePad Icon" width="120" />
 </p>
 
@@ -20,9 +24,11 @@
 
 一个允许你使用**手柄按钮(Button)组合**来触发**全屏截图** 或者 **OBS 截图** 的程序。
 
-- ✅ 支持组合键触发
-- ✅ 支持自定义手柄与外设扩展
-- ✅ 支持**OBS-Websocket**连接，使用**OBS场景**来截图
+- ✅ 组合键触发
+- ✅ 保存文件名自定义
+- ✅ 截图保存至剪切板
+- ✅ 截图音频播放
+- ✅ 对接**OBS-Websocket**，使用**OBS场景**来截图
 
 ---
 
@@ -66,11 +72,15 @@
 - [x] 摒弃HID 改用SDL2 从而实现更好的手柄兼容性
 - [x] 对接OBS的Socket服务 从而使用OBS来截图
 - [x] 音频音量调整
-- [ ] jpg/png 格式开放成选项
-- [ ] 文件名自定义
-- [ ] 截图进剪切板
-- [ ] 开机自启动设置
-- [ ] call xbox game bar（未知）
+- [x] jpg/png 格式开放成选项
+- [x] 文件名自定义
+- [x] 截图进剪切板
+- [x] 多语言
+- [x] 获取focus的窗口title作为文件名自定义的字段
+- [x] 打开软件和设备变化时可自动监听
+- [x] 开机自启动
+- [x] 更新检测
+- [x] 最小化启动
 
 ---
 

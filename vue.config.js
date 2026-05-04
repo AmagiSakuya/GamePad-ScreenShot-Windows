@@ -7,6 +7,17 @@ module.exports = defineConfig({
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src')
+      },
+      fallback: {
+        "path": require.resolve("path-browserify"),
+        "fs": false,
+        "crypto": false,
+        "stream": false,
+        "assert": false,
+        "http": false,
+        "https": false,
+        "os": false,
+        "url": false
       }
     }
   },
@@ -23,7 +34,14 @@ module.exports = defineConfig({
           'preload.js'
         ],
         extraResources: [
-          
+          {
+            from: "src/gamepad.ico",
+            to: "./" 
+          },
+          {
+            from: "src/assets/recording.ico",
+            to: "./assets/recording.ico" 
+          }
         ]
       }
     }
