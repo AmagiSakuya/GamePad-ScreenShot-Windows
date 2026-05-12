@@ -286,8 +286,10 @@ export default {
 
   },
   async beforeUnmount() {
+    if (this.listening) {
+      this.stopListen();
+    }
     await window.electronAPI.offDeviceChanged()
-    //
     await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
     clearInterval(timer)
     clearInterval(active_info_getter_timer)
@@ -423,8 +425,6 @@ export default {
       this.saveCurrentConfig();
       this.listening = true;
       this.windowsNotify(this.$t('alertMsg.listeningStarted'));
-      window.electronAPI.updateTrayIcon(true);
-      window.electronAPI.updateTrayListeningState(true);
     },
     async onSDL2DeviceChanged() {
       if (this.listening) {
@@ -436,7 +436,6 @@ export default {
         this.listening = false;
         await this.loadGamePadList();
         window.electronAPI.sendListenStatusChanged();
-        window.electronAPI.updateTrayListeningState(false);
       } else {
         await this.tryStartListen();
       }
@@ -478,8 +477,6 @@ export default {
     async stopListen() {
       this.listening = false;
       this.windowsNotify(this.$t('alertMsg.listeningStopped'));
-      window.electronAPI.updateTrayIcon(false);
-      window.electronAPI.updateTrayListeningState(false);
     },
     async onUserSelectedDeviceChange() {
       this.loadConfig(this.currentGamePad.name)

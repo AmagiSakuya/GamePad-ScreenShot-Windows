@@ -2,7 +2,7 @@
 
 import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
+import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const activeWin = require('active-win');
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
@@ -175,7 +175,7 @@ app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
-      await installExtension(VUEJS3_DEVTOOLS)
+      await installExtension(VUEJS_DEVTOOLS)
     } catch (e) {
       console.error('Vue Devtools failed to install:', e.toString())
     }

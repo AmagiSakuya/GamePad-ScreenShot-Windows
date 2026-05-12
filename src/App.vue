@@ -69,7 +69,9 @@ export default {
     return {
       activeTab: 'home',
       obsPageInstance: null,
-      mainPageInstance: null
+      mainPageInstance: null,
+      traySyncTimer: null,
+      currentTrayListening: false
     }
   },
   async beforeMount() {
@@ -78,7 +80,7 @@ export default {
   async mounted() {
     this.obsPageInstance = this.$refs.obsPageRef;
     this.mainPageInstance = this.$refs.mainPageRef;
-
+    this.startTraySync();
     // 检查是否启用启动时更新检测
     try {
       const checkUpdateOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'disabled');
@@ -102,9 +104,25 @@ export default {
     }
   },
   unmounted() {
-
+    if (this.traySyncTimer) {
+      clearInterval(this.traySyncTimer);
+      this.traySyncTimer = null;
+    }
   },
   methods: {
+    startTraySync() {
+      const syncTrayState = () => {
+        const listening = this.$refs['mainPageRef'] == void 0 ? false : this.$refs['mainPageRef'].listening
+        if (listening !== this.currentTrayListening) {
+          this.currentTrayListening = listening;
+          window.electronAPI.updateTrayIcon(listening);
+          window.electronAPI.updateTrayListeningState(listening);
+        }
+      };
+
+      syncTrayState();
+      this.traySyncTimer = setInterval(syncTrayState, 300);
+    },
     windowsNotify(message) {
       new Notification('', {
         body: message
