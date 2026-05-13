@@ -318,7 +318,11 @@ export default {
         return;
       }
       if (this.config.sound == screenshotSoundEnum.NS2) {
-        let sound = new Howl({ src: [ns2SoundSrc], volume: this.config.soundPower })
+        let sound = new Howl({
+          src: [ns2SoundSrc], volume: this.config.soundPower, onend: function () {
+            this.unload();
+          }
+        })
         sound.play();
       }
 
