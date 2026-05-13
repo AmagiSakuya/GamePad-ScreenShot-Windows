@@ -33,21 +33,22 @@
         </div>
 
         <div class="setting-row-horizontal">
-          
-          <div v-show="!listening" class="setting-row" >
+          <div v-show="!listening" class="setting-row">
             <div class="setting-label">
-                <i class="fas fa-folder-open"></i>
+              <i class="fas fa-folder-open"></i>
               <span>{{ $t('savingMode') }}</span>
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.screenShotSaveWay">
-                <option v-for="(value, index) in screenShotSaveWayEnum" :key="index" :value="value"> {{ $t(`saveWay.${value}`) }}</option>
+                <option v-for="(value, index) in screenShotSaveWayEnum" :key="index" :value="value"> {{
+                  $t(`saveWay.${value}`) }}</option>
               </select>
             </div>
           </div>
 
           <!--路径设置 -->
-          <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row" style="flex: 2;">
+          <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly"
+            class="setting-row" style="flex: 2;">
             <div class="setting-label">
               <i class="fas fa-folder-open"></i>
               <span>{{ $t('savePath') }}</span>
@@ -65,9 +66,10 @@
             <!-- <span class="hint-text">选择保存截图的文件夹位置</span> -->
           </div>
           <!-- 保存格式 -->
-          <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly" class="setting-row" style="flex: 0.5;">
+          <div v-show="!listening && config.screenShotSaveWay != screenShotSaveWayEnum.CilpboardOnly"
+            class="setting-row" style="flex: 0.5;">
             <div class="setting-label">
-                <i class="fas fa-folder-open"></i>
+              <i class="fas fa-folder-open"></i>
               <span>{{ $t('imageFormat') }}</span>
             </div>
             <div class="setting-controls">
@@ -86,14 +88,17 @@
           <div class="setting-label">
             <i class="fas fa-folder-open"></i>
             <span>{{ $t('saveFileName') }}</span>
-            <span class="hint-text"  style="user-select: text;"> {{ $t('availableFields') }} : ( {{ availableFields.join('、')  }}  )</span> 
+            <span class="hint-text" style="user-select: text;"> {{ $t('availableFields') }} : ( {{
+              availableFields.join('、') }} )</span>
           </div>
           <div class="setting-controls">
             <div class="input-wrapper">
-              <input type="text" class="form-input" placeholder="Screenshot_%datetime%" v-model="config.fileNameTemplate" style="user-select: text;">
+              <input type="text" class="form-input" placeholder="Screenshot_%datetime%"
+                v-model="config.fileNameTemplate" style="user-select: text;">
             </div>
           </div>
-          <span class="hint-text" style="user-select: text;margin-left: 5px;">{{ $t('fileNamePreview') }}：{{ formatFileName(config.fileNameTemplate, formatPreviewTicker) }}.{{ config.imageFormat }}</span>
+          <span class="hint-text" style="user-select: text;margin-left: 5px;">{{ $t('fileNamePreview') }}：{{
+            formatFileName(config.fileNameTemplate, formatPreviewTicker) }}.{{ config.imageFormat }}</span>
         </div>
 
         <!--  控制器设置 -->
@@ -129,7 +134,8 @@
                   <option v-for="(n, index) in 20" :key="index" :value="index">Button{{ index }}</option>
                 </select>
                 <button v-show="loadedGamePads.length > 0" @click="automatedDetection(index)" class="btn btn-primary">
-                  <span>{{ detectionIndex == -1 ? $t('recognize') : detectionIndex == index ? $t('recognizing') : $t('unavailable') }}</span>
+                  <span>{{ detectionIndex == -1 ? $t('recognize') : detectionIndex == index ? $t('recognizing') :
+                    $t('unavailable') }}</span>
                 </button>
                 <button @click="removeCombo(index)" class="btn btn-danger">
                   <span>{{ $t('delete') }}</span>
@@ -149,7 +155,8 @@
             </div>
             <div class="setting-controls">
               <select class="form-select" v-model="config.sound">
-                <option v-for="(value, index) in screenshotSoundEnum" :key="index" :value="value">{{ $t(`screenshotSound.${value}`) }}</option>
+                <option v-for="(value, index) in screenshotSoundEnum" :key="index" :value="value">{{
+                  $t(`screenshotSound.${value}`) }}</option>
               </select>
             </div>
             <!-- <span class="hint-text">选择截图时播放的音效</span> -->
@@ -175,24 +182,24 @@
           <span class="setting-row-listening-tip">{{ $t('listening') }}</span>
         </div>
 
-      </div>  
+      </div>
     </div>
 
     <div class="settings-footer-btn">
       <div v-if="errorMessage" class="error-tip">{{ errorMessage }}</div>
       <!-- 开始 -->
       <button v-show="!listening" class="save-button" @click="startListen">
-        <span class="icon">▶</span> 
+        <span class="icon">▶</span>
         <span>{{ $t('start') }}</span>
       </button>
 
-     <div v-show="listening" class="button-group">
+      <div v-show="listening" class="button-group">
         <button class="save-button primary" @click="openScreenShotFolder">
-          <span class="icon">📂</span> 
+          <span class="icon">📂</span>
           {{ $t('openScreenshotFolder') }}
         </button>
         <button class="save-button" @click="stopListen">
-          <span class="icon">⏹</span> 
+          <span class="icon">⏹</span>
           {{ $t('stop') }}
         </button>
       </div>
@@ -202,7 +209,8 @@
 </template>
 
 <script>
-const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum , ScreenShotSaveWayEnum } = require('@/lib/enum')
+const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
+
 import { Howl } from 'howler'
 import ns2SoundSrc from '@/assets/ns2截图音.mp3'
 
@@ -260,20 +268,18 @@ export default {
   },
   async mounted() {
     await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged);
-
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
-
     // 添加托盘监听事件
     window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
     window.electronAPI.onStopListenFromTray(this.onStopListenFromTray);
 
-     await this.tryStartListen('appStart');
+    await this.tryStartListen('appStart');
 
     timer = setInterval(this.getCurrentButtonsValue, 60);
 
     active_info_getter_timer = setInterval(async () => {
-      if(!this.config.fileNameTemplate.includes('%activeWinTitle%') && !this.config.fileNameTemplate.includes('%activeWinOwner%')) {
+      if (!this.config.fileNameTemplate.includes('%activeWinTitle%') && !this.config.fileNameTemplate.includes('%activeWinOwner%')) {
         return;
       }
       activeWinInfoResult = await window.electronAPI.getActiveWindowsInfo();
@@ -283,7 +289,6 @@ export default {
         this.formatPreviewTicker++;
       }
     }, 3000);
-
   },
   async beforeUnmount() {
     if (this.listening) {
@@ -335,12 +340,12 @@ export default {
       if (this.currentGamePad && this.currentGamePad.name) {
         const configStr = JSON.stringify(this.config);
         let STORAGE_KEY = this.currentGamePad.name
-        localStorage.setItem(STORAGE_KEY, configStr);
+        await window.electronAPI.setStore(STORAGE_KEY, configStr);
       }
     },
     async loadConfig(deviceName) {
       let STORAGE_KEY = deviceName
-      const savedConfig = localStorage.getItem(STORAGE_KEY);
+      const savedConfig = await window.electronAPI.getStore(STORAGE_KEY, void 0);
 
       if (savedConfig) {
         this.config = JSON.parse(savedConfig);
@@ -348,7 +353,7 @@ export default {
         this.resetConfig();
       }
 
-      //#region  升级老配置
+      //#region 升级老配置
       if (this.config.fileNameTemplate == null || this.config.fileNameTemplate == undefined || this.config.fileNameTemplate.trim() == '') {
         this.config.fileNameTemplate = 'Screenshot_%timestamp%'
       }
@@ -363,9 +368,6 @@ export default {
       //#endregion
 
     },
-    async initDevice() {
-      return false
-    },
     resetConfig() {
       this.config = {
         path: '',
@@ -376,7 +378,7 @@ export default {
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
-        fileNameTemplate:'Screenshot_%timestamp%'
+        fileNameTemplate: 'Screenshot_%timestamp%'
       }
     },
     async loadGamePadList() {
@@ -500,14 +502,14 @@ export default {
       }
     },
     formatFileName(template, ticker = 0) {
-      if(template == null || template == undefined || template.trim() == '') {
+      if (template == null || template == undefined || template.trim() == '') {
         return '';
       }
       //const activeWinInfo = await window.electronAPI.getActiveWinInfo();
       const now = new Date();
       const replacements = {
         '%timestamp%': now.getTime(),
-        '%datetime%':now.getFullYear() + '_' + String(now.getMonth() + 1).padStart(2, '0') + '_' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + '_' + String(now.getMinutes()).padStart(2, '0') + '_' + String(now.getSeconds()).padStart(2, '0'),
+        '%datetime%': now.getFullYear() + '_' + String(now.getMonth() + 1).padStart(2, '0') + '_' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getHours()).padStart(2, '0') + '_' + String(now.getMinutes()).padStart(2, '0') + '_' + String(now.getSeconds()).padStart(2, '0'),
         '%YYYY%': now.getFullYear(),
         '%MM%': String(now.getMonth() + 1).padStart(2, '0'),
         '%DD%': String(now.getDate()).padStart(2, '0'),
@@ -931,9 +933,8 @@ input:checked+.slider:before {
 /* 按钮容器 */
 .button-group {
   display: flex;
-  gap: 16px; 
+  gap: 16px;
   width: 100%;
   box-sizing: border-box;
 }
-
 </style>

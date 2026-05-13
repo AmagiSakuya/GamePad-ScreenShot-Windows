@@ -3,8 +3,8 @@ const path = require('path')
 const { app } = require('electron'); 
 
 class ConfigStore {
-    constructor(fileName = 'store.json') {
-        const userDataPath = app.isPackaged ? process.resourcesPath : path.join(app.getAppPath(), 'temp');
+    constructor(fileName = 'localStorge.json') {
+        const userDataPath = app.isPackaged ? path.join(process.resourcesPath, '..', 'config') : path.join(app.getAppPath(), 'temp');
 
         if (!fs.existsSync(userDataPath)) {
             fs.mkdirSync(userDataPath, { recursive: true });

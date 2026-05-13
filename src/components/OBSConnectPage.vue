@@ -37,7 +37,7 @@
                     <div class="setting-controls">
                         <select class="form-select" v-model="selectedScene">
                             <option v-for="(value, index) in sceneList" :key="index" :value="value">{{ value.sceneName
-                                }}
+                            }}
                             </option>
                         </select>
                     </div>
@@ -107,7 +107,7 @@ export default {
         });
     },
     async mounted() {
-        this.loadConfig();
+        await this.loadConfig();
     },
     unmounted() {
 
@@ -118,7 +118,7 @@ export default {
                 await obs.connect(this.obsConfig.server, this.obsConfig.pwd);
                 console.log('✅ 已成功连接到 OBS');
                 this.isConnected = true
-                this.saveConfig()
+                await this.saveConfig()
                 this.refreshList();
             } catch (error) {
                 this.isConnected = false
@@ -178,12 +178,12 @@ export default {
                 console.error('❌ 出错啦:', error.code, error.message);
             }
         },
-        saveConfig() {
+        async saveConfig() {
             const configStr = JSON.stringify(this.obsConfig);
-            localStorage.setItem(STORAGE_KEY, configStr);
+            await window.electronAPI.setStore(STORAGE_KEY, configStr);
         },
-        loadConfig() {
-            const savedConfig = localStorage.getItem(STORAGE_KEY);
+        async loadConfig() {
+            const savedConfig = await window.electronAPI.getStore(STORAGE_KEY, void 0);
             if (savedConfig) {
                 this.obsConfig = JSON.parse(savedConfig);
             }
