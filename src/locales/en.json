@@ -41,6 +41,10 @@
         "listeningStarted": "Started listening",
         "listeningStopped": "Stopped listening"
     },
+    "overlayNotify":{
+        "screenshotSuccess": "Screenshot taken",
+        "screenshotSaved": "Screenshot saved"
+    },
     "screenshotSound": {
         "None": "Mute",
         "NS2": "Nintendo Switch 2"

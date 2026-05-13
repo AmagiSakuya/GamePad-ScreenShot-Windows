@@ -5,6 +5,7 @@ const path = require('path')
 const os = require('os')
 
 contextBridge.exposeInMainWorld('electronAPI', {
+    showScreenshotNotification: (data) => ipcRenderer.invoke('show-screenshot-notification', data),
     screenShot: async (config) => {
         var sizeArr = [{ width: 1920, height: 1080 }, { width: 2560, height: 1440 }, { width: 3840, height: 2160 }]
         var size

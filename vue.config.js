@@ -41,6 +41,10 @@ module.exports = defineConfig({
           {
             from: "src/assets/recording.ico",
             to: "./assets/recording.ico" 
+          },
+          {
+            from: "src/screenshot-notification.html",
+            to: "./html/screenshot-notification.html" 
           }
         ]
       }

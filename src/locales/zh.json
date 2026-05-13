@@ -41,6 +41,10 @@
         "listeningStarted": "开始监听",
         "listeningStopped": "停止监听"
     },
+    "overlayNotify":{
+        "screenshotSuccess": "截图成功",
+        "screenshotSaved": "已保存到本地"
+    },
     "screenshotSound": {
         "None": "静音",
         "NS2": "Nintendo Switch 2"

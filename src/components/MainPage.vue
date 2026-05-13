@@ -325,6 +325,12 @@ export default {
         })
         sound.play();
       }
+      
+      await window.electronAPI.showScreenshotNotification({
+        img: filePath, 
+        title: this.$t('overlayNotify.screenshotSuccess'), 
+        desc: this.$t('overlayNotify.screenshotSaved'), 
+      })
 
       this.screenShoting = false;
     },
