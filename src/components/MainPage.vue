@@ -325,12 +325,16 @@ export default {
         })
         sound.play();
       }
-      
-      await window.electronAPI.showScreenshotNotification({
-        img: filePath, 
-        title: this.$t('overlayNotify.screenshotSuccess'), 
-        desc: this.$t('overlayNotify.screenshotSaved'), 
-      })
+
+      // 读取系统设置的覆盖通知配置
+      let overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
+      if (overlayNotify === 'show') {
+        await window.electronAPI.showScreenshotNotification({
+          img: filePath, 
+          title: this.$t('overlayNotify.screenshotSuccess'), 
+          desc: this.$t('overlayNotify.screenshotSaved'), 
+        })
+      }
 
       this.screenShoting = false;
     },

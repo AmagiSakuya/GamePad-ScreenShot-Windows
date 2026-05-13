@@ -87,6 +87,11 @@
             "cancelButton": "取消"
         },
         "autoListenResolution":"自动开始监听",
+        "overlayNotify": "覆盖通知",
+        "overlayNotifyEnum": {
+            "show": "显示",
+            "hide": "关闭"
+        },
         "autoListenResolutionEnum": {
             "never": "从不",
             "whenDeviceAvailable": "设备变化时",

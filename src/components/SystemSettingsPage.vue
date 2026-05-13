@@ -70,7 +70,8 @@ export default {
                 checkUpdateOnStartup: 'enabled',
                 proxy: '',
                 autoStart: false,
-                minimizeOnStartup: false
+                minimizeOnStartup: false,
+                overlayNotify: 'show'
             },
             groups: [
                 {
@@ -109,6 +110,17 @@ export default {
                             options: [
                                 { value: 'exit', label: 'SystemSettingsPage.closeTypeEnum.exit' },
                                 { value: 'tray', label: 'SystemSettingsPage.closeTypeEnum.tray' }
+                            ]
+                        },
+                        {
+                            key: 'overlayNotify',
+                            icon: 'fas fa-bell',
+                            type: 'select',
+                            configKey: 'overlayNotify',
+                            handler: async function() { await window.electronAPI.setStore('overlayNotify', this.config.overlayNotify) },
+                            options: [
+                                { value: 'show', label: 'SystemSettingsPage.overlayNotifyEnum.show' },
+                                { value: 'hide', label: 'SystemSettingsPage.overlayNotifyEnum.hide' }
                             ]
                         }
                     ]
@@ -217,6 +229,7 @@ export default {
         const checkUpdateOnStartup = await window.electronAPI.getStore(checkUpdateOnStartupKey, 'enabled');
         const proxy = await window.electronAPI.getStore(proxyKey, '');
         const autoStart = await window.electronAPI.getStore(autoStartKey, false);
+        const overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
 
         this.config.language = locale;
         this.config.closeType = closeType;
@@ -227,6 +240,7 @@ export default {
         this.config.autoStart = autoStart === 'true' || autoStart === true;
         const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
         this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
+        this.config.overlayNotify = overlayNotify;
     },
     unmounted() {
 

@@ -87,6 +87,11 @@
             "cancelButton": "Cancel"
         },
         "autoListenResolution":"Auto Start Listening",
+        "overlayNotify": "Overlay Notification",
+        "overlayNotifyEnum": {
+            "show": "Show",
+            "hide": "Hide"
+        },
         "autoListenResolutionEnum": {
             "never": "Never",
             "whenDeviceAvailable": "On Device Change",
