@@ -63,7 +63,7 @@ async function createWindow() {
     let closeType = configStore.get('closeType', 'exit')
 
     if (closeType === 'exit') {
-      app.isQuiting =  true;
+      app.isQuiting = true;
     }
 
     if (!app.isQuiting) {
@@ -91,12 +91,12 @@ async function createWindow() {
 // 创建系统托盘
 function createTray() {
   // 图标路径，建议使用 16x16 或 32x32 的图片
-  
+
   const normalIcon = getAssetPath('gamepad.ico');
   const recordingIcon = getAssetPath('assets', 'recording.ico');
-  
+
   tray = new Tray(normalIcon);
-// win.webContents.send('open-folder-triggered')
+  // win.webContents.send('open-folder-triggered')
   let isListening = false; // 初始假设未监听
   const updateMenu = () => {
     const contextMenu = Menu.buildFromTemplate([
@@ -266,30 +266,35 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
       preload: preloadPath
     }
   });
-    // 获取主屏幕尺寸，定位到左上角
-    const { screen } = require('electron');
-    const display = screen.getPrimaryDisplay();
-    const x = 0;
-    const y = 0;
-  
-    overlayWindow = new BrowserWindow({
-      width: 480,
-      height: 150,
-      x,
-      y,
-      transparent: true,
-      frame: false,
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      resizable: false,
-      focusable: false,
-      show: false,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        preload: preloadPath
-      }
-    });
+  // 获取主屏幕尺寸，定位到左上角
+  const { screen } = require('electron');
+  const display = screen.getPrimaryDisplay();
+  const x = 0;
+  const y = 0;
+
+  overlayWindow = new BrowserWindow({
+    width: 480,
+    height: 150,
+    x,
+    y,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: false,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: preloadPath
+    }
+  });
+
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  overlayWindow.setIgnoreMouseEvents(true);
+
 
   const overlayWindowFilePath = app.isPackaged ? path.join(process.resourcesPath, 'html', 'screenshot-notification.html') : '../src/screenshot-notification.html';
 
@@ -440,10 +445,10 @@ async function showConfirmMessageBox(title, message, detail, buttons) {
 
 ipcMain.handle('open-folder', async (_, folderPath) => {
   shell.openPath(folderPath).then((errorMessage) => {
-      if (errorMessage) {
-        console.error('打开文件失败:', errorMessage);
-      }
-    });
+    if (errorMessage) {
+      console.error('打开文件失败:', errorMessage);
+    }
+  });
 })
 //#endregion
 
@@ -496,7 +501,7 @@ function checkForUpdates() {
           // 使用标题而不是tag，标题格式为 vx.x.x
           const titleMatch = release.name.match(/v(\d+\.\d+\.\d+)/);
           const latestVersion = titleMatch ? titleMatch[1] : release.tag_name.replace('v', '');
-          
+
           // 获取当前版本
           let currentVersion;
           try {
