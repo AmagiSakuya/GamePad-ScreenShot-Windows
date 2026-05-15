@@ -38,6 +38,12 @@
   <img src="./images/1.jpg" alt="软件主界面" width="600" />
 </p>
 
+#### 覆层通知
+
+<p align="center">
+  <img src="./images/5.gif" alt="覆层通知" width="600" />
+</p>
+
 ---
 
 ## 🎮 如何设置组合按键
