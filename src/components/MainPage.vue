@@ -331,9 +331,9 @@ export default {
       let overlayNotifyDuration = Number(await window.electronAPI.getStore('overlayNotifyDuration', 2)) || 2;
       if (overlayNotify === 'show') {
         await window.electronAPI.showScreenshotNotification({
-          img: filePath, 
-          title: this.$t('overlayNotify.screenshotSuccess'), 
-          desc: this.$t('overlayNotify.screenshotSaved'), 
+          img: filePath,
+          title: this.$t('overlayNotify.screenshotSuccess'),
+          desc: this.$t('overlayNotify.screenshotSaved'),
           duration: overlayNotifyDuration * 1000
         })
       }
@@ -442,11 +442,19 @@ export default {
       }
       this.saveCurrentConfig();
       this.listening = true;
-      this.windowsNotify(this.$t('alertMsg.listeningStarted'));
+      let listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
+      if (listenNotifyPolicy === 'all' || listenNotifyPolicy === 'start') {
+        this.windowsNotify(this.$t('alertMsg.listeningStarted'));
+      }
     },
     async onSDL2DeviceChanged() {
       if (this.listening) {
-        this.windowsNotify(this.$t('alertMsg.deviceChangedCancelListening'));
+
+        let listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
+        if (listenNotifyPolicy === 'all' || listenNotifyPolicy === 'stop') {
+          this.windowsNotify(this.$t('alertMsg.deviceChangedCancelListening'));
+        }
+
         if (this.detectionIndex != -1) {
           this.detectionIndex = -1;
           await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
@@ -494,7 +502,10 @@ export default {
     },
     async stopListen() {
       this.listening = false;
-      this.windowsNotify(this.$t('alertMsg.listeningStopped'));
+      let listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
+      if (listenNotifyPolicy === 'all' || listenNotifyPolicy === 'stop') {
+        this.windowsNotify(this.$t('alertMsg.listeningStopped'));
+      }
     },
     async onUserSelectedDeviceChange() {
       this.loadConfig(this.currentGamePad.name)

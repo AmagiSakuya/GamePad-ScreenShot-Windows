@@ -72,7 +72,8 @@ export default {
                 autoStart: false,
                 minimizeOnStartup: false,
                 overlayNotify: 'show',
-                overlayNotifyDuration: 3
+                overlayNotifyDuration: 3,
+                listenNotifyPolicy: 'all'
             },
             groups: [
                 {
@@ -112,7 +113,14 @@ export default {
                                 { value: 'exit', label: 'SystemSettingsPage.closeTypeEnum.exit' },
                                 { value: 'tray', label: 'SystemSettingsPage.closeTypeEnum.tray' }
                             ]
-                        },
+                        }
+                    ]
+                },
+                {
+                    key: 'groupNotify',
+                    icon: 'fas fa-bell',
+                    collapsed: true,
+                    settings: [
                         {
                             key: 'overlayNotify',
                             icon: 'fas fa-bell',
@@ -136,6 +144,19 @@ export default {
                                 { value: 3, label: 'SystemSettingsPage.overlayNotifyDurationEnum.3' },
                                 { value: 4, label: 'SystemSettingsPage.overlayNotifyDurationEnum.4' },
                                 { value: 5, label: 'SystemSettingsPage.overlayNotifyDurationEnum.5' }
+                            ]
+                        },
+                        {
+                            key: 'listenNotifyPolicy',
+                            icon: 'fas fa-bullhorn',
+                            type: 'select',
+                            configKey: 'listenNotifyPolicy',
+                            handler: async function() { await window.electronAPI.setStore('listenNotifyPolicy', this.config.listenNotifyPolicy) },
+                            options: [
+                                { value: 'all', label: 'SystemSettingsPage.listenNotifyPolicyEnum.all' },
+                                { value: 'start', label: 'SystemSettingsPage.listenNotifyPolicyEnum.start' },
+                                { value: 'stop', label: 'SystemSettingsPage.listenNotifyPolicyEnum.stop' },
+                                { value: 'none', label: 'SystemSettingsPage.listenNotifyPolicyEnum.none' }
                             ]
                         }
                     ]

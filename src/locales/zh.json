@@ -88,6 +88,14 @@
         },
         "autoListenResolution":"自动开始监听",
         "overlayNotify": "覆盖通知",
+        "groupNotify": "通知设置",
+        "listenNotifyPolicy": "监听时Windows通知策略",
+        "listenNotifyPolicyEnum": {
+            "all": "全部",
+            "start": "仅开始时",
+            "stop": "仅停止时",
+            "none": "不通知"
+        },
         "overlayNotifyEnum": {
             "show": "显示",
             "hide": "关闭"

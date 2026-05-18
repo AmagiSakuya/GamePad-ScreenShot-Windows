@@ -88,6 +88,14 @@
         },
         "autoListenResolution":"Auto Start Listening",
         "overlayNotify": "Overlay Notification",
+        "groupNotify": "Notification Settings",
+        "listenNotifyPolicy": "Windows Notify Policy On Listening",
+        "listenNotifyPolicyEnum": {
+            "all": "All",
+            "start": "Start Only",
+            "stop": "Stop Only",
+            "none": "None"
+        },
         "overlayNotifyEnum": {
             "show": "Show",
             "hide": "Hide"
