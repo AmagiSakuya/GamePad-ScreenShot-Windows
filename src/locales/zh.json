@@ -92,6 +92,14 @@
             "show": "显示",
             "hide": "关闭"
         },
+        "overlayNotifyDuration": "覆层通知持续时间",
+        "overlayNotifyDurationEnum": {
+            "1": "1秒",
+            "2": "2秒",
+            "3": "3秒",
+            "4": "4秒",
+            "5": "5秒"
+        },
         "autoListenResolutionEnum": {
             "never": "从不",
             "whenDeviceAvailable": "设备变化时",

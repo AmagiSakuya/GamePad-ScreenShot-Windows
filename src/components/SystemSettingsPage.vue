@@ -71,7 +71,8 @@ export default {
                 proxy: '',
                 autoStart: false,
                 minimizeOnStartup: false,
-                overlayNotify: 'show'
+                overlayNotify: 'show',
+                overlayNotifyDuration: 3
             },
             groups: [
                 {
@@ -121,6 +122,20 @@ export default {
                             options: [
                                 { value: 'show', label: 'SystemSettingsPage.overlayNotifyEnum.show' },
                                 { value: 'hide', label: 'SystemSettingsPage.overlayNotifyEnum.hide' }
+                            ]
+                        },
+                        {
+                            key: 'overlayNotifyDuration',
+                            icon: 'fas fa-clock',
+                            type: 'select',
+                            configKey: 'overlayNotifyDuration',
+                            handler: async function() { await window.electronAPI.setStore('overlayNotifyDuration', this.config.overlayNotifyDuration) },
+                            options: [
+                                { value: 1, label: 'SystemSettingsPage.overlayNotifyDurationEnum.1' },
+                                { value: 2, label: 'SystemSettingsPage.overlayNotifyDurationEnum.2' },
+                                { value: 3, label: 'SystemSettingsPage.overlayNotifyDurationEnum.3' },
+                                { value: 4, label: 'SystemSettingsPage.overlayNotifyDurationEnum.4' },
+                                { value: 5, label: 'SystemSettingsPage.overlayNotifyDurationEnum.5' }
                             ]
                         }
                     ]
@@ -230,6 +245,7 @@ export default {
         const proxy = await window.electronAPI.getStore(proxyKey, '');
         const autoStart = await window.electronAPI.getStore(autoStartKey, false);
         const overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
+        const overlayNotifyDuration = await window.electronAPI.getStore('overlayNotifyDuration', 2);
 
         this.config.language = locale;
         this.config.closeType = closeType;
@@ -241,6 +257,7 @@ export default {
         const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
         this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
         this.config.overlayNotify = overlayNotify;
+        this.config.overlayNotifyDuration = Number(overlayNotifyDuration) || 2;
     },
     unmounted() {
 

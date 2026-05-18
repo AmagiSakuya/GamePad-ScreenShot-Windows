@@ -326,13 +326,15 @@ export default {
         sound.play();
       }
 
-      // 读取系统设置的覆盖通知配置
+      // 读取系统设置的覆盖通知配置和持续时间
       let overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
+      let overlayNotifyDuration = Number(await window.electronAPI.getStore('overlayNotifyDuration', 2)) || 2;
       if (overlayNotify === 'show') {
         await window.electronAPI.showScreenshotNotification({
           img: filePath, 
           title: this.$t('overlayNotify.screenshotSuccess'), 
           desc: this.$t('overlayNotify.screenshotSaved'), 
+          duration: overlayNotifyDuration * 1000
         })
       }
 

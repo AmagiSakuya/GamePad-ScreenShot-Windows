@@ -92,6 +92,14 @@
             "show": "Show",
             "hide": "Hide"
         },
+        "overlayNotifyDuration": "Overlay Notification Duration",
+        "overlayNotifyDurationEnum": {
+            "1": "1s",
+            "2": "2s",
+            "3": "3s",
+            "4": "4s",
+            "5": "5s"
+        },
         "autoListenResolutionEnum": {
             "never": "Never",
             "whenDeviceAvailable": "On Device Change",

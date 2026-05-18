@@ -238,91 +238,6 @@ const messages = {
 };
 
 // 2. 模拟 $t 函数
-// ===== 截图通知浮窗 =====
-let overlayWindow = null;
-let overlayTimeout = null;
-
-function showScreenshotNotification({ img, title = '截图成功', desc = '已保存到本地' }) {
-  // 如果已有通知，先关闭
-  if (overlayWindow) {
-    overlayWindow.close();
-    overlayWindow = null;
-    clearTimeout(overlayTimeout);
-  }
-
-  overlayWindow = new BrowserWindow({
-    width: 380,
-    height: 100,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    focusable: false,
-    show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: preloadPath
-    }
-  });
-  // 获取主屏幕尺寸，定位到左上角
-  const { screen } = require('electron');
-  const display = screen.getPrimaryDisplay();
-  const x = 0;
-  const y = 0;
-
-  overlayWindow = new BrowserWindow({
-    width: 480,
-    height: 150,
-    x,
-    y,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    focusable: false,
-    show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: preloadPath
-    }
-  });
-
-  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  overlayWindow.setIgnoreMouseEvents(true);
-
-
-  const overlayWindowFilePath = app.isPackaged ? path.join(process.resourcesPath, 'html', 'screenshot-notification.html') : '../src/screenshot-notification.html';
-
-  overlayWindow.loadFile(overlayWindowFilePath, {
-    query: { img, title, desc }
-  });
-
-  overlayWindow.once('ready-to-show', () => {
-    overlayWindow.showInactive(); // 不抢焦点
-  });
-
-  overlayWindow.on('closed', () => {
-    overlayWindow = null;
-    clearTimeout(overlayTimeout);
-  });
-
-  // 5秒后自动关闭
-  overlayTimeout = setTimeout(() => {
-    if (overlayWindow) {
-      overlayWindow.close();
-      overlayWindow = null;
-    }
-  }, 5300);
-}
-
-ipcMain.handle('show-screenshot-notification', (event, args) => {
-  showScreenshotNotification(args);
-});
 function $t(key) {
   let locale = configStore.get(localeKey, 'zh');
   // 支持 "menu.file.save" 这种嵌套路径
@@ -592,5 +507,78 @@ ipcMain.handle('stop-listen-from-tray', async () => {
 ipcMain.handle('get-active-win-info', () => {
   return activeWin();
 })
+
+//#endregion
+
+//#region 截图通知浮窗
+
+let overlayWindow = null;
+let overlayTimeout = null;
+
+function showScreenshotNotification({ img, title = '截图成功', desc = '已保存到本地', duration = 3000 }) {
+  // 如果已有通知，先关闭
+  if (overlayWindow) {
+    overlayWindow.close();
+    overlayWindow = null;
+    clearTimeout(overlayTimeout);
+  }
+
+  // 获取主屏幕尺寸，定位到左上角
+  const { screen } = require('electron');
+  const display = screen.getPrimaryDisplay();
+  const x = 0;
+  const y = 0;
+
+  overlayWindow = new BrowserWindow({
+    width: 480,
+    height: 150,
+    x,
+    y,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: false,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: preloadPath
+    }
+  });
+
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  overlayWindow.setIgnoreMouseEvents(true);
+
+
+  const overlayWindowFilePath = app.isPackaged ? path.join(process.resourcesPath, 'html', 'screenshot-notification.html') : '../src/screenshot-notification.html';
+
+  overlayWindow.loadFile(overlayWindowFilePath, {
+    query: { img, title, desc }
+  });
+
+  overlayWindow.once('ready-to-show', () => {
+    overlayWindow.showInactive(); // 不抢焦点
+  });
+
+  overlayWindow.on('closed', () => {
+    overlayWindow = null;
+    clearTimeout(overlayTimeout);
+  });
+
+  // 5秒后自动关闭
+  overlayTimeout = setTimeout(() => {
+    if (overlayWindow) {
+      overlayWindow.close();
+      overlayWindow = null;
+    }
+  }, duration);
+}
+
+ipcMain.handle('show-screenshot-notification', (event, args) => {
+  showScreenshotNotification(args);
+});
 
 //#endregion
