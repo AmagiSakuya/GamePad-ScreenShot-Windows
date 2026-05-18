@@ -150,7 +150,6 @@ function createTray() {
   });
 }
 
-
 app.on('will-quit', () => {
   //globalShortcut.unregisterAll()
 })
@@ -221,7 +220,6 @@ if (isDevelopment) {
     })
   }
 }
-
 
 ipcMain.on('restart-app', () => {
   app.relaunch();
@@ -379,6 +377,7 @@ ipcMain.handle('get-store', (_, key, defaultValue) => {
 //#endregion
 
 //#region 更新检测
+
 // 检查GitHub最新release
 function checkForUpdates() {
   return new Promise((resolve, reject) => {
@@ -507,7 +506,6 @@ ipcMain.handle('stop-listen-from-tray', async () => {
 ipcMain.handle('get-active-win-info', () => {
   return activeWin();
 })
-
 //#endregion
 
 //#region 截图通知浮窗
@@ -579,6 +577,36 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
 
 ipcMain.handle('show-screenshot-notification', (event, args) => {
   showScreenshotNotification(args);
+});
+
+//#endregion
+
+//#region 主线程错误日志记录
+const logDir = app.isPackaged ? path.join(process.resourcesPath, '..', 'log') : path.join(app.getAppPath(), 'log');
+// Ensure the log directory exists
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+
+// Function to log errors to a file
+function logErrorToFile(error) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const logFilePath = path.join(logDir, `error-${timestamp}.log`);
+  const logContent = `Time: ${new Date().toISOString()}\nError: ${error.stack || error.message || error}\n`;
+
+  fs.writeFileSync(logFilePath, logContent, { flag: 'a' });
+}
+
+// Catch uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  logErrorToFile(error);
+});
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+  logErrorToFile(reason);
 });
 
 //#endregion
