@@ -131,7 +131,7 @@
             <div class="combo-rows-container">
               <div v-for="(key, index) in config.comboKeys" :key="index" class="combo-row">
                 <select class="form-select combo-select" v-model="config.comboKeys[index]">
-                  <option v-for="(n, index) in 20" :key="index" :value="index">Button{{ index }}</option>
+                  <option v-for="(n, index) in comboKeyOptions" :key="index" :value="n.label">{{ n.label }}</option>
                 </select>
                 <button v-show="loadedGamePads.length > 0" @click="automatedDetection(index)" class="btn btn-primary">
                   <span>{{ detectionIndex == -1 ? $t('recognize') : detectionIndex == index ? $t('recognizing') :
@@ -218,6 +218,7 @@ let rawDevices;
 let timer;
 let active_info_getter_timer;
 let lastButtonsValue;
+let lastHatsValue;
 let activeWinInfoResult;
 let autoListenResolutionKey = 'autoListenResolution';
 
@@ -257,13 +258,15 @@ export default {
       loadedGamePads: [],
       currentGamePad: {},
       buttonsValuePreview: new Array(20).fill(false),
+      hatsValuePreview: new Array(4).fill(false),
       screenShoting: false,
       detectionIndex: -1,
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
       saveImageFormateOptions: ['jpg', 'png'],
       availableFields: ['activeWinTitle', 'activeWinOwner', 'timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss', 'cs', 'ms'],
       formatPreviewTicker: 0,
-      errorMessage: ''
+      errorMessage: '',
+      comboKeyOptions: []
     }
   },
   async mounted() {
@@ -276,7 +279,7 @@ export default {
 
     await this.tryStartListen('appStart');
 
-    timer = setInterval(this.getCurrentButtonsValue, 60);
+    timer = setInterval(this.handleScreenShotTrigger, 60);
 
     active_info_getter_timer = setInterval(async () => {
       if (!this.config.fileNameTemplate.includes('%activeWinTitle%') && !this.config.fileNameTemplate.includes('%activeWinOwner%')) {
@@ -289,6 +292,16 @@ export default {
         this.formatPreviewTicker++;
       }
     }, 3000);
+
+    //按键选项初始化
+    this.comboKeyOptions = [];
+    for (let i = 0; i < 20; i++) {
+      this.comboKeyOptions.push({ label: 'Button' + i, value: i });
+    }
+     for (let i = 0; i < 4; i++) {
+      this.comboKeyOptions.push({ label: 'Hat' + i, value: i });
+    }
+
   },
   async beforeUnmount() {
     if (this.listening) {
@@ -475,30 +488,55 @@ export default {
         }
       }
     },
-    async getCurrentButtonsValue() {
+    async handleScreenShotTrigger() {
       this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
+      this.hatsValuePreview = await window.electronAPI.getCurrentHatValue()
+
+      //如果是监听中
       if (this.listening) {
         let flag = true;
         for (let i = 0; i < this.config.comboKeys.length; i++) {
-          let m_index = this.config.comboKeys[i];
-          let buttonValue = this.buttonsValuePreview[m_index];
-          if (!buttonValue) flag = false
+          let m_btn_key = this.config.comboKeys[i];
+
+          if(m_btn_key.indexOf("Button") !== -1){
+            let btn_index = Number(m_btn_key.replace("Button", ""));
+            if (!this.buttonsValuePreview[btn_index]) {
+              flag = false;
+            }
+          }else{
+            let hat_index = Number(m_btn_key.replace("Hat", ""));
+            if (!this.hatsValuePreview[hat_index]) {
+              flag = false;
+            }
+          }
         }
         if (flag) {
           this.takeScreenshot();
         }
       }
-
+      
+      //如果是识别中
       if (!this.listening && this.detectionIndex != -1) {
         for (let i = 0; i < this.buttonsValuePreview.length; i++) {
           if (this.buttonsValuePreview[i] != lastButtonsValue[i]) {
-            this.config.comboKeys[this.detectionIndex] = i;
+            this.config.comboKeys[this.detectionIndex] = "Button"+ i;
             this.detectionIndex = -1;
-            await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
             break;
           }
         }
       }
+
+      if (!this.listening && this.detectionIndex != -1) {
+        for (let i = 0; i < this.hatsValuePreview.length; i++) {
+          if (this.hatsValuePreview[i] != lastHatsValue[i]) {
+            this.config.comboKeys[this.detectionIndex] = "Hat"+ i;
+            this.detectionIndex = -1;
+            break;
+          }
+        }
+      }
+
+      lastHatsValue
     },
     async stopListen() {
       this.listening = false;
@@ -519,7 +557,9 @@ export default {
           return;
         }
         this.detectionIndex = detectionIndex;
+        //let buttonsWithHats = this.buttonsValuePreview.concat(this.hatsValuePreview);
         lastButtonsValue = JSON.parse(JSON.stringify(this.buttonsValuePreview));
+        lastHatsValue = JSON.parse(JSON.stringify(this.hatsValuePreview));
         return;
       }
       if (this.detectionIndex == detectionIndex) {

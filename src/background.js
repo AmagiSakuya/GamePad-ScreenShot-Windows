@@ -276,6 +276,7 @@ ipcMain.handle('file-conflict-handle', async (_, config) => {
 //#region SDL2方法
 let device_instance;
 let buttons = new Array(20).fill(false);
+let hats = [false, false, false, false];
 
 ipcMain.handle('get-all-gamepad', () => {
   return sdl.joystick.devices
@@ -283,7 +284,6 @@ ipcMain.handle('get-all-gamepad', () => {
 
 ipcMain.handle('open-sdl2-device', async (_, device) => {
   try {
-
     device_instance = sdl.joystick.openDevice(sdl.joystick.devices[device._index]);
     buttons = new Array(20).fill(false);
 
@@ -293,6 +293,11 @@ ipcMain.handle('open-sdl2-device', async (_, device) => {
 
     device_instance.on('buttonUp', (data) => {
       buttons[data.button] = false;
+    })
+
+    device_instance.on('hatMotion', (data) => {
+      hats = mapHatMotionToDirections(data.value);
+      //console.log(hats);
     })
 
   } catch (err) {
@@ -305,12 +310,19 @@ ipcMain.handle('open-sdl2-device', async (_, device) => {
 ipcMain.handle('remove-sdl2-device-instance-all-listeners', async (_, device) => {
   if (device_instance) {
     buttons = new Array(20).fill(false);
+    hats = [false, false, false, false]
     device_instance.removeAllListeners();
   }
 })
 
 ipcMain.handle('get-current-buttons-value', async () => {
-  return buttons;
+  //return buttons;
+  return buttons
+})
+
+ipcMain.handle('get-current-hats-value', async () => {
+  //return buttons;
+  return hats
 })
 
 sdl.joystick.on('deviceAdd', (device) => {
@@ -327,6 +339,28 @@ ipcMain.handle('get-device-instance-button-number', async () => {
   }
   return 0
 })
+
+function mapHatMotionToDirections(motion) {
+  // 初始化 [上, 右, 下, 左] 全为 false (0)
+  let directions = [false, false, false, false];
+
+  // 如果是中心点，直接返回全 false
+  if (motion === 'hatMotion centered') {
+    return directions;
+  }
+
+  // 转为小写，方便模糊匹配，防止大小写拼写错误
+  const m = motion.toLowerCase();
+
+  // 检查是否包含对应的方向关键字
+  if (m.includes('up')) directions[0] = true; // 0 是上
+  if (m.includes('right')) directions[1] = true; // 1 是右
+  if (m.includes('down')) directions[2] = true; // 2 是下
+  if (m.includes('left')) directions[3] = true; // 3 是左
+
+  return directions;
+}
+
 
 //#endregion
 
