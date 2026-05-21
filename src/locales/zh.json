@@ -8,6 +8,7 @@
     "thumbnailSize": "保存尺寸",
     "savingMode": "保存形式",
     "savePath": "保存路径",
+    "saveByActiveWinTitle": "按窗口名保存",
     "select": "选择",
     "selectFolderPath": "请选择文件夹路径",
     "imageFormat": "图片格式",

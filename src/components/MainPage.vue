@@ -56,6 +56,13 @@
                 <button class="btn btn-primary" @click="chooseFolder">
                   <span>{{ $t('select') }}</span>
                 </button>
+                <span style="display:flex;align-items:center;gap:8px;margin-left:6px;">
+                  <span style="font-size:0.95rem;user-select:none;">{{ $t('saveByActiveWinTitle') }}</span>
+                  <label class="switch" style="margin:0;">
+                    <input type="checkbox" v-model="config.saveByActiveWinTitle">
+                    <span class="slider round"></span>
+                  </label>
+                </span>
               </div>
             </div>
             <div class="setting-controls">
@@ -246,7 +253,9 @@ export default {
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
-        fileNameTemplate: 'Screenshot_%timestamp%'
+        fileNameTemplate: 'Screenshot_%timestamp%',
+        // 新增：按窗口名保存开关
+        saveByActiveWinTitle: false
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
@@ -313,6 +322,20 @@ export default {
       this.screenShoting = true;
       var m_config = JSON.parse(JSON.stringify(this.config));
       m_config.calcedFileName = this.formatFileName(m_config.fileNameTemplate);
+      // 如果启用了按窗口名保存，则将当前窗口标题作为子文件夹加入到路径中
+      if (m_config.saveByActiveWinTitle) {
+        activeWinInfoResult = await window.electronAPI.getActiveWindowsInfo();
+        let folderName = activeWinInfoResult ? activeWinInfoResult.title : 'UnknownWindow'
+        // 清理非法文件名字符：<>:"/\\|?*
+        folderName = this.sanitizeToValidFolderName(folderName);
+        // 去掉路径末尾的斜杠或反斜杠
+        let basePath = m_config.path.replace(/[\\/]$/, '');
+        // Windows 下使用反斜杠
+        m_config.path = basePath + '\\' + folderName;
+        await window.electronAPI.ensureFolder(m_config.path);
+        //console.log('按窗口名保存启用，截图将保存在：' + m_config.path);
+      }
+
       let filePath;
       if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
         filePath = await window.electronAPI.screenShot(m_config)
@@ -388,8 +411,11 @@ export default {
       if (this.config.imageFormat == null || this.config.imageFormat == undefined || this.config.imageFormat.trim() == '') {
         this.config.imageFormat = 'jpg'
       }
-      //#endregion
 
+      if (this.config.saveByActiveWinTitle == null || this.config.saveByActiveWinTitle == undefined) {
+        this.config.saveByActiveWinTitle = false;
+      }
+      //#endregion
     },
     resetConfig() {
       this.config = {
@@ -401,7 +427,8 @@ export default {
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
-        fileNameTemplate: 'Screenshot_%timestamp%'
+        fileNameTemplate: 'Screenshot_%timestamp%',
+        saveByActiveWinTitle: false
       }
     },
     async loadGamePadList() {
@@ -577,6 +604,24 @@ export default {
     },
     openScreenShotFolder() {
       window.electronAPI.openFolder(this.config.path);
+    },
+    sanitizeToValidFolderName(str) {
+      if (!str || typeof str !== 'string') return 'untitled_folder';
+      return str
+        // 1. 替换所有跨平台非法字符与控制字符
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\x00-\x1f\x7f\\/:*?"<>|]/g, '_')
+
+        // 2. 针对 Windows 的特殊保留字处理
+        .replace(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i, '_$1$2')
+
+        // 3. 细节美化与安全修剪
+        .replace(/_+/g, '_')
+        .replace(/^[\s_]+|[\s_]+$/g, '')
+
+        // 4. 长度限制
+        .substring(0, 255);
+
     }
   }
 }

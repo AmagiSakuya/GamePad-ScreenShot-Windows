@@ -84,6 +84,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showConfirmMessageBox: (title, message, detail, buttons) => ipcRenderer.invoke('show-confirm-messageBox', title, message, detail, buttons),
     fileConflictHandle: (config) => ipcRenderer.invoke('file-conflict-handle', config),
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
+    // Ensure folder exists (creates recursively). Returns true on success, false on failure.
+    ensureFolder: (folderPath) => {
+        try {
+            if (!folderPath || folderPath.trim() === '') return false;
+            fs.mkdirSync(folderPath, { recursive: true });
+            return true;
+        } catch (e) {
+            console.error('ensureFolder failed', e);
+            return false;
+        }
+    },
     restartApp: () => ipcRenderer.send('restart-app'),
     getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
