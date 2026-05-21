@@ -277,6 +277,7 @@ ipcMain.handle('file-conflict-handle', async (_, config) => {
 let device_instance;
 let buttons = new Array(20).fill(false);
 let hats = [false, false, false, false];
+let isXboxController = false;
 
 ipcMain.handle('get-all-gamepad', () => {
   return sdl.joystick.devices
@@ -285,6 +286,8 @@ ipcMain.handle('get-all-gamepad', () => {
 ipcMain.handle('open-sdl2-device', async (_, device) => {
   try {
     device_instance = sdl.joystick.openDevice(sdl.joystick.devices[device._index]);
+    isXboxController = device_instance._device.vendor == 1118 && device_instance._device.product == 654;
+
     buttons = new Array(20).fill(false);
 
     device_instance.on('buttonDown', (data) => {
@@ -297,7 +300,6 @@ ipcMain.handle('open-sdl2-device', async (_, device) => {
 
     device_instance.on('hatMotion', (data) => {
       hats = mapHatMotionToDirections(data.value);
-      //console.log(hats);
     })
 
   } catch (err) {
@@ -315,13 +317,24 @@ ipcMain.handle('remove-sdl2-device-instance-all-listeners', async (_, device) =>
   }
 })
 
+ipcMain.handle('close-sdl2-instance-device', async (_, device) => {
+  if (device_instance) {
+    device_instance.close();
+    device_instance = void 0;
+  }
+})
+
 ipcMain.handle('get-current-buttons-value', async () => {
-  //return buttons;
+  if (isXboxController) {
+    let res = [];
+    res = buttons.slice(0, device_instance.buttons.length);
+    res = res.concat(hats);
+    return res;
+  }
   return buttons
 })
 
 ipcMain.handle('get-current-hats-value', async () => {
-  //return buttons;
   return hats
 })
 
@@ -335,6 +348,9 @@ sdl.joystick.on('deviceRemove', (device) => {
 
 ipcMain.handle('get-device-instance-button-number', async () => {
   if (device_instance) {
+    if (isXboxController) {
+      return device_instance.buttons.length + 4;
+    }
     return device_instance.buttons.length
   }
   return 0

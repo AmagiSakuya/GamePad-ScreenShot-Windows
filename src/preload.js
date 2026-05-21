@@ -74,6 +74,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     copyText: (text) => clipboard.writeText(text),
     getAllGamePad: () => ipcRenderer.invoke('get-all-gamepad'),
     openSdl2Device: (device) => ipcRenderer.invoke('open-sdl2-device', device),
+    closeSdl2DeviceInstance: () => ipcRenderer.invoke('close-sdl2-instance-device'),
     removeSdl2DeviceInstanceAllListeners: () => ipcRenderer.invoke('remove-sdl2-device-instance-all-listeners'),
     getCurrentButtonsValue: () => ipcRenderer.invoke('get-current-buttons-value'),
     getCurrentHatValue: () => ipcRenderer.invoke('get-current-hats-value'),

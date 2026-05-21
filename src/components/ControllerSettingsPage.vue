@@ -24,12 +24,6 @@
                             <div v-show="index < deviceInstanceButtonCount" class="button-state"
                                 :class="button ? 'button-pressed' : 'button-released'" tabindex="0"></div>
                         </div>
-
-                        <div class="button-item" v-for="(hat, index) in hatsValuePreview" :key="'hat' + index">
-                            <div class="button-label">Hat{{ index }}</div>
-                            <div class="button-state"
-                                :class="hat ? 'button-pressed' : 'button-released'" tabindex="0"></div>
-                        </div>
                     </div>
                 </div>
                
@@ -53,7 +47,6 @@ export default {
             loadedGamePads: [],
             currentGamePad: {},
             buttonsValuePreview: new Array(20).fill(false),
-            hatsValuePreview: new Array(4).fill(false),
             deviceInstanceButtonCount: 0
         }
     },
@@ -103,7 +96,6 @@ export default {
         async getCurrentButtonsValue() {
             this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
             this.buttonsValuePreview = this.buttonsValuePreview.slice(0, this.deviceInstanceButtonCount);
-            this.hatsValuePreview = await window.electronAPI.getCurrentHatValue()
         }
     }
 }

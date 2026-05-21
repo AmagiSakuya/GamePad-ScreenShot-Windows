@@ -218,7 +218,6 @@ let rawDevices;
 let timer;
 let active_info_getter_timer;
 let lastButtonsValue;
-let lastHatsValue;
 let activeWinInfoResult;
 let autoListenResolutionKey = 'autoListenResolution';
 
@@ -258,7 +257,6 @@ export default {
       loadedGamePads: [],
       currentGamePad: {},
       buttonsValuePreview: new Array(20).fill(false),
-      hatsValuePreview: new Array(4).fill(false),
       screenShoting: false,
       detectionIndex: -1,
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
@@ -298,10 +296,6 @@ export default {
     for (let i = 0; i < 20; i++) {
       this.comboKeyOptions.push({ label: 'Button' + i, value: i });
     }
-     for (let i = 0; i < 4; i++) {
-      this.comboKeyOptions.push({ label: 'Hat' + i, value: i });
-    }
-
   },
   async beforeUnmount() {
     if (this.listening) {
@@ -490,22 +484,15 @@ export default {
     },
     async handleScreenShotTrigger() {
       this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
-      this.hatsValuePreview = await window.electronAPI.getCurrentHatValue()
 
       //如果是监听中
       if (this.listening) {
         let flag = true;
         for (let i = 0; i < this.config.comboKeys.length; i++) {
           let m_btn_key = this.config.comboKeys[i];
-
           if(m_btn_key.indexOf("Button") !== -1){
             let btn_index = Number(m_btn_key.replace("Button", ""));
             if (!this.buttonsValuePreview[btn_index]) {
-              flag = false;
-            }
-          }else{
-            let hat_index = Number(m_btn_key.replace("Hat", ""));
-            if (!this.hatsValuePreview[hat_index]) {
               flag = false;
             }
           }
@@ -514,29 +501,19 @@ export default {
           this.takeScreenshot();
         }
       }
-      
+ 
       //如果是识别中
       if (!this.listening && this.detectionIndex != -1) {
         for (let i = 0; i < this.buttonsValuePreview.length; i++) {
           if (this.buttonsValuePreview[i] != lastButtonsValue[i]) {
-            this.config.comboKeys[this.detectionIndex] = "Button"+ i;
+            this.config.comboKeys[this.detectionIndex] = "Button" + i;
             this.detectionIndex = -1;
+            await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+            //await window.electronAPI.closeSdl2DeviceInstance()
             break;
           }
         }
       }
-
-      if (!this.listening && this.detectionIndex != -1) {
-        for (let i = 0; i < this.hatsValuePreview.length; i++) {
-          if (this.hatsValuePreview[i] != lastHatsValue[i]) {
-            this.config.comboKeys[this.detectionIndex] = "Hat"+ i;
-            this.detectionIndex = -1;
-            break;
-          }
-        }
-      }
-
-      lastHatsValue
     },
     async stopListen() {
       this.listening = false;
@@ -557,14 +534,11 @@ export default {
           return;
         }
         this.detectionIndex = detectionIndex;
-        //let buttonsWithHats = this.buttonsValuePreview.concat(this.hatsValuePreview);
         lastButtonsValue = JSON.parse(JSON.stringify(this.buttonsValuePreview));
-        lastHatsValue = JSON.parse(JSON.stringify(this.hatsValuePreview));
         return;
       }
       if (this.detectionIndex == detectionIndex) {
         this.detectionIndex = -1;
-        await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
         return;
       }
     },
