@@ -38,6 +38,12 @@ A utility that allows you to trigger **Full-screen screenshots** or **OBS screen
   <img src="./images/1_en.jpg" alt="Main Interface" width="600" />
 </p>
 
+#### 🖼️ Overlay Notify
+
+<p align="center">
+  <img src="./images/5.gif" alt="覆层通知" width="600" />
+</p>
+
 ---
 
 ## 🎮 How to Set Up Button Combinations
@@ -73,21 +79,7 @@ A utility that allows you to trigger **Full-screen screenshots** or **OBS screen
 
 ---
 
-## 📋 TODO
 
-- [x] Migrated from HID to **SDL2** for better controller compatibility
-- [x] Integrated **OBS Socket service** for OBS-based captures
-- [x] Audio volume adjustment
-- [x] Selectable JPG/PNG formats
-- [x] Customizable filenames
-- [x] Copy to clipboard functionality
-- [x] Multi-language support
-- [x] Add "Focused Window Title" as a custom field for file naming
-- [x] Auto-start
-- [x] Update detection
-- [x] Minimize on startup
-
----
 
 ## ⚠️ Known Limitations
 

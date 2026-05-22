@@ -56,10 +56,13 @@ if (!gotTheLock) {
   app.quit();
 }
 
+const packagePath = path.join(app.getAppPath(), 'package.json');
+const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
 async function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
-    title: $t('gamepadScreenShotTool'),
+    title: $t('gamepadScreenShotTool') + ` ver.${packageJson.version}`,
     width: 700,
     height: 900,
     autoHideMenuBar: true,
@@ -482,14 +485,11 @@ function checkForUpdates() {
         try {
           const release = JSON.parse(data);
           // 使用标题而不是tag，标题格式为 vx.x.x
-          const titleMatch = release.name.match(/v(\d+\.\d+\.\d+)/);
-          const latestVersion = titleMatch ? titleMatch[1] : release.tag_name.replace('v', '');
+          const latestVersion = release.tag_name.replace(/^v/, '');
 
           // 获取当前版本
           let currentVersion;
           try {
-            const packagePath = path.join(app.getAppPath(), 'package.json');
-            const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
             currentVersion = packageJson.version;
           } catch (error) {
             console.warn('Failed to read package.json:', error);
@@ -653,7 +653,7 @@ log.transports.console.level = false; // 生产环境可以关闭控制台打印
 // 封装一个优雅的“闪退”函数
 function crashAndExit(title, error) {
   // 同步写入日志，确保程序退出前数据已经落盘
-  log.error(`[FATAL CRASH] ${title}:`, error);
+  log.error(`[FATAL CRASH] [Version:${packageJson.version}] ${title}:`, error);
   let path = log.transports.file.getFile().path;
   dialog.showErrorBox(
     $t('alertMsg.fatalCrashTitle'),

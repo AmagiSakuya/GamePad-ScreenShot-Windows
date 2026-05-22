@@ -38,7 +38,7 @@
                     <div class="group-content">
                         <div class="setting-row">
                             <div class="setting-controls">
-                                <button class="btn compact" @click="openLogFolder">{{ $t('SystemSettingsPage.openLogFolder') }}</button>
+                                <button class="btn compact" style="background: linear-gradient(to right, #4b6cb7, #4b6cb7);color: #fff;" @click="openLogFolder">{{ $t('SystemSettingsPage.openLogFolder') }}</button>
                             </div>
                         </div>
                     </div>
