@@ -85,6 +85,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     showConfirmMessageBox: (title, message, detail, buttons) => ipcRenderer.invoke('show-confirm-messageBox', title, message, detail, buttons),
     fileConflictHandle: (config) => ipcRenderer.invoke('file-conflict-handle', config),
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
+    getLogFolder: () => ipcRenderer.invoke('get-log-folder'),
     // Ensure folder exists (creates recursively). Returns true on success, false on failure.
     ensureFolder: (folderPath) => {
         try {

@@ -129,7 +129,8 @@
         "groupPolicy": "Policy Settings",
         "groupUpdate": "Update Settings",
         "languageChinese": "中文",
-        "languageEnglish": "English"
+        "languageEnglish": "English",
+        "openLogFolder": "Open Log Folder"
     },
     "TrayMenu": {
         "openScreenshotFolder":"Open Screenshot Folder",

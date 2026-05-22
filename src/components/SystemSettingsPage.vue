@@ -34,6 +34,15 @@
                 </div>
 
             </div>
+                <div class="setting-group">
+                    <div class="group-content">
+                        <div class="setting-row">
+                            <div class="setting-controls">
+                                <button class="btn compact" @click="openLogFolder">{{ $t('SystemSettingsPage.openLogFolder') }}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </div>
 
     </div>
@@ -74,8 +83,8 @@ export default {
                 overlayNotify: 'show',
                 overlayNotifyDuration: 3,
                 listenNotifyPolicy: 'all'
-            },
-            groups: [
+                },
+                groups: [
                 {
                     key: 'groupBasic',
                     icon: 'fas fa-cog',
@@ -337,6 +346,19 @@ export default {
         },
         toggleGroup(index) {
             this.groups[index].collapsed = !this.groups[index].collapsed;
+        },
+        async openLogFolder() {
+
+            const logPath = await window.electronAPI.getLogFolder();
+            if (!logPath) {
+                return;
+            }
+            // 确保文件夹存在（如果不存在则创建），再打开
+            const ensured = await window.electronAPI.ensureFolder(logPath);
+            if (!ensured) {
+                return;
+            }
+            await window.electronAPI.openFolder(logPath);
         }
     }
 }

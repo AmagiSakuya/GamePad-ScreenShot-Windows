@@ -425,6 +425,13 @@ ipcMain.handle('open-folder', async (_, folderPath) => {
     }
   });
 })
+// 返回日志文件夹路径（开发/打包环境不同）
+ipcMain.handle('get-log-folder', async () => {
+  let filePath = log.transports.file.getFile().path;
+  let folderPath = path.dirname(filePath);
+  return folderPath;
+});
+
 //#endregion
 
 //#region store

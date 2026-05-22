@@ -129,7 +129,8 @@
         "groupPolicy": "策略设置",
         "groupUpdate": "更新设置",
         "languageChinese": "中文",
-        "languageEnglish": "English"
+        "languageEnglish": "English",
+        "openLogFolder": "打开日志文件夹"
     },
     "TrayMenu": {
         "openScreenshotFolder":"打开截图文件夹",
