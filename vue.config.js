@@ -24,7 +24,6 @@ module.exports = defineConfig({
   pluginOptions: {
     electronBuilder: {
       preload: 'src/preload.js',
-      externals: ['electron-log'],
       builderOptions: {
         "productName": "Gamepad Full-ScreenShot Tool",
         "win": {
