@@ -1,10 +1,16 @@
 import { createApp } from 'vue'
+
 import App from './App.vue'
 import { createI18n } from 'vue-i18n'
 import zh from './locales/zh.json'
 import en from './locales/en.json'
 
 const app = createApp(App)
+
+app.config.errorHandler = (err, instance, info) => {
+    // 让 preload 帮你通知主进程闪退
+    window.electronAPI.sendFatalError(err);
+};
 
 let localeKey = 'locale';
 

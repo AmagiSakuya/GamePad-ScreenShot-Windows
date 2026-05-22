@@ -1,6 +1,7 @@
 'use strict'
 
 import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell } from 'electron'
+const log = require('electron-log');
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const activeWin = require('active-win');
@@ -26,6 +27,23 @@ const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
+
+//#region 重写ipcMain.handle，添加全局错误捕获
+
+const originalHandle = ipcMain.handle;
+ipcMain.handle = function (channel, listener) {
+  // 返回包裹后的新 listener
+  return originalHandle.call(ipcMain, channel, async (event, ...args) => {
+    try {
+      // 执行原本的业务逻辑
+      return await listener(event, ...args);
+    } catch (error) {
+      crashAndExit('Uncaught Exception in IpcMain Handle', error);
+      throw error; // 仍然抛出，维持原本的返回特性
+    }
+  });
+};
+//#endregion
 
 //#region app
 let win;
@@ -284,28 +302,22 @@ ipcMain.handle('get-all-gamepad', () => {
 })
 
 ipcMain.handle('open-sdl2-device', async (_, device) => {
-  try {
-    device_instance = sdl.joystick.openDevice(sdl.joystick.devices[device._index]);
-    isXboxController = device_instance._device.vendor == 1118 && device_instance._device.product == 654;
+  device_instance = sdl.joystick.openDevice(sdl.joystick.devices[device._index]);
+  isXboxController = device_instance._device.vendor == 1118 && device_instance._device.product == 654;
 
-    buttons = new Array(20).fill(false);
+  buttons = new Array(20).fill(false);
 
-    device_instance.on('buttonDown', (data) => {
-      buttons[data.button] = true;
-    })
+  device_instance.on('buttonDown', (data) => {
+    buttons[data.button] = true;
+  })
 
-    device_instance.on('buttonUp', (data) => {
-      buttons[data.button] = false;
-    })
+  device_instance.on('buttonUp', (data) => {
+    buttons[data.button] = false;
+  })
 
-    device_instance.on('hatMotion', (data) => {
-      hats = mapHatMotionToDirections(data.value);
-    })
-
-  } catch (err) {
-    console.error('打开控制器失败', err);
-    return false
-  }
+  device_instance.on('hatMotion', (data) => {
+    hats = mapHatMotionToDirections(data.value);
+  })
   return true;
 })
 
@@ -526,12 +538,7 @@ function compareVersions(version1, version2) {
 }
 
 ipcMain.handle('check-for-updates', async () => {
-  try {
-    return await checkForUpdates();
-  } catch (error) {
-    console.error('Check for updates failed:', error);
-    throw error;
-  }
+  return await checkForUpdates();
 });
 
 ipcMain.handle('open-release-page', async (_, url) => {
@@ -632,31 +639,37 @@ ipcMain.handle('show-screenshot-notification', (event, args) => {
 //#endregion
 
 //#region 主线程错误日志记录
-const logDir = app.isPackaged ? path.join(process.resourcesPath, '..', 'log') : path.join(app.getAppPath(), 'log');
-// Ensure the log directory exists
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
+
+log.transports.file.level = 'error'; // 只记录 error 及以上级别
+log.transports.console.level = false; // 生产环境可以关闭控制台打印
+
+// 封装一个优雅的“闪退”函数
+function crashAndExit(title, error) {
+  // 同步写入日志，确保程序退出前数据已经落盘
+  log.error(`[FATAL CRASH] ${title}:`, error);
+  let path = log.transports.file.getFile().path;
+  dialog.showErrorBox(
+    $t('alertMsg.fatalCrashTitle'),
+    $t('alertMsg.fatalCrashMessage') + `\n\n${path}`
+  );
+
+  // 退出程序。1 表示异常退出
+  app.exit(1); 
 }
 
-// Function to log errors to a file
-function logErrorToFile(error) {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const logFilePath = path.join(logDir, `error-${timestamp}.log`);
-  const logContent = `Time: ${new Date().toISOString()}\nError: ${error.stack || error.message || error}\n`;
-
-  fs.writeFileSync(logFilePath, logContent, { flag: 'a' });
-}
-
-// Catch uncaught exceptions
+// 2. 捕获主进程未处理的同步/异步异常
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  logErrorToFile(error);
+  crashAndExit('Uncaught Exception in Main Process', error);
 });
 
-// Catch unhandled promise rejections
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
-  logErrorToFile(reason);
+process.on('unhandledRejection', (reason, promise) => {
+  crashAndExit('Unhandled Rejection in Main Process', reason);
+});
+
+// 3. 响应渲染进程未处理的同步/异步异常
+ipcMain.on('renderer-fatal-error', function (event, errorMsg) {
+  // 收到前端传来的死讯，直接调用上面的闪退函数
+  crashAndExit('Renderer Process Exception', errorMsg);
 });
 
 //#endregion

@@ -40,7 +40,9 @@
         "openGamepadFail": "打开控制器失败",
         "deviceChangedCancelListening": "设备发生变化, 已停止截图监听",
         "listeningStarted": "开始监听",
-        "listeningStopped": "停止监听"
+        "listeningStopped": "停止监听",
+        "fatalCrashTitle": "致命崩溃",
+        "fatalCrashMessage": "程序发生严重错误，即将关闭，错误日志已记录。"
     },
     "overlayNotify":{
         "screenshotSuccess": "截图成功",

@@ -18,6 +18,7 @@
     "@kmamal/sdl": "^0.11.13",
     "active-win": "^8.2.1",
     "core-js": "^3.8.3",
+    "electron-log": "^4.4.8",
     "fs": "^0.0.1-security",
     "howler": "^2.2.4",
     "obs-websocket-js": "^5.0.7",

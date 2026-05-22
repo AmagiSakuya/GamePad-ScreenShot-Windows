@@ -476,6 +476,7 @@ export default {
       }
       this.saveCurrentConfig();
       this.listening = true;
+
       let listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
       if (listenNotifyPolicy === 'all' || listenNotifyPolicy === 'start') {
         this.windowsNotify(this.$t('alertMsg.listeningStarted'));

@@ -40,7 +40,9 @@
         "openGamepadFail": "Failed to open controller",
         "deviceChangedCancelListening": "Device changed. Screenshot listening stopped",
         "listeningStarted": "Started listening",
-        "listeningStopped": "Stopped listening"
+        "listeningStopped": "Stopped listening",
+        "fatalCrashTitle": "FatalCrash",
+        "fatalCrashMessage": "The application has encountered a critical error and needs to close. An error log has been recorded."
     },
     "overlayNotify":{
         "screenshotSuccess": "Screenshot taken",

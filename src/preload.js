@@ -1,8 +1,9 @@
 const { contextBridge, ipcRenderer, desktopCapturer, clipboard, nativeImage } = require('electron')
-const { resolutionEnum , ScreenShotSaveWayEnum } = require('../src/lib/enum')
+const { resolutionEnum, ScreenShotSaveWayEnum } = require('../src/lib/enum')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
+const log = require('electron-log');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     showScreenshotNotification: (data) => ipcRenderer.invoke('show-screenshot-notification', data),
@@ -32,17 +33,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
         })
 
         let filePath = null;
-         const img = sources[0].thumbnail
+        const img = sources[0].thumbnail
 
-            let buffer;
-            switch (config.imageFormat) {
-                case 'jpg':
-                    buffer = img.toJPEG(100)
-                    break
-                case 'png':
-                    buffer = img.toPNG()
-                    break
-            }
+        let buffer;
+        switch (config.imageFormat) {
+            case 'jpg':
+                buffer = img.toJPEG(100)
+                break
+            case 'png':
+                buffer = img.toPNG()
+                break
+        }
 
         if (config.screenShotSaveWay != ScreenShotSaveWayEnum.CilpboardOnly) {
             filePath = await ipcRenderer.invoke('file-conflict-handle', config);
@@ -106,5 +107,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onStopListenFromTray: (callback) => ipcRenderer.on('stop-listen-from-tray', callback),
     updateTrayIcon: (isListening) => ipcRenderer.send('update-tray-icon', isListening),
     updateTrayListeningState: (state) => ipcRenderer.send('update-listening-state', state),
-    sendListenStatusChanged: () => ipcRenderer.send('listen-status-changed')
+    sendListenStatusChanged: () => ipcRenderer.send('listen-status-changed'),
+    logInfo: (...args) => log.info(...args),
+    logWarn: (...args) => log.warn(...args),
+    logError: (...args) => log.error(...args),
+    sendFatalError: (error) => ipcRenderer.send('renderer-fatal-error', error.message || error.toString())
 })
