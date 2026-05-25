@@ -2,6 +2,7 @@
 
 import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell } from 'electron'
 const log = require('electron-log');
+const { uIOhook, UiohookKey } = require('uiohook-napi')
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const activeWin = require('active-win');
@@ -173,6 +174,7 @@ function createTray() {
 
 app.on('will-quit', () => {
   //globalShortcut.unregisterAll()
+  uIOhook.stop()
 })
 
 // Quit when all windows are closed.
@@ -212,7 +214,6 @@ app.on('ready', async () => {
   if (minimizeOnStartup) {
     win.hide();
   }
-
   // 启动时检测更新
   if (!isDevelopment) {
     const checkOnStartup = configStore.get('checkUpdateOnStartup', 'enabled');
@@ -225,6 +226,13 @@ app.on('ready', async () => {
       }, 1000); // 延迟1秒
     }
   }
+
+  //开启底层钩子监听
+  uIOhook.start()
+  // 监听全局键盘按下事件
+  uIOhook.on('keydown', (event) => {
+    win.webContents.send('screen-shot-keyboard-triggered', event);
+  })
 })
 
 // Exit cleanly on request from parent process in development mode.

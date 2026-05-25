@@ -28,6 +28,7 @@
     "start": "Start",
     "stop": "Stop",
     "openScreenshotFolder": "Open Screenshot Folder",
+    "keyboardTrigger": "Extra Keyboard Trigger",
     "saveWay": {
         "file": "File",
         "clipboard": "Clipboard",

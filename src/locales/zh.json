@@ -28,6 +28,7 @@
     "start": "启动",
     "stop": "停止",
     "openScreenshotFolder": "打开截图文件夹",
+    "keyboardTrigger": "额外键盘触发",
     "saveWay": {
         "file": "文件",
         "clipboard": "剪切板",

@@ -71,6 +71,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     offDeviceChanged: () => {
         ipcRenderer.removeAllListeners('device-changed')
     },
+    onScreenshotKeyboardTriggered: (callback) => {
+        ipcRenderer.on('screen-shot-keyboard-triggered', callback)
+    },
+    offScreenshotKeyboardTriggered: () => {
+        ipcRenderer.removeAllListeners('screen-shot-keyboard-triggered')
+    },
     selectFolder: () => ipcRenderer.invoke('select-folder'),
     copyText: (text) => clipboard.writeText(text),
     getAllGamePad: () => ipcRenderer.invoke('get-all-gamepad'),
@@ -112,5 +118,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     logInfo: (...args) => log.info(...args),
     logWarn: (...args) => log.warn(...args),
     logError: (...args) => log.error(...args),
-    sendFatalError: (error) => ipcRenderer.send('renderer-fatal-error', error.message || error.toString())
+    sendFatalError: (error) => ipcRenderer.send('renderer-fatal-error', error.message || error.toString()),
 })

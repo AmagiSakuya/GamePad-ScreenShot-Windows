@@ -133,6 +133,25 @@
                 <span>{{ $t('addKey') }}</span>
               </button>
             </div>
+
+            <div class="action-buttons" style="margin-left: 10px; display: inline-flex; gap: 8px;">
+              <span style="display:flex;align-items:center;gap:8px;margin-left:6px;">
+                <span style="user-select:none;">{{ $t('keyboardTrigger') }}</span>
+                <label class="switch" style="margin:0;">
+                  <input type="checkbox" v-model="config.keyboardTrigger">
+                  <span class="slider round"></span>
+                </label>
+
+                <span v-show="config.keyboardTrigger">{{computedKeyCodeLabel()}}</span>
+
+                <button v-show="config.keyboardTrigger" @click="detectiontingKeyboard = !detectiontingKeyboard"
+                  class="btn btn-primary">
+                  <span>{{ detectiontingKeyboard ? $t('recognizing') : $t('recognize') }}</span>
+                </button>
+
+              </span>
+            </div>
+            
           </div>
           <div class="setting-controls">
             <div class="combo-rows-container">
@@ -217,7 +236,7 @@
 
 <script>
 const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
-
+const { KeyCode }  = require('@/lib/keycode')
 import { Howl } from 'howler'
 import ns2SoundSrc from '@/assets/ns2截图音.mp3'
 
@@ -254,8 +273,9 @@ export default {
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate: 'Screenshot_%timestamp%',
-        // 新增：按窗口名保存开关
-        saveByActiveWinTitle: false
+        saveByActiveWinTitle: false,
+        keyboardTrigger: false,
+        keyboardTriggerKeyCode: null
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
@@ -268,6 +288,7 @@ export default {
       buttonsValuePreview: new Array(20).fill(false),
       screenShoting: false,
       detectionIndex: -1,
+      detectiontingKeyboard: false,
       volumeOptions: [0.5, 1, 1.5, 2, 3, 4, 5],
       saveImageFormateOptions: ['jpg', 'png'],
       availableFields: ['activeWinTitle', 'activeWinOwner', 'timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss', 'cs', 'ms'],
@@ -278,8 +299,10 @@ export default {
   },
   async mounted() {
     await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged);
+    await window.electronAPI.onScreenshotKeyboardTriggered(this.onScreenshotKeyboardTriggeredCallback);
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
+    console.log(KeyCode);
     // 添加托盘监听事件
     window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
     window.electronAPI.onStopListenFromTray(this.onStopListenFromTray);
@@ -311,6 +334,7 @@ export default {
       this.stopListen();
     }
     await window.electronAPI.offDeviceChanged()
+    await window.electronAPI.offDeviceChanged();
     await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
     clearInterval(timer)
     clearInterval(active_info_getter_timer)
@@ -623,6 +647,26 @@ export default {
         // 4. 长度限制
         .substring(0, 255);
 
+    },
+    onScreenshotKeyboardTriggeredCallback(_, event) {
+      if (this.detectiontingKeyboard ==  true) {
+        this.config.keyboardTriggerKeyCode = event.keycode;
+        this.detectiontingKeyboard = false;
+      }
+      if(this.config.keyboardTrigger && this.listening && event.keycode == this.config.keyboardTriggerKeyCode){
+        this.takeScreenshot();
+      }
+    },
+    computedKeyCodeLabel() {
+      let m_key = this.config.keyboardTriggerKeyCode;
+      let keys = Object.keys(KeyCode);
+      for (let i = 0; i < keys.length; i++) {
+        let k = keys[i];
+        if (KeyCode[k] == m_key) {
+          return k;
+        }
+      }
+      return 'None'
     }
   }
 }
@@ -698,6 +742,11 @@ export default {
   width: 100%;
   min-height: 30px;
   user-select: none;
+}
+
+.setting-label span {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 
@@ -947,6 +996,7 @@ export default {
   display: inline-block;
   width: 50px;
   height: 24px;
+  min-width: 50px;
 }
 
 .switch input {
