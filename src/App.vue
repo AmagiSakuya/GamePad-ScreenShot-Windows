@@ -42,7 +42,7 @@
 
       <!-- 系统设置 -->
       <div v-show="activeTab === 'system'" class="tab-pane">
-        <SystemSettingsPage :windowsNotify="windowsNotify"></SystemSettingsPage>
+        <SystemSettingsPage ref="systemPageRef" :windowsNotify="windowsNotify"></SystemSettingsPage>
       </div>
 
     </div>
@@ -82,25 +82,13 @@ export default {
     this.mainPageInstance = this.$refs.mainPageRef;
     this.startTraySync();
     // 检查是否启用启动时更新检测
-    try {
-      const checkUpdateOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'disabled');
-      if (checkUpdateOnStartup === 'enabled') {
-        // 延迟一下再检测，避免影响应用启动
-        setTimeout(async () => {
-          try {
-            const result = await window.electronAPI.checkForUpdates();
-            if (result.hasUpdate) {
-              // 自动打开浏览器进入发布页面
-              await window.electronAPI.openReleasePage(result.releaseUrl);
-              this.windowsNotify(`${this.$t('SystemSettingsPage.updateAvailable')}: ${result.latestVersion}`);
-            }
-          } catch (error) {
-            console.error('Startup update check failed:', error);
-          }
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Failed to check startup update setting:', error);
+    const checkOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'enabled');
+    if (checkOnStartup === 'enabled') {
+      // 非阻塞检测，避免启动失败
+      setTimeout(async () => {
+        //console.log('Checking for updates on startup...');
+        await this.$refs['systemPageRef'].checkForUpdates();
+      }, 1000); // 延迟1秒
     }
   },
   unmounted() {

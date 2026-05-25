@@ -302,7 +302,7 @@ export default {
     await window.electronAPI.onScreenshotKeyboardTriggered(this.onScreenshotKeyboardTriggeredCallback);
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
-    console.log(KeyCode);
+
     // 添加托盘监听事件
     window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
     window.electronAPI.onStopListenFromTray(this.onStopListenFromTray);

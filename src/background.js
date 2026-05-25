@@ -214,18 +214,6 @@ app.on('ready', async () => {
   if (minimizeOnStartup) {
     win.hide();
   }
-  // 启动时检测更新
-  if (!isDevelopment) {
-    const checkOnStartup = configStore.get('checkUpdateOnStartup', 'enabled');
-    if (checkOnStartup === 'enabled') {
-      // 非阻塞检测，避免启动失败
-      setTimeout(() => {
-        checkForUpdates().catch(err => {
-          console.error('Startup update check failed:', err);
-        });
-      }, 1000); // 延迟1秒
-    }
-  }
 
   //开启底层钩子监听
   uIOhook.start()
