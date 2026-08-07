@@ -47,7 +47,9 @@
     },
     "overlayNotify":{
         "screenshotSuccess": "Screenshot taken",
-        "screenshotSaved": "Screenshot saved"
+        "screenshotSaved": "Screenshot saved",
+        "replayBufferSaved": "Replay saved",
+        "replayBufferSavedDesc": "OBS replay buffer saved locally"
     },
     "screenshotSound": {
         "None": "Mute",
@@ -62,7 +64,12 @@
         "obsServiceNotFound": "OBS WebSocket service not found",
         "obsNotConnected": "Cannot connected to OBS",
         "invalidSceneSelected": "No valid scene selected",
-        "obsScreenshotError": "Failed to capture screenshot from OBS"
+        "obsScreenshotError": "Failed to capture screenshot from OBS",
+        "saveReplayBufferOnLongPress": "Save replay buffer on long press",
+        "replayBufferHint": "Uses the screenshot folder and filename template",
+        "replayBufferNotActive": "OBS replay buffer is not active",
+        "replayBufferSaved": "OBS replay buffer saved",
+        "replayBufferError": "Failed to save OBS replay buffer: "
     },
     "GampadTesterPage": {
         "selectController": "Select Controller",

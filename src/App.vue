@@ -7,11 +7,6 @@
         <span>{{ $t('screenshotSettings') }}</span>
       </button>
 
-      <button class="tab-btn" :class="{ active: activeTab === 'obs' }" @click="activeTab = 'obs'">
-        <i class="fas fa-obs"></i>
-        <span>{{ $t('obsConnect') }}</span>
-      </button>
-
       <button class="tab-btn" :class="{ active: activeTab === 'debug' }" @click="activeTab = 'debug'">
         <i class="fas fa-bug"></i>
         <span>{{ $t('gamepadTester') }}</span>
@@ -27,12 +22,7 @@
     <div class="tab-content">
       <!-- 首页内容 -->
       <div v-if="activeTab === 'home'" class="tab-pane">
-        <MainPage ref="mainPageRef" :compOBS="obsPageInstance" :windowsNotify="windowsNotify"></MainPage>
-      </div>
-
-      <!-- OBS连接 -->
-      <div v-show="activeTab === 'obs'" class="tab-pane">
-        <OBSConnectPage ref="obsPageRef" :compMain="mainPageInstance" :windowsNotify="windowsNotify"></OBSConnectPage>
+        <MainPage ref="mainPageRef" :windowsNotify="windowsNotify"></MainPage>
       </div>
 
       <!-- Debug 页面内容 -->
@@ -52,7 +42,6 @@
 <script>
 import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
-import OBSConnectPage from '@/components/OBSConnectPage.vue'
 import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
 
 import { ref } from 'vue';
@@ -61,15 +50,12 @@ export default {
   name: 'App',
   components: {
     MainPage,
-    OBSConnectPage,
     ControllerSettingsPage,
     SystemSettingsPage
   },
   data() {
     return {
       activeTab: 'home',
-      obsPageInstance: null,
-      mainPageInstance: null,
       traySyncTimer: null,
       currentTrayListening: false
     }
@@ -78,8 +64,6 @@ export default {
 
   },
   async mounted() {
-    this.obsPageInstance = this.$refs.obsPageRef;
-    this.mainPageInstance = this.$refs.mainPageRef;
     this.startTraySync();
     // 检查是否启用启动时更新检测
     const checkOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'enabled');

@@ -47,7 +47,9 @@
     },
     "overlayNotify":{
         "screenshotSuccess": "截图成功",
-        "screenshotSaved": "已保存到本地"
+        "screenshotSaved": "已保存到本地",
+        "replayBufferSaved": "录像保存成功",
+        "replayBufferSavedDesc": "OBS 回放缓存已保存到本地"
     },
     "screenshotSound": {
         "None": "静音",
@@ -62,7 +64,12 @@
         "obsServiceNotFound":"未找到OBS Websocket服务",
         "obsNotConnected":"无法连接到OBS",
         "invalidSceneSelected":"没有选择正确的场景",
-        "obsScreenshotError":"OBS截图出错"
+        "obsScreenshotError":"OBS截图出错",
+        "saveReplayBufferOnLongPress": "长按组合键保存回放缓存",
+        "replayBufferHint": "使用与截图相同的保存路径和文件名模板",
+        "replayBufferNotActive": "OBS 回放缓存尚未启用",
+        "replayBufferSaved": "OBS 回放缓存已保存",
+        "replayBufferError": "保存 OBS 回放缓存失败："
     },
     "GampadTesterPage": {
         "selectController": "选择控制器",

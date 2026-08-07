@@ -32,6 +32,23 @@
           </div>
         </div>
 
+        <OBSConnectPage v-show="config.screenshotWay === screenShotWayEnum.OBS && !listening"
+          ref="obsConnectPageRef" :windowsNotify="windowsNotify" />
+
+        <div v-show="config.screenshotWay === screenShotWayEnum.OBS && !listening" class="setting-row">
+          <div class="setting-label">
+            <i class="fas fa-history"></i>
+            <span>{{ $t('OBSPage.saveReplayBufferOnLongPress') }}</span>
+          </div>
+          <div class="setting-controls">
+            <label class="switch">
+              <input type="checkbox" v-model="config.obsReplayBufferOnLongPress">
+              <span class="slider round"></span>
+            </label>
+            <span class="hint-text">{{ $t('OBSPage.replayBufferHint') }}</span>
+          </div>
+        </div>
+
         <div class="setting-row-horizontal">
           <div v-show="!listening" class="setting-row">
             <div class="setting-label">
@@ -239,6 +256,7 @@ const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWa
 const { KeyCode }  = require('@/lib/keycode')
 import { Howl } from 'howler'
 import ns2SoundSrc from '@/assets/ns2截图音.mp3'
+import OBSConnectPage from '@/components/OBSConnectPage.vue'
 
 let rawDevices;
 let timer;
@@ -249,12 +267,8 @@ let autoListenResolutionKey = 'autoListenResolution';
 
 export default {
   name: 'MainPage',
-  components: {},
+  components: { OBSConnectPage },
   props: {
-    compOBS: {
-      type: Object,
-      default: null
-    },
     windowsNotify: {
       type: Function,
       default: null
@@ -275,7 +289,8 @@ export default {
         fileNameTemplate: 'Screenshot_%timestamp%',
         saveByActiveWinTitle: false,
         keyboardTrigger: false,
-        keyboardTriggerKeyCode: null
+        keyboardTriggerKeyCode: null,
+        obsReplayBufferOnLongPress: false
       },
       screenshotSoundEnum: screenshotSoundEnum,
       resolutionEnum: resolutionEnum,
@@ -294,7 +309,9 @@ export default {
       availableFields: ['activeWinTitle', 'activeWinOwner', 'timestamp', 'datetime', 'YYYY', 'MM', 'DD', 'hh', 'mm', 'ss', 'cs', 'ms'],
       formatPreviewTicker: 0,
       errorMessage: '',
-      comboKeyOptions: []
+      comboKeyOptions: [],
+      comboPressedAt: 0,
+      comboLongPressHandled: false
     }
   },
   async mounted() {
@@ -344,55 +361,54 @@ export default {
     async takeScreenshot() {
       if (this.screenShoting) return;
       this.screenShoting = true;
-      var m_config = JSON.parse(JSON.stringify(this.config));
-      m_config.calcedFileName = this.formatFileName(m_config.fileNameTemplate);
-      // 如果启用了按窗口名保存，则将当前窗口标题作为子文件夹加入到路径中
-      if (m_config.saveByActiveWinTitle) {
-        activeWinInfoResult = await window.electronAPI.getActiveWindowsInfo();
-        let folderName = activeWinInfoResult ? activeWinInfoResult.title : 'UnknownWindow'
-        // 清理非法文件名字符：<>:"/\\|?*
-        folderName = this.sanitizeToValidFolderName(folderName);
-        // 去掉路径末尾的斜杠或反斜杠
-        let basePath = m_config.path.replace(/[\\/]$/, '');
-        // Windows 下使用反斜杠
-        m_config.path = basePath + '\\' + folderName;
-        await window.electronAPI.ensureFolder(m_config.path);
-        //console.log('按窗口名保存启用，截图将保存在：' + m_config.path);
-      }
+      const m_config = await this.prepareCaptureConfig();
 
       let filePath;
       if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
         filePath = await window.electronAPI.screenShot(m_config)
       } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
-        filePath = await this.compOBS.takeScreenshot(m_config)
+        filePath = await this.$refs.obsConnectPageRef.takeScreenshot(m_config)
       }
 
       if (filePath == void 0 || filePath == null) {
         this.screenShoting = false;
         return;
       }
-      if (this.config.sound == screenshotSoundEnum.NS2) {
-        let sound = new Howl({
-          src: [ns2SoundSrc], volume: this.config.soundPower, onend: function () {
-            this.unload();
-          }
-        })
-        sound.play();
-      }
-
-      // 读取系统设置的覆盖通知配置和持续时间
-      let overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
-      let overlayNotifyDuration = Number(await window.electronAPI.getStore('overlayNotifyDuration', 2)) || 2;
-      if (overlayNotify === 'show') {
-        await window.electronAPI.showScreenshotNotification({
-          img: filePath,
-          title: this.$t('overlayNotify.screenshotSuccess'),
-          desc: this.$t('overlayNotify.screenshotSaved'),
-          duration: overlayNotifyDuration * 1000
-        })
-      }
+      await this.playCaptureSound();
+      await this.showCaptureNotification({
+        img: filePath,
+        title: this.$t('overlayNotify.screenshotSuccess'),
+        desc: this.$t('overlayNotify.screenshotSaved')
+      });
 
       this.screenShoting = false;
+    },
+    async prepareCaptureConfig() {
+      const config = JSON.parse(JSON.stringify(this.config));
+      config.calcedFileName = this.formatFileName(config.fileNameTemplate);
+      if (config.saveByActiveWinTitle) {
+        activeWinInfoResult = await window.electronAPI.getActiveWindowsInfo();
+        const folderName = this.sanitizeToValidFolderName(activeWinInfoResult ? activeWinInfoResult.title : 'UnknownWindow');
+        config.path = config.path.replace(/[\\/]$/, '') + '\\' + folderName;
+        await window.electronAPI.ensureFolder(config.path);
+      }
+      return config;
+    },
+    async playCaptureSound() {
+      if (this.config.sound !== screenshotSoundEnum.NS2) return;
+      const sound = new Howl({
+        src: [ns2SoundSrc], volume: this.config.soundPower, onend: function () {
+          this.unload();
+        }
+      });
+      sound.play();
+    },
+    async showCaptureNotification({ img, title, desc, type }) {
+      const overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
+      const overlayNotifyDuration = Number(await window.electronAPI.getStore('overlayNotifyDuration', 2)) || 2;
+      if (overlayNotify === 'show') {
+        await window.electronAPI.showScreenshotNotification({ img, title, desc, type, duration: overlayNotifyDuration * 1000 });
+      }
     },
     async chooseFolder() {
       const folder = await window.electronAPI.selectFolder()
@@ -439,6 +455,10 @@ export default {
       if (this.config.saveByActiveWinTitle == null || this.config.saveByActiveWinTitle == undefined) {
         this.config.saveByActiveWinTitle = false;
       }
+
+      if (this.config.obsReplayBufferOnLongPress == null || this.config.obsReplayBufferOnLongPress == undefined) {
+        this.config.obsReplayBufferOnLongPress = false;
+      }
       //#endregion
     },
     resetConfig() {
@@ -452,7 +472,10 @@ export default {
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate: 'Screenshot_%timestamp%',
-        saveByActiveWinTitle: false
+        saveByActiveWinTitle: false,
+        keyboardTrigger: false,
+        keyboardTriggerKeyCode: null,
+        obsReplayBufferOnLongPress: false
       }
     },
     async loadGamePadList() {
@@ -483,9 +506,9 @@ export default {
       }
 
       //尝试连接OBS
-      if (this.config.screenshotWay == ScreenShotWayEnum.OBS && !this.compOBS.isConnected) {
-        await this.compOBS.connectOBS();
-        if (!this.compOBS.isConnected) {
+      if (this.config.screenshotWay == ScreenShotWayEnum.OBS && !this.$refs.obsConnectPageRef.isConnected) {
+        await this.$refs.obsConnectPageRef.connectOBS();
+        if (!this.$refs.obsConnectPageRef.isConnected) {
           this.errorMessage = this.$t('OBSPage.obsNotConnected')
           return;
         }
@@ -550,7 +573,9 @@ export default {
           }
         }
         if (flag) {
-          this.takeScreenshot();
+          this.handleComboPressed();
+        } else {
+          this.handleComboReleased();
         }
       }
  
@@ -565,6 +590,41 @@ export default {
             break;
           }
         }
+      }
+    },
+    async handleComboPressed() {
+      if (!this.comboPressedAt) {
+        this.comboPressedAt = Date.now();
+        this.comboLongPressHandled = false;
+        return;
+      }
+
+      const isLongPressReplay = this.config.screenshotWay === ScreenShotWayEnum.OBS &&
+        this.config.obsReplayBufferOnLongPress &&
+        !this.comboLongPressHandled &&
+        Date.now() - this.comboPressedAt >= 1000;
+      if (isLongPressReplay) {
+        // Lock the action before awaiting so holding the combo cannot save multiple videos.
+        this.comboLongPressHandled = true;
+        const replayConfig = await this.prepareCaptureConfig();
+        const saved = await this.$refs.obsConnectPageRef.saveReplayBuffer(replayConfig);
+        if (saved) {
+          await this.playCaptureSound();
+          await this.showCaptureNotification({
+            title: this.$t('overlayNotify.replayBufferSaved'),
+            desc: this.$t('overlayNotify.replayBufferSavedDesc'),
+            type: 'text'
+          });
+        }
+      }
+    },
+    async handleComboReleased() {
+      if (!this.comboPressedAt) return;
+      const shouldTakeScreenshot = !this.comboLongPressHandled;
+      this.comboPressedAt = 0;
+      this.comboLongPressHandled = false;
+      if (shouldTakeScreenshot) {
+        await this.takeScreenshot();
       }
     },
     async stopListen() {

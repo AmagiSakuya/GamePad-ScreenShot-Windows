@@ -1,7 +1,5 @@
 <template>
-    <div class="settings-container">
-        <div class="settings-content-scroll">
-            <div class="settings-content">
+    <div class="obs-connect-settings">
                 <!-- 服务器地址 -->
                 <div v-show="!isConnected" class="setting-row">
                     <div class="setting-label">
@@ -53,9 +51,6 @@
                     <span>{{ $t('OBSPage.disconnect') }}</span>
                 </button>
 
-            </div>
-        </div>
-
     </div>
 </template>
 
@@ -63,17 +58,12 @@
 import { OBSWebSocket } from 'obs-websocket-js';
 const obs = new OBSWebSocket();
 const STORAGE_KEY = 'obs_config_data';
-const { screenshotSoundEnum } = require('@/lib/enum')
 export default {
     name: 'OBSConnectPage',
     components: {
 
     },
     props: {
-        compMain: {
-            type: Object,
-            default: null
-        },
         windowsNotify: {
             type: Function,
             default: null
@@ -119,7 +109,7 @@ export default {
                 console.log('✅ 已成功连接到 OBS');
                 this.isConnected = true
                 await this.saveConfig()
-                this.refreshList();
+                await this.refreshList();
             } catch (error) {
                 this.isConnected = false
             }
@@ -127,7 +117,7 @@ export default {
         async refreshList() {
             this.sceneList = await this.getSceneList();
             this.screenshotableSources = await this.getScreenshotableSources();
-            if (this.sceneList.length > 0) {
+            if (this.sceneList.length > 0 && !this.sceneList.some(scene => scene.sceneName === this.selectedScene?.sceneName)) {
                 this.selectedScene = this.sceneList[0]
             }
         },
@@ -176,6 +166,51 @@ export default {
             } catch (error) {
                 this.windowsNotify(this.$t('OBSPage.obsScreenshotError') + error.message)
                 console.error('❌ 出错啦:', error.code, error.message);
+            }
+        },
+        async saveReplayBuffer(config) {
+            if (!this.isConnected) {
+                this.windowsNotify(this.$t('OBSPage.obsNotConnected'))
+                return;
+            }
+
+            try {
+                const { parameterValue: outputMode } = await obs.call('GetProfileParameter', {
+                    parameterCategory: 'Output',
+                    parameterName: 'Mode'
+                });
+                const isAdvancedOutput = outputMode === 'Advanced';
+
+                // OBS controls replay-buffer files. Keep its destination and base filename in sync
+                // with the screenshot settings before asking OBS to save the current buffer.
+                await Promise.all([
+                    obs.call('SetProfileParameter', {
+                        parameterCategory: isAdvancedOutput ? 'AdvOut' : 'SimpleOutput',
+                        parameterName: isAdvancedOutput ? 'RecFilePath' : 'FilePath',
+                        parameterValue: config.path
+                    }),
+                    obs.call('SetProfileParameter', {
+                        parameterCategory: 'Output',
+                        parameterName: 'FilenameFormatting',
+                        parameterValue: config.calcedFileName
+                    }),
+                    ...(isAdvancedOutput ? [] : [
+                        obs.call('SetProfileParameter', { parameterCategory: 'SimpleOutput', parameterName: 'RecRBPrefix', parameterValue: config.calcedFileName }),
+                        obs.call('SetProfileParameter', { parameterCategory: 'SimpleOutput', parameterName: 'RecRBSuffix', parameterValue: '' })
+                    ])
+                ]);
+
+                const { outputActive } = await obs.call('GetReplayBufferStatus');
+                if (!outputActive) {
+                    this.windowsNotify(this.$t('OBSPage.replayBufferNotActive'));
+                    return;
+                }
+                await obs.call('SaveReplayBuffer');
+                return true;
+            } catch (error) {
+                this.windowsNotify(this.$t('OBSPage.replayBufferError') + error.message);
+                console.error('Failed to save OBS replay buffer:', error);
+                return false;
             }
         },
         async saveConfig() {
