@@ -257,6 +257,7 @@ const { KeyCode }  = require('@/lib/keycode')
 import { Howl } from 'howler'
 import ns2SoundSrc from '@/assets/ns2截图音.mp3'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
+import psSoundSrc from '@/assets/PS通知.mp3'
 
 let rawDevices;
 let timer;
@@ -395,9 +396,10 @@ export default {
       return config;
     },
     async playCaptureSound() {
-      if (this.config.sound !== screenshotSoundEnum.NS2) return;
+      if (this.config.sound == screenshotSoundEnum.None) return;
+      var soundSrc = this.config.sound == screenshotSoundEnum.NS2 ? ns2SoundSrc : psSoundSrc;
       const sound = new Howl({
-        src: [ns2SoundSrc], volume: this.config.soundPower, onend: function () {
+        src: [soundSrc], volume: this.config.soundPower, onend: function () {
           this.unload();
         }
       });

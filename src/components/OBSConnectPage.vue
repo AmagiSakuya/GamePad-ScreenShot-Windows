@@ -175,43 +175,69 @@ export default {
             }
 
             try {
-                const { parameterValue: outputMode } = await obs.call('GetProfileParameter', {
-                    parameterCategory: 'Output',
-                    parameterName: 'Mode'
-                });
-                const isAdvancedOutput = outputMode === 'Advanced';
-
-                // OBS controls replay-buffer files. Keep its destination and base filename in sync
-                // with the screenshot settings before asking OBS to save the current buffer.
-                await Promise.all([
-                    obs.call('SetProfileParameter', {
-                        parameterCategory: isAdvancedOutput ? 'AdvOut' : 'SimpleOutput',
-                        parameterName: isAdvancedOutput ? 'RecFilePath' : 'FilePath',
-                        parameterValue: config.path
-                    }),
-                    obs.call('SetProfileParameter', {
-                        parameterCategory: 'Output',
-                        parameterName: 'FilenameFormatting',
-                        parameterValue: config.calcedFileName
-                    }),
-                    ...(isAdvancedOutput ? [] : [
-                        obs.call('SetProfileParameter', { parameterCategory: 'SimpleOutput', parameterName: 'RecRBPrefix', parameterValue: config.calcedFileName }),
-                        obs.call('SetProfileParameter', { parameterCategory: 'SimpleOutput', parameterName: 'RecRBSuffix', parameterValue: '' })
-                    ])
-                ]);
-
                 const { outputActive } = await obs.call('GetReplayBufferStatus');
                 if (!outputActive) {
                     this.windowsNotify(this.$t('OBSPage.replayBufferNotActive'));
                     return;
                 }
-                await obs.call('SaveReplayBuffer');
-                return true;
+
+                const { outputs } = await obs.call('GetOutputList');
+                const replayBufferOutput = outputs.find(output => output.outputKind === 'replay_buffer');
+                if (!replayBufferOutput) {
+                    throw new Error('Replay buffer output was not found');
+                }
+
+                const outputName = replayBufferOutput.outputName;
+                const { outputSettings: originalOutputSettings } = await obs.call('GetOutputSettings', { outputName });
+
+                try {
+                    // The active replay buffer snapshots profile values when it starts.
+                    // Update the output itself so config.path (including its window-name
+                    // folder) takes effect for this save.
+                    await obs.call('SetOutputSettings', {
+                        outputName,
+                        outputSettings: {
+                            ...originalOutputSettings,
+                            directory: config.path,
+                            format: config.calcedFileName
+                        }
+                    });
+                    const replaySaveWaiter = this.createReplayBufferSavedWaiter();
+                    try {
+                        await obs.call('SaveReplayBuffer');
+                        await replaySaveWaiter.promise;
+                        return true;
+                    } finally {
+                        replaySaveWaiter.cancel();
+                    }
+                } finally {
+                    await obs.call('SetOutputSettings', { outputName, outputSettings: originalOutputSettings });
+                }
             } catch (error) {
                 this.windowsNotify(this.$t('OBSPage.replayBufferError') + error.message);
                 console.error('Failed to save OBS replay buffer:', error);
                 return false;
             }
+        },
+        createReplayBufferSavedWaiter() {
+            let timeout;
+            let onReplaySaved;
+            const cancel = () => {
+                clearTimeout(timeout);
+                obs.off('ReplayBufferSaved', onReplaySaved);
+            };
+            const promise = new Promise((resolve, reject) => {
+                timeout = setTimeout(() => {
+                    cancel();
+                    reject(new Error('Timed out waiting for the replay buffer to save'));
+                }, 10000);
+                onReplaySaved = () => {
+                    cancel();
+                    resolve();
+                };
+                obs.on('ReplayBufferSaved', onReplaySaved);
+            });
+            return { promise, cancel };
         },
         async saveConfig() {
             const configStr = JSON.stringify(this.obsConfig);

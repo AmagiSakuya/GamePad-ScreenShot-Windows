@@ -573,7 +573,7 @@ ipcMain.handle('get-active-win-info', () => {
 let overlayWindow = null;
 let overlayTimeout = null;
 
-function showScreenshotNotification({ img, title = '截图成功', desc = '已保存到本地', duration = 3000 }) {
+function showScreenshotNotification({ img, title = '截图成功', desc = '已保存到本地', type, duration = 3000 }) {
   // 如果已有通知，先关闭
   if (overlayWindow) {
     overlayWindow.close();
@@ -614,7 +614,7 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
   const overlayWindowFilePath = app.isPackaged ? path.join(process.resourcesPath, 'html', 'screenshot-notification.html') : '../src/screenshot-notification.html';
 
   overlayWindow.loadFile(overlayWindowFilePath, {
-    query: { img, title, desc }
+    query: { img, title, desc, type }
   });
 
   overlayWindow.once('ready-to-show', () => {

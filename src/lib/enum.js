@@ -6,7 +6,8 @@ const resolutionEnum = {
 
 const screenshotSoundEnum = {
     None: "None",
-    NS2: "NS2"
+    NS2: "NS2",
+    PS: "PS"
 }
 
 const CommonButtonEnum = {

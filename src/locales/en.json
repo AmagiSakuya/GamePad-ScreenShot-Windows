@@ -53,7 +53,8 @@
     },
     "screenshotSound": {
         "None": "Mute",
-        "NS2": "Nintendo Switch 2"
+        "NS2": "Nintendo Switch 2",
+        "PS": "PS5 Notification"
     },
     "OBSPage": {
         "obsAddress": "OBS Address",
