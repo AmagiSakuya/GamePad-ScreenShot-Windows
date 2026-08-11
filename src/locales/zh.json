@@ -6,6 +6,8 @@
     "systemSettings": "系统设置",
     "screenshotSource": "截图来源",
     "thumbnailSize": "保存尺寸",
+    "screenToCapture": "截图屏幕",
+    "screenToCaptureOption": "屏幕 {number}",
     "savingMode": "保存形式",
     "savePath": "保存路径",
     "saveByActiveWinTitle": "按窗口名保存",

@@ -30,6 +30,20 @@
             </div>
             <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
           </div>
+
+          <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
+            <div class="setting-label">
+              <i class="fas fa-desktop"></i>
+              <span>{{ $t('screenToCapture') }}</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.screenSourceId" @focus="loadScreenSources">
+                <option v-for="(source, index) in screenSources" :key="source.id" :value="source.id">
+                  {{ screenSourceLabel(index) }}
+                </option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <OBSConnectPage v-show="config.screenshotWay === screenShotWayEnum.OBS && !listening"
@@ -285,6 +299,7 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        screenSourceId: '',
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate: 'Screenshot_%timestamp%',
@@ -297,6 +312,7 @@ export default {
       resolutionEnum: resolutionEnum,
       screenShotWayEnum: ScreenShotWayEnum,
       screenShotSaveWayEnum: ScreenShotSaveWayEnum,
+      screenSources: [],
       showBufferDebug: false,
       listening: false,
       loadedGamePads: [],
@@ -320,6 +336,7 @@ export default {
     await window.electronAPI.onScreenshotKeyboardTriggered(this.onScreenshotKeyboardTriggeredCallback);
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
+    await this.loadScreenSources();
 
     // 添加托盘监听事件
     window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
@@ -359,6 +376,16 @@ export default {
     this.saveCurrentConfig()
   },
   methods: {
+    async loadScreenSources() {
+      const screenSources = await window.electronAPI.getScreenSources();
+      this.screenSources = screenSources;
+      if (screenSources.length && !screenSources.some((source) => source.id === this.config.screenSourceId)) {
+        this.config.screenSourceId = screenSources[0].id;
+      }
+    },
+    screenSourceLabel(index) {
+      return this.$t('screenToCaptureOption', { number: index + 1 });
+    },
     async takeScreenshot() {
       if (this.screenShoting) return;
       this.screenShoting = true;
@@ -461,6 +488,10 @@ export default {
       if (this.config.obsReplayBufferOnLongPress == null || this.config.obsReplayBufferOnLongPress == undefined) {
         this.config.obsReplayBufferOnLongPress = false;
       }
+
+      if (this.config.screenSourceId == null) {
+        this.config.screenSourceId = '';
+      }
       //#endregion
     },
     resetConfig() {
@@ -471,6 +502,7 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        screenSourceId: '',
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate: 'Screenshot_%timestamp%',
@@ -485,7 +517,8 @@ export default {
       this.loadedGamePads = rawDevices;
       if (this.loadedGamePads.length > 0) {
         this.currentGamePad = this.loadedGamePads[0]
-        this.loadConfig(this.currentGamePad.name)
+        await this.loadConfig(this.currentGamePad.name)
+        await this.loadScreenSources()
       } else {
         this.resetConfig();
       }
@@ -637,7 +670,8 @@ export default {
       }
     },
     async onUserSelectedDeviceChange() {
-      this.loadConfig(this.currentGamePad.name)
+      await this.loadConfig(this.currentGamePad.name)
+      await this.loadScreenSources()
     },
     async automatedDetection(detectionIndex) {
       if (this.detectionIndex == -1) {

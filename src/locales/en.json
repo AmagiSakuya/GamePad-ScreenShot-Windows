@@ -6,6 +6,8 @@
     "systemSettings": "System Settings",
     "screenshotSource": "Source",
     "thumbnailSize": "Image Size",
+    "screenToCapture": "Screen to Capture",
+    "screenToCaptureOption": "Screen {number}",
     "savingMode": "Saving Mode",
     "savePath": "Save Path",
     "saveByActiveWinTitle": "Save by Win title",

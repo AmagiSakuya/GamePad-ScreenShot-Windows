@@ -7,6 +7,13 @@ const log = require('electron-log');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     showScreenshotNotification: (data) => ipcRenderer.invoke('show-screenshot-notification', data),
+    getScreenSources: async () => {
+        const sources = await desktopCapturer.getSources({
+            types: ['screen'],
+            thumbnailSize: { width: 1, height: 1 }
+        });
+        return sources.map((source) => ({ id: source.id, name: source.name }));
+    },
     screenShot: async (config) => {
         var sizeArr = [{ width: 1920, height: 1080 }, { width: 2560, height: 1440 }, { width: 3840, height: 2160 }]
         var size
@@ -33,7 +40,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         })
 
         let filePath = null;
-        const img = sources[0].thumbnail
+        // A configured display can disappear after it was saved; then use the
+        // first currently available screen instead of failing the screenshot.
+        const source = sources.find((item) => item.id === config.screenSourceId) || sources[0];
+        if (!source) {
+            throw new Error('No screen source available for capture');
+        }
+        const img = source.thumbnail
 
         let buffer;
         switch (config.imageFormat) {
