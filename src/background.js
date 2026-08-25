@@ -1,11 +1,12 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell, clipboard, nativeImage } from 'electron'
 const log = require('electron-log');
 const { uIOhook, UiohookKey } = require('uiohook-napi')
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const activeWin = require('active-win');
+const screenshot = require('screenshot-desktop');
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
 const fs = require('fs')
@@ -18,7 +19,7 @@ if (process.platform === 'win32') {
 }
 
 //Scripts
-const { resolutionEnum, screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum } = require('@/lib/enum')
+const { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
 const configStore = require('@/lib/configLoader')
 
 //Path Define
@@ -269,8 +270,13 @@ function getAssetPath(...relativePaths) {
 
 //#region 文件名冲突处理 #fouced program name#
 let filenameConflictResolutionKey = 'filenameConflictResolution';
+let screenSourceCache = [];
 
 ipcMain.handle('file-conflict-handle', async (_, config) => {
+  return resolveScreenshotFilePath(config);
+})
+
+async function resolveScreenshotFilePath(config) {
   let filePath = path.join(config.path, `${config.calcedFileName}.${config.imageFormat}`);
   if (fs.existsSync(filePath)) {
     let filenameConflictResolution = configStore.get(filenameConflictResolutionKey, 'overwrite')
@@ -286,6 +292,60 @@ ipcMain.handle('file-conflict-handle', async (_, config) => {
       }
     }
   }
+  return filePath;
+}
+
+function encodeScreenshotBuffer(buffer, format) {
+  const image = nativeImage.createFromBuffer(buffer);
+  return format === 'png' ? image.toPNG() : image.toJPEG(100);
+}
+
+ipcMain.handle('get-screen-sources', async () => {
+  const displays = await screenshot.listDisplays();
+  screenSourceCache = displays.map((display) => ({ id: display.id, name: display.name }));
+  return screenSourceCache;
+})
+
+ipcMain.handle('screen-shot', async (_, config) => {
+  const format = config.imageFormat === 'png' ? 'png' : 'jpg';
+  let screenSourceId = config.screenSourceId;
+  if (!screenSourceCache.some((display) => display.id === screenSourceId)) {
+    screenSourceId = screenSourceCache[0] && screenSourceCache[0].id;
+  }
+
+  let buffer;
+  try {
+    buffer = await screenshot({
+      screen: screenSourceId,
+      format
+    });
+  } catch (error) {
+    screenSourceCache = (await screenshot.listDisplays()).map((display) => ({ id: display.id, name: display.name }));
+    const fallbackDisplay = screenSourceCache[0];
+    if (!fallbackDisplay) {
+      throw new Error('No screen source available for capture');
+    }
+    buffer = await screenshot({
+      screen: fallbackDisplay.id,
+      format
+    });
+  }
+
+  buffer = encodeScreenshotBuffer(buffer, format);
+
+  let filePath = null;
+  if (config.screenShotSaveWay != ScreenShotSaveWayEnum.CilpboardOnly) {
+    filePath = await resolveScreenshotFilePath(config);
+    if (filePath != null) {
+      fs.writeFileSync(filePath, buffer);
+    }
+  }
+
+  if (config.screenShotSaveWay != ScreenShotSaveWayEnum.FileOnly) {
+    const image = nativeImage.createFromBuffer(buffer);
+    clipboard.writeImage(image);
+  }
+
   return filePath;
 })
 //#endregion

@@ -24,6 +24,7 @@ module.exports = defineConfig({
   pluginOptions: {
     electronBuilder: {
       preload: 'src/preload.js',
+      externals: ['screenshot-desktop'],
       builderOptions: {
         "productName": "Gamepad Full-ScreenShot Tool",
         "win": {
@@ -31,7 +32,8 @@ module.exports = defineConfig({
           "target": ["dir"]
         },
         asarUnpack: [
-          'preload.js'
+          'preload.js',
+          'node_modules/screenshot-desktop/**'
         ],
         extraResources: [
           {

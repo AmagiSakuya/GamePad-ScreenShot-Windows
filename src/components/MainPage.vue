@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="settings-container">
     <div class="settings-content-scroll">
       <div class="settings-content">
@@ -14,21 +14,6 @@
                 <option v-for="(value, index) in screenShotWayEnum" :key="index">{{ value }}</option>
               </select>
             </div>
-            <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
-          </div>
-
-          <!-- 尺寸设置 -->
-          <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
-            <div class="setting-label">
-              <i class="fas fa-expand-alt"></i>
-              <span>{{ $t('thumbnailSize') }}</span>
-            </div>
-            <div class="setting-controls">
-              <select class="form-select" v-model="config.resolution">
-                <option v-for="(value, index) in resolutionEnum" :key="index">{{ value }}</option>
-              </select>
-            </div>
-            <!-- <span class="hint-text">选择截图的分辨率大小</span> -->
           </div>
 
           <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
@@ -127,7 +112,7 @@
             <i class="fas fa-folder-open"></i>
             <span>{{ $t('saveFileName') }}</span>
             <span class="hint-text" style="user-select: text;"> {{ $t('availableFields') }} : ( {{
-              availableFields.join('、') }} )</span>
+               availableFields.join('、') }} )</span>
           </div>
           <div class="setting-controls">
             <div class="input-wrapper">
@@ -139,7 +124,7 @@
             formatFileName(config.fileNameTemplate, formatPreviewTicker) }}.{{ config.imageFormat }}</span>
         </div>
 
-        <!--  控制器设置 -->
+
         <div v-show="!listening" class="setting-row">
           <div class="setting-label">
             <i class="fas fa-gamepad"></i>
@@ -151,7 +136,7 @@
                 {{ value.name }}</option>
             </select>
           </div>
-          <!-- <span class="hint-text">选择您使用的游戏控制器类型</span> -->
+
         </div>
 
         <!-- 组合按键设置 -->
@@ -244,9 +229,9 @@
 
     <div class="settings-footer-btn">
       <div v-if="errorMessage" class="error-tip">{{ errorMessage }}</div>
-      <!-- 开始 -->
+     <!-- 开始 -->
       <button v-show="!listening" class="save-button" @click="startListen">
-        <span class="icon">▶</span>
+        <span class="icon">▶️</span>
         <span>{{ $t('start') }}</span>
       </button>
 
@@ -256,7 +241,7 @@
           {{ $t('openScreenshotFolder') }}
         </button>
         <button class="save-button" @click="stopListen">
-          <span class="icon">⏹</span>
+          <span class="icon">⏹️</span>
           {{ $t('stop') }}
         </button>
       </div>
@@ -266,7 +251,7 @@
 </template>
 
 <script>
-const { resolutionEnum, screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
+const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
 const { KeyCode }  = require('@/lib/keycode')
 import { Howl } from 'howler'
 import ns2SoundSrc from '@/assets/ns2截图音.mp3'
@@ -294,7 +279,6 @@ export default {
       controllerConfig: [],
       config: {
         path: '',
-        resolution: resolutionEnum.R_1080P,
         comboKeys: [],
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
@@ -309,7 +293,6 @@ export default {
         obsReplayBufferOnLongPress: false
       },
       screenshotSoundEnum: screenshotSoundEnum,
-      resolutionEnum: resolutionEnum,
       screenShotWayEnum: ScreenShotWayEnum,
       screenShotSaveWayEnum: ScreenShotSaveWayEnum,
       screenSources: [],
@@ -468,7 +451,7 @@ export default {
         this.resetConfig();
       }
 
-      //#region 升级老配置
+     //#region 升级老配置
       if (this.config.fileNameTemplate == null || this.config.fileNameTemplate == undefined || this.config.fileNameTemplate.trim() == '') {
         this.config.fileNameTemplate = 'Screenshot_%timestamp%'
       }
@@ -497,7 +480,6 @@ export default {
     resetConfig() {
       this.config = {
         path: '',
-        resolution: resolutionEnum.R_1080P,
         comboKeys: [],
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
@@ -525,7 +507,7 @@ export default {
     },
     async startListen() {
       this.errorMessage = '';
-      //1.检查配置
+       //1.检查配置
       var m_config = JSON.parse(JSON.stringify(this.config));
       if (m_config.path == "") {
         this.errorMessage = this.$t('alertMsg.emptyPath')
@@ -713,14 +695,14 @@ export default {
       return template.replace(/%timestamp%|%datetime%|%YYYY%|%MM%|%DD%|%hh%|%mm%|%ss%|%cs%|%ms%|%activeWinTitle%|%activeWinOwner%/g, match => replacements[match] || match);
     },
     async onStartListenFromTray() {
-      if (this.listening) return; // 如果已经在监听，不做任何事
+      if (this.listening) return; 
       await this.startListen();
       if (this.errorMessage) {
         this.windowsNotify(this.errorMessage);
       }
     },
     async onStopListenFromTray() {
-      if (!this.listening) return; // 如果没有在监听，不做任何事
+      if (!this.listening) return; 
       this.stopListen();
     },
     openScreenShotFolder() {
@@ -729,18 +711,10 @@ export default {
     sanitizeToValidFolderName(str) {
       if (!str || typeof str !== 'string') return 'untitled_folder';
       return str
-        // 1. 替换所有跨平台非法字符与控制字符
-        // eslint-disable-next-line no-control-regex
         .replace(/[\x00-\x1f\x7f\\/:*?"<>|]/g, '_')
-
-        // 2. 针对 Windows 的特殊保留字处理
         .replace(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i, '_$1$2')
-
-        // 3. 细节美化与安全修剪
         .replace(/_+/g, '_')
         .replace(/^[\s_]+|[\s_]+$/g, '')
-
-        // 4. 长度限制
         .substring(0, 255);
 
     },
@@ -846,14 +820,12 @@ export default {
 }
 
 
-/* 确保按钮在标题行内正确显示 */
 .setting-label .action-buttons {
   display: inline-flex;
   align-items: center;
   margin: 0;
 }
 
-/* 调整按钮样式以适应标题行 */
 .setting-label .btn {
   padding: 4px 15px;
   font-size: 13px;
@@ -1085,8 +1057,6 @@ export default {
   padding: 0 32px;
 }
 
-
-/* 开关样式保持不变 */
 .switch {
   position: relative;
   display: inline-block;

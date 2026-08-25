@@ -1,77 +1,11 @@
-const { contextBridge, ipcRenderer, desktopCapturer, clipboard, nativeImage } = require('electron')
-const { resolutionEnum, ScreenShotSaveWayEnum } = require('../src/lib/enum')
+const { contextBridge, ipcRenderer, clipboard } = require('electron')
 const fs = require('fs')
-const path = require('path')
-const os = require('os')
 const log = require('electron-log');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     showScreenshotNotification: (data) => ipcRenderer.invoke('show-screenshot-notification', data),
-    getScreenSources: async () => {
-        const sources = await desktopCapturer.getSources({
-            types: ['screen'],
-            thumbnailSize: { width: 1, height: 1 }
-        });
-        return sources.map((source) => ({ id: source.id, name: source.name }));
-    },
-    screenShot: async (config) => {
-        var sizeArr = [{ width: 1920, height: 1080 }, { width: 2560, height: 1440 }, { width: 3840, height: 2160 }]
-        var size
-        switch (config.resolution) {
-            case resolutionEnum.R_1080P:
-                size = sizeArr[0]
-                break
-
-            case resolutionEnum.R_2K:
-                size = sizeArr[1]
-                break
-
-            case resolutionEnum.R_4K:
-                size = sizeArr[2]
-                break
-
-            default:
-                size = sizeArr[0]
-        }
-
-        const sources = await desktopCapturer.getSources({
-            types: ['screen'],
-            thumbnailSize: size
-        })
-
-        let filePath = null;
-        // A configured display can disappear after it was saved; then use the
-        // first currently available screen instead of failing the screenshot.
-        const source = sources.find((item) => item.id === config.screenSourceId) || sources[0];
-        if (!source) {
-            throw new Error('No screen source available for capture');
-        }
-        const img = source.thumbnail
-
-        let buffer;
-        switch (config.imageFormat) {
-            case 'jpg':
-                buffer = img.toJPEG(100)
-                break
-            case 'png':
-                buffer = img.toPNG()
-                break
-        }
-
-        if (config.screenShotSaveWay != ScreenShotSaveWayEnum.CilpboardOnly) {
-            filePath = await ipcRenderer.invoke('file-conflict-handle', config);
-            if (filePath != null) {
-                fs.writeFileSync(filePath, buffer)
-            }
-        }
-
-        if (config.screenShotSaveWay != ScreenShotSaveWayEnum.FileOnly) {
-            const image = nativeImage.createFromBuffer(buffer);
-            clipboard.writeImage(image);
-        }
-
-        return filePath
-    },
+    getScreenSources: () => ipcRenderer.invoke('get-screen-sources'),
+    screenShot: (config) => ipcRenderer.invoke('screen-shot', config),
     onOpenFolderTriggered: (callback) => {
         ipcRenderer.on('open-folder-triggered', callback)
     },
