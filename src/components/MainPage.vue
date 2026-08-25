@@ -711,6 +711,7 @@ export default {
     sanitizeToValidFolderName(str) {
       if (!str || typeof str !== 'string') return 'untitled_folder';
       return str
+        // eslint-disable-next-line no-control-regex
         .replace(/[\x00-\x1f\x7f\\/:*?"<>|]/g, '_')
         .replace(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i, '_$1$2')
         .replace(/_+/g, '_')
