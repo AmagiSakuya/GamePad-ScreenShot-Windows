@@ -76,7 +76,8 @@
     },
     "GampadTesterPage": {
         "selectController": "选择控制器",
-        "buttonState": "按键状态"
+        "buttonState": "按键状态",
+        "axisState": "轴状态"
     },
     "SystemSettingsPage": {
         "language": "语言",

@@ -354,6 +354,7 @@ ipcMain.handle('screen-shot', async (_, config) => {
 let device_instance;
 let buttons = new Array(20).fill(false);
 let hats = [false, false, false, false];
+let axes = new Array(10).fill(0);
 let isXboxController = false;
 
 ipcMain.handle('get-all-gamepad', () => {
@@ -361,10 +362,42 @@ ipcMain.handle('get-all-gamepad', () => {
 })
 
 ipcMain.handle('open-sdl2-device', async (_, device) => {
-  device_instance = sdl.joystick.openDevice(sdl.joystick.devices[device._index]);
-  isXboxController = device_instance._device.vendor == 1118 && device_instance._device.product == 654;
+  if (!device || device._index === undefined) {
+    return false;
+  }
+  const sdlDevice = sdl.joystick.devices[device._index];
+  if (!sdlDevice) {
+    return false;
+  }
+
+  if (device_instance) {
+    try {
+      device_instance.removeAllListeners();
+      device_instance.close();
+    } catch (e) {
+      // ignore
+    }
+    device_instance = void 0;
+  }
+
+  try {
+    device_instance = sdl.joystick.openDevice(sdlDevice);
+  } catch (e) {
+    console.error('Failed to open SDL device:', e);
+    return false;
+  }
+
+  isXboxController = device_instance._device && device_instance._device.vendor == 1118 && device_instance._device.product == 654;
 
   buttons = new Array(20).fill(false);
+  hats = [false, false, false, false];
+  const axisCount = (device_instance.axes && device_instance.axes.length) ? device_instance.axes.length : 10;
+  axes = new Array(axisCount).fill(0);
+  if (device_instance.axes) {
+    for (let i = 0; i < device_instance.axes.length; i++) {
+      axes[i] = device_instance.axes[i] || 0;
+    }
+  }
 
   device_instance.on('buttonDown', (data) => {
     buttons[data.button] = true;
@@ -377,20 +410,32 @@ ipcMain.handle('open-sdl2-device', async (_, device) => {
   device_instance.on('hatMotion', (data) => {
     hats = mapHatMotionToDirections(data.value);
   })
+
+  device_instance.on('axisMotion', (data) => {
+    axes[data.axis] = data.value;
+  })
+
   return true;
 })
 
-ipcMain.handle('remove-sdl2-device-instance-all-listeners', async (_, device) => {
+ipcMain.handle('remove-sdl2-device-instance-all-listeners', async () => {
   if (device_instance) {
     buttons = new Array(20).fill(false);
-    hats = [false, false, false, false]
+    hats = [false, false, false, false];
+    const axisCount = (device_instance.axes && device_instance.axes.length) ? device_instance.axes.length : 10;
+    axes = new Array(axisCount).fill(0);
     device_instance.removeAllListeners();
   }
 })
 
-ipcMain.handle('close-sdl2-instance-device', async (_, device) => {
+ipcMain.handle('close-sdl2-instance-device', async () => {
   if (device_instance) {
-    device_instance.close();
+    try {
+      device_instance.removeAllListeners();
+      device_instance.close();
+    } catch (e) {
+      // ignore
+    }
     device_instance = void 0;
   }
 })
@@ -398,11 +443,26 @@ ipcMain.handle('close-sdl2-instance-device', async (_, device) => {
 ipcMain.handle('get-current-buttons-value', async () => {
   if (isXboxController) {
     let res = [];
-    res = buttons.slice(0, device_instance.buttons.length);
+    if (device_instance && device_instance.buttons) {
+      res = buttons.slice(0, device_instance.buttons.length);
+    } else {
+      res = buttons.slice(0, 16);
+    }
     res = res.concat(hats);
     return res;
   }
   return buttons
+})
+
+ipcMain.handle('get-current-axes-value', async () => {
+  if (device_instance && device_instance.axes) {
+    const currentAxes = device_instance.axes;
+    for (let i = 0; i < currentAxes.length; i++) {
+      axes[i] = currentAxes[i];
+    }
+    return Array.from(currentAxes);
+  }
+  return axes;
 })
 
 ipcMain.handle('get-current-hats-value', async () => {
@@ -420,11 +480,18 @@ sdl.joystick.on('deviceRemove', (device) => {
 ipcMain.handle('get-device-instance-button-number', async () => {
   if (device_instance) {
     if (isXboxController) {
-      return device_instance.buttons.length + 4;
+      return (device_instance.buttons ? device_instance.buttons.length : 0) + 4;
     }
-    return device_instance.buttons.length
+    return device_instance.buttons ? device_instance.buttons.length : 0;
   }
   return 0
+})
+
+ipcMain.handle('get-device-instance-axis-number', async () => {
+  if (device_instance && device_instance.axes) {
+    return device_instance.axes.length;
+  }
+  return 0;
 })
 
 function mapHatMotionToDirections(motion) {

@@ -76,7 +76,8 @@
     },
     "GampadTesterPage": {
         "selectController": "Select Controller",
-        "buttonState": "Button State"
+        "buttonState": "Button State",
+        "axisState": "Axis State"
     },
     "SystemSettingsPage": {
         "language": "Language",

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="settings-container">
     <div class="settings-content-scroll">
       <div class="settings-content">
@@ -262,6 +262,7 @@ let rawDevices;
 let timer;
 let active_info_getter_timer;
 let lastButtonsValue;
+let lastAxesValue;
 let activeWinInfoResult;
 let autoListenResolutionKey = 'autoListenResolution';
 
@@ -301,6 +302,7 @@ export default {
       loadedGamePads: [],
       currentGamePad: {},
       buttonsValuePreview: new Array(20).fill(false),
+      axesValuePreview: [],
       screenShoting: false,
       detectionIndex: -1,
       detectiontingKeyboard: false,
@@ -342,10 +344,7 @@ export default {
     }, 3000);
 
     //按键选项初始化
-    this.comboKeyOptions = [];
-    for (let i = 0; i < 20; i++) {
-      this.comboKeyOptions.push({ label: 'Button' + i, value: i });
-    }
+    this.initComboKeyOptions();
   },
   async beforeUnmount() {
     if (this.listening) {
@@ -428,8 +427,28 @@ export default {
         this.config.path = folder
       }
     },
+    initComboKeyOptions(buttonCount = 20, axisCount = 6) {
+      const options = [];
+      const bCount = Math.max(buttonCount || 0, 20);
+      for (let i = 0; i < bCount; i++) {
+        options.push({ label: 'Button' + i, value: 'Button' + i });
+      }
+      const aCount = Math.max(axisCount || 0, 6);
+      for (let i = 0; i < aCount; i++) {
+        options.push({ label: 'Axis' + i + '+', value: 'Axis' + i + '+' });
+        options.push({ label: 'Axis' + i + '-', value: 'Axis' + i + '-' });
+      }
+      if (this.config && Array.isArray(this.config.comboKeys)) {
+        for (const key of this.config.comboKeys) {
+          if (key && !options.some(o => o.label === key)) {
+            options.push({ label: key, value: key });
+          }
+        }
+      }
+      this.comboKeyOptions = options;
+    },
     addCombo() {
-      this.config.comboKeys.push(0)
+      this.config.comboKeys.push('Button0')
     },
     removeCombo(index) {
       this.config.comboKeys.splice(index, 1)
@@ -452,6 +471,10 @@ export default {
       }
 
      //#region 升级老配置
+      if (Array.isArray(this.config.comboKeys)) {
+        this.config.comboKeys = this.config.comboKeys.map(k => typeof k === 'number' ? 'Button' + k : k);
+      }
+
       if (this.config.fileNameTemplate == null || this.config.fileNameTemplate == undefined || this.config.fileNameTemplate.trim() == '') {
         this.config.fileNameTemplate = 'Screenshot_%timestamp%'
       }
@@ -476,6 +499,7 @@ export default {
         this.config.screenSourceId = '';
       }
       //#endregion
+      this.initComboKeyOptions();
     },
     resetConfig() {
       this.config = {
@@ -504,6 +528,7 @@ export default {
       } else {
         this.resetConfig();
       }
+      this.initComboKeyOptions();
     },
     async startListen() {
       this.errorMessage = '';
@@ -576,16 +601,36 @@ export default {
     },
     async handleScreenShotTrigger() {
       this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
+      this.axesValuePreview = await window.electronAPI.getCurrentAxesValue()
 
       //如果是监听中
       if (this.listening) {
         let flag = true;
         for (let i = 0; i < this.config.comboKeys.length; i++) {
           let m_btn_key = this.config.comboKeys[i];
-          if(m_btn_key.indexOf("Button") !== -1){
-            let btn_index = Number(m_btn_key.replace("Button", ""));
-            if (!this.buttonsValuePreview[btn_index]) {
-              flag = false;
+          if (typeof m_btn_key === 'number') {
+            m_btn_key = 'Button' + m_btn_key;
+          }
+          if (typeof m_btn_key === 'string') {
+            if (m_btn_key.startsWith('Button')) {
+              let btn_index = Number(m_btn_key.replace('Button', ''));
+              if (!this.buttonsValuePreview || !this.buttonsValuePreview[btn_index]) {
+                flag = false;
+              }
+            } else if (m_btn_key.startsWith('Axis')) {
+              let match = m_btn_key.match(/^Axis\s*(\d+)\s*([+-])$/i);
+              if (match) {
+                let axis_index = Number(match[1]);
+                let dir = match[2];
+                let val = (this.axesValuePreview && this.axesValuePreview[axis_index] !== undefined) ? this.axesValuePreview[axis_index] : 0;
+                if (dir === '+' && val < 0.85) {
+                  flag = false;
+                } else if (dir === '-' && val > -0.85) {
+                  flag = false;
+                }
+              } else {
+                flag = false;
+              }
             }
           }
         }
@@ -598,13 +643,45 @@ export default {
  
       //如果是识别中
       if (!this.listening && this.detectionIndex != -1) {
-        for (let i = 0; i < this.buttonsValuePreview.length; i++) {
-          if (this.buttonsValuePreview[i] != lastButtonsValue[i]) {
-            this.config.comboKeys[this.detectionIndex] = "Button" + i;
-            this.detectionIndex = -1;
-            await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
-            //await window.electronAPI.closeSdl2DeviceInstance()
-            break;
+        // 检查按键变化
+        if (this.buttonsValuePreview && lastButtonsValue) {
+          for (let i = 0; i < this.buttonsValuePreview.length; i++) {
+            if (this.buttonsValuePreview[i] && !lastButtonsValue[i]) {
+              const detectedKey = 'Button' + i;
+              this.config.comboKeys[this.detectionIndex] = detectedKey;
+              this.initComboKeyOptions();
+              this.detectionIndex = -1;
+              await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+              return;
+            }
+          }
+        }
+
+        // 检查轴变化 (从非极值状态变成 1 或 -1)
+        if (this.axesValuePreview && lastAxesValue) {
+          for (let i = 0; i < this.axesValuePreview.length; i++) {
+            const curVal = this.axesValuePreview[i] || 0;
+            const lastVal = lastAxesValue[i] !== undefined ? lastAxesValue[i] : 0;
+
+            // 正向: 之前不是 1 (< 0.85)，现在变成 1 (>= 0.85)
+            if (curVal >= 0.85 && lastVal < 0.85) {
+              const detectedKey = 'Axis' + i + '+';
+              this.config.comboKeys[this.detectionIndex] = detectedKey;
+              this.initComboKeyOptions();
+              this.detectionIndex = -1;
+              await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+              return;
+            }
+
+            // 负向: 之前不是 -1 (> -0.85)，现在变成 -1 (<= -0.85)
+            if (curVal <= -0.85 && lastVal > -0.85) {
+              const detectedKey = 'Axis' + i + '-';
+              this.config.comboKeys[this.detectionIndex] = detectedKey;
+              this.initComboKeyOptions();
+              this.detectionIndex = -1;
+              await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+              return;
+            }
           }
         }
       }
@@ -664,11 +741,15 @@ export default {
           return;
         }
         this.detectionIndex = detectionIndex;
-        lastButtonsValue = JSON.parse(JSON.stringify(this.buttonsValuePreview));
+        this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue();
+        this.axesValuePreview = await window.electronAPI.getCurrentAxesValue();
+        lastButtonsValue = JSON.parse(JSON.stringify(this.buttonsValuePreview || []));
+        lastAxesValue = JSON.parse(JSON.stringify(this.axesValuePreview || []));
         return;
       }
       if (this.detectionIndex == detectionIndex) {
         this.detectionIndex = -1;
+        await window.electronAPI.removeSdl2DeviceInstanceAllListeners();
         return;
       }
     },
