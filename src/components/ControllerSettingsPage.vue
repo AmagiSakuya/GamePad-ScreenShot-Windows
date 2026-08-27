@@ -171,7 +171,7 @@ export default {
     min-width: 300px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    padding: 16px 20px;
+    padding: 16px 0px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     max-width: 690px;
     width: 100%;
