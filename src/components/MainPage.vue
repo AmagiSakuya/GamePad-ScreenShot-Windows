@@ -453,24 +453,51 @@ export default {
     removeCombo(index) {
       this.config.comboKeys.splice(index, 1)
     },
+    async loadGlobalConfig() {
+      // 只加载全局配置，不加载手柄专属 comboKeys（用于无手柄连接时）
+      const savedGlobal = await window.electronAPI.getStore('globalConfig', void 0);
+      if (savedGlobal) {
+        const globalParsed = JSON.parse(savedGlobal);
+        this.config = { ...this.config, ...globalParsed };
+      }
+      // comboKeys 清空，因为没有手柄
+      this.config.comboKeys = [];
+    },
     async saveCurrentConfig() {
+      // 保存全局配置（不含 comboKeys，与手柄无关）
+      const globalConfig = { ...this.config };
+      delete globalConfig.comboKeys;
+      await window.electronAPI.setStore('globalConfig', JSON.stringify(globalConfig));
+
+      // 保存手柄专属配置（只保存 comboKeys）
       if (this.currentGamePad && this.currentGamePad.name) {
-        const configStr = JSON.stringify(this.config);
-        let STORAGE_KEY = this.currentGamePad.name
-        await window.electronAPI.setStore(STORAGE_KEY, configStr);
+        const padConfig = { comboKeys: this.config.comboKeys };
+        await window.electronAPI.setStore(this.currentGamePad.name, JSON.stringify(padConfig));
       }
     },
     async loadConfig(deviceName) {
-      let STORAGE_KEY = deviceName
-      const savedConfig = await window.electronAPI.getStore(STORAGE_KEY, void 0);
-
-      if (savedConfig) {
-        this.config = JSON.parse(savedConfig);
+      // 1. 加载全局配置（不含 comboKeys）
+      const savedGlobal = await window.electronAPI.getStore('globalConfig', void 0);
+      if (savedGlobal) {
+        const globalParsed = JSON.parse(savedGlobal);
+        // 合并全局配置到 config（comboKeys 后续由手柄配置覆盖）
+        this.config = { ...this.config, ...globalParsed };
       } else {
         this.resetConfig();
       }
 
-     //#region 升级老配置
+      // 2. 加载手柄专属 comboKeys
+      const savedPad = await window.electronAPI.getStore(deviceName, void 0);
+      if (savedPad) {
+        const padParsed = JSON.parse(savedPad);
+        // 新格式：{ comboKeys: [...] }
+        // 旧格式兼容：整个 config 都存在手柄 key 里，只提取 comboKeys
+        this.config.comboKeys = Array.isArray(padParsed.comboKeys) ? padParsed.comboKeys : [];
+      } else {
+        this.config.comboKeys = [];
+      }
+
+      //#region 升级老配置
       if (Array.isArray(this.config.comboKeys)) {
         this.config.comboKeys = this.config.comboKeys.map(k => typeof k === 'number' ? 'Button' + k : k);
       }
@@ -526,7 +553,7 @@ export default {
         await this.loadConfig(this.currentGamePad.name)
         await this.loadScreenSources()
       } else {
-        this.resetConfig();
+        await this.loadGlobalConfig();
       }
       this.initComboKeyOptions();
     },
