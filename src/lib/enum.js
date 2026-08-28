@@ -18,6 +18,11 @@ const ScreenShotWayEnum = {
     OBS: 'OBS', 
 }
 
+const CaptureTargetTypeEnum = {
+    Screen: 'screen',
+    Window: 'window'
+}
+
 const ScreenShotSaveWayEnum = {
     FileOnly: 'file',
     CilpboardOnly: 'clipboard',
@@ -25,4 +30,4 @@ const ScreenShotSaveWayEnum = {
 }
 
 
-module.exports = { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum }
+module.exports = { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum }

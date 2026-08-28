@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="settings-container">
     <div class="settings-content-scroll">
       <div class="settings-content">
@@ -18,6 +18,19 @@
 
           <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening" class="setting-row">
             <div class="setting-label">
+              <i class="fas fa-crosshairs"></i>
+              <span>{{ $t('captureTarget') }}</span>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.captureTargetType">
+                <option :value="captureTargetTypeEnum.Screen">{{ $t('captureTargetScreen') }}</option>
+                <option :value="captureTargetTypeEnum.Window">{{ $t('captureTargetWindow') }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening && config.captureTargetType === captureTargetTypeEnum.Screen" class="setting-row">
+            <div class="setting-label">
               <i class="fas fa-desktop"></i>
               <span>{{ $t('screenToCapture') }}</span>
             </div>
@@ -25,6 +38,23 @@
               <select class="form-select" v-model="config.screenSourceId" @focus="loadScreenSources">
                 <option v-for="(source, index) in screenSources" :key="source.id" :value="source.id">
                   {{ screenSourceLabel(index) }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div v-show="config.screenshotWay == screenShotWayEnum.DesktopCapturer && !listening && config.captureTargetType === captureTargetTypeEnum.Window" class="setting-row">
+            <div class="setting-label">
+              <i class="fas fa-window-maximize"></i>
+              <span>{{ $t('windowToCapture') }}</span>
+              <button class="btn btn-primary" style="margin-left: 10px;" @click="loadCaptureWindows">
+                <span>{{ $t('refresh') }}</span>
+              </button>
+            </div>
+            <div class="setting-controls">
+              <select class="form-select" v-model="config.windowSourceId" @focus="loadCaptureWindows">
+                <option v-for="source in captureWindows" :key="source.id" :value="source.id">
+                  {{ windowSourceLabel(source) }}
                 </option>
               </select>
             </div>
@@ -251,7 +281,7 @@
 </template>
 
 <script>
-const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
+const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum } = require('@/lib/enum')
 const { KeyCode }  = require('@/lib/keycode')
 import { Howl } from 'howler'
 import ns2SoundSrc from '@/assets/ns2截图音.mp3'
@@ -284,7 +314,9 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        captureTargetType: CaptureTargetTypeEnum.Screen,
         screenSourceId: '',
+        windowSourceId: '',
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate: 'Screenshot_%timestamp%',
@@ -296,7 +328,9 @@ export default {
       screenshotSoundEnum: screenshotSoundEnum,
       screenShotWayEnum: ScreenShotWayEnum,
       screenShotSaveWayEnum: ScreenShotSaveWayEnum,
+      captureTargetTypeEnum: CaptureTargetTypeEnum,
       screenSources: [],
+      captureWindows: [],
       showBufferDebug: false,
       listening: false,
       loadedGamePads: [],
@@ -322,6 +356,7 @@ export default {
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
     await this.loadScreenSources();
+    await this.loadCaptureWindows();
 
     // 添加托盘监听事件
     window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
@@ -367,6 +402,17 @@ export default {
     },
     screenSourceLabel(index) {
       return this.$t('screenToCaptureOption', { number: index + 1 });
+    },
+    async loadCaptureWindows() {
+      const windows = await window.electronAPI.getCaptureWindows();
+      this.captureWindows = windows;
+      if (windows.length && !windows.some((source) => String(source.id) === String(this.config.windowSourceId))) {
+        this.config.windowSourceId = windows[0].id;
+      }
+    },
+    windowSourceLabel(source) {
+      const ownerName = source.ownerName ? `${source.ownerName} - ` : '';
+      return `${ownerName}${source.title}`;
     },
     async takeScreenshot() {
       if (this.screenShoting) return;
@@ -525,6 +571,14 @@ export default {
       if (this.config.screenSourceId == null) {
         this.config.screenSourceId = '';
       }
+
+      if (this.config.captureTargetType !== CaptureTargetTypeEnum.Window) {
+        this.config.captureTargetType = CaptureTargetTypeEnum.Screen;
+      }
+
+      if (this.config.windowSourceId == null) {
+        this.config.windowSourceId = '';
+      }
       //#endregion
       this.initComboKeyOptions();
     },
@@ -535,7 +589,9 @@ export default {
         sound: screenshotSoundEnum.NS2,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
+        captureTargetType: CaptureTargetTypeEnum.Screen,
         screenSourceId: '',
+        windowSourceId: '',
         screenShotSaveWay: ScreenShotSaveWayEnum.FileOnly,
         imageFormat: 'jpg',
         fileNameTemplate: 'Screenshot_%timestamp%',
@@ -572,6 +628,14 @@ export default {
       if (this.detectionIndex != -1) {
         this.errorMessage = this.$t('alertMsg.detectionInProgress')
         return;
+      }
+
+      if (this.config.screenshotWay === ScreenShotWayEnum.DesktopCapturer && this.config.captureTargetType === CaptureTargetTypeEnum.Window) {
+        await this.loadCaptureWindows();
+        if (!this.config.windowSourceId) {
+          this.errorMessage = this.$t('alertMsg.captureWindowEmpty');
+          return;
+        }
       }
 
       //尝试连接OBS

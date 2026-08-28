@@ -7,6 +7,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const activeWin = require('active-win');
 const screenshot = require('screenshot-desktop');
+const { Window: ScreenshotWindow } = require('node-screenshots');
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
 const fs = require('fs')
@@ -271,6 +272,7 @@ function getAssetPath(...relativePaths) {
 //#region 文件名冲突处理 #fouced program name#
 let filenameConflictResolutionKey = 'filenameConflictResolution';
 let screenSourceCache = [];
+let captureWindowCache = [];
 
 ipcMain.handle('file-conflict-handle', async (_, config) => {
   return resolveScreenshotFilePath(config);
@@ -306,32 +308,137 @@ ipcMain.handle('get-screen-sources', async () => {
   return screenSourceCache;
 })
 
+ipcMain.handle('get-capture-windows', async () => {
+  if (process.platform !== 'win32' || typeof activeWin.getOpenWindows !== 'function') {
+    captureWindowCache = [];
+    return captureWindowCache;
+  }
+
+  const windows = await activeWin.getOpenWindows();
+  captureWindowCache = windows
+    .filter((item) => item && item.id && item.title && item.bounds)
+    .filter((item) => item.bounds.width > 0 && item.bounds.height > 0)
+    .filter((item) => item.bounds.x > -10000 && item.bounds.y > -10000)
+    .map((item) => {
+      return {
+        id: item.id,
+        title: item.title,
+        ownerName: item.owner && item.owner.name ? item.owner.name : '',
+        processId: item.owner && item.owner.processId ? item.owner.processId : 0,
+        path: item.owner && item.owner.path ? item.owner.path : '',
+        bounds: item.bounds
+      };
+    });
+
+  return captureWindowCache;
+})
+
+function isLikelyBlackGameFrame(raw, width, height) {
+  if (!raw || raw.length < width * height * 4 || width <= 0 || height <= 0) {
+    return true;
+  }
+
+  const step = width * height > 1920 * 1080 ? 8 : 4;
+  let sampled = 0;
+  let dark = 0;
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const offset = (y * width + x) * 4;
+      const r = raw[offset];
+      const g = raw[offset + 1];
+      const b = raw[offset + 2];
+      sampled++;
+      if (r <= 8 && g <= 8 && b <= 8) dark++;
+    }
+  }
+
+  return sampled > 0 && dark / sampled >= 0.995;
+}
+
+function getScreenshotWindowId(item) {
+  return typeof item.id === 'function' ? item.id() : item.id;
+}
+
+function getScreenshotImageDimension(image, key) {
+  return typeof image[key] === 'function' ? image[key]() : image[key];
+}
+
+async function captureWindowBuffer(windowId, format) {
+  const windows = ScreenshotWindow.all();
+  const targetWindow = windows.find((item) => String(getScreenshotWindowId(item)) === String(windowId));
+  if (!targetWindow) {
+    throw new Error($t('captureWindowNotFound'));
+  }
+
+  const image = await targetWindow.captureImage();
+  const width = getScreenshotImageDimension(image, 'width');
+  const height = getScreenshotImageDimension(image, 'height');
+  const raw = await image.toRaw(true);
+  if (isLikelyBlackGameFrame(raw, width, height)) {
+    throw new Error('检测到游戏黑帧，拒绝保存黑屏截图');
+  }
+
+  const buffer = format === 'png' ? await image.toPng(true) : await image.toJpeg(true);
+  if (!buffer || buffer.length === 0) {
+    throw new Error('窗口捕获返回了空画面');
+  }
+  return buffer;
+}
+
+async function resolveCaptureWindow(config) {
+  let selectedWindow = captureWindowCache.find((item) => String(item.id) === String(config.windowSourceId));
+  if (!selectedWindow) {
+    const windows = await activeWin.getOpenWindows();
+    selectedWindow = windows
+      .filter((item) => item && item.id && item.title && item.bounds)
+      .find((item) => String(item.id) === String(config.windowSourceId));
+  }
+  if (!selectedWindow) {
+    throw new Error($t('captureWindowNotFound'));
+  }
+  return selectedWindow;
+}
+
 ipcMain.handle('screen-shot', async (_, config) => {
   const format = config.imageFormat === 'png' ? 'png' : 'jpg';
-  let screenSourceId = config.screenSourceId;
-  if (!screenSourceCache.some((display) => display.id === screenSourceId)) {
-    screenSourceId = screenSourceCache[0] && screenSourceCache[0].id;
-  }
-
   let buffer;
-  try {
-    buffer = await screenshot({
-      screen: screenSourceId,
-      format
-    });
-  } catch (error) {
-    screenSourceCache = (await screenshot.listDisplays()).map((display) => ({ id: display.id, name: display.name }));
-    const fallbackDisplay = screenSourceCache[0];
-    if (!fallbackDisplay) {
-      throw new Error('No screen source available for capture');
+
+  const isWindowCapture = config.captureTargetType === 'window';
+  if (isWindowCapture) {
+    try {
+      const selectedWindow = await resolveCaptureWindow(config);
+      buffer = await captureWindowBuffer(selectedWindow.id, format);
+    } catch (error) {
+      log.warn('Game window capture rejected:', error);
+      return null;
     }
-    buffer = await screenshot({
-      screen: fallbackDisplay.id,
-      format
-    });
+  } else {
+    let screenSourceId = config.screenSourceId;
+    if (!screenSourceCache.some((display) => display.id === screenSourceId)) {
+      screenSourceId = screenSourceCache[0] && screenSourceCache[0].id;
+    }
+
+    try {
+      buffer = await screenshot({
+        screen: screenSourceId,
+        format
+      });
+    } catch (error) {
+      screenSourceCache = (await screenshot.listDisplays()).map((display) => ({ id: display.id, name: display.name }));
+      const fallbackDisplay = screenSourceCache[0];
+      if (!fallbackDisplay) {
+        throw new Error('No screen source available for capture');
+      }
+      buffer = await screenshot({
+        screen: fallbackDisplay.id,
+        format
+      });
+    }
   }
 
-  buffer = encodeScreenshotBuffer(buffer, format);
+  if (!isWindowCapture) {
+    buffer = encodeScreenshotBuffer(buffer, format);
+  }
 
   let filePath = null;
   if (config.screenShotSaveWay != ScreenShotSaveWayEnum.CilpboardOnly) {

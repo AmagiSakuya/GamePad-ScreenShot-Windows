@@ -5,6 +5,7 @@ const log = require('electron-log');
 contextBridge.exposeInMainWorld('electronAPI', {
     showScreenshotNotification: (data) => ipcRenderer.invoke('show-screenshot-notification', data),
     getScreenSources: () => ipcRenderer.invoke('get-screen-sources'),
+    getCaptureWindows: () => ipcRenderer.invoke('get-capture-windows'),
     screenShot: (config) => ipcRenderer.invoke('screen-shot', config),
     onOpenFolderTriggered: (callback) => {
         ipcRenderer.on('open-folder-triggered', callback)

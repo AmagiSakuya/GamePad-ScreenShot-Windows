@@ -24,7 +24,7 @@ module.exports = defineConfig({
   pluginOptions: {
     electronBuilder: {
       preload: 'src/preload.js',
-      externals: ['screenshot-desktop'],
+      externals: ['screenshot-desktop', 'node-screenshots'],
       builderOptions: {
         "productName": "Gamepad Full-ScreenShot Tool",
         "win": {
@@ -33,7 +33,8 @@ module.exports = defineConfig({
         },
         asarUnpack: [
           'preload.js',
-          'node_modules/screenshot-desktop/**'
+          'node_modules/screenshot-desktop/**',
+          'node_modules/node-screenshots/**'
         ],
         extraResources: [
           {
@@ -47,7 +48,7 @@ module.exports = defineConfig({
           {
             from: "src/screenshot-notification.html",
             to: "./html/screenshot-notification.html" 
-          }
+          },
         ]
       }
     }
