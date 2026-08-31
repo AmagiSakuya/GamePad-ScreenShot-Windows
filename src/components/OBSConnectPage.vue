@@ -135,6 +135,13 @@ export default {
                 return
             }
 
+            // OBS 不会替桌面截图流程兜底创建目录，保存前统一确保目标目录存在。
+            const folderReady = await window.electronAPI.ensureFolder(config && config.path);
+            if (!folderReady) {
+                this.windowsNotify(this.$t('OBSPage.obsScreenshotError') + '保存目录无法创建');
+                return;
+            }
+
             let filepath = await window.electronAPI.fileConflictHandle(config);
 
             if (filepath == null) {
@@ -175,6 +182,12 @@ export default {
             }
 
             try {
+                // 回放缓存由 OBS 自己写文件，仍需在调用 SaveReplayBuffer 前确保目录存在。
+                const folderReady = await window.electronAPI.ensureFolder(config && config.path);
+                if (!folderReady) {
+                    throw new Error('保存目录无法创建');
+                }
+
                 const { outputActive } = await obs.call('GetReplayBufferStatus');
                 if (!outputActive) {
                     this.windowsNotify(this.$t('OBSPage.replayBufferNotActive'));

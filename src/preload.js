@@ -1,5 +1,4 @@
 const { contextBridge, ipcRenderer, clipboard } = require('electron')
-const fs = require('fs')
 const log = require('electron-log');
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -43,16 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
     getLogFolder: () => ipcRenderer.invoke('get-log-folder'),
     // Ensure folder exists (creates recursively). Returns true on success, false on failure.
-    ensureFolder: (folderPath) => {
-        try {
-            if (!folderPath || folderPath.trim() === '') return false;
-            fs.mkdirSync(folderPath, { recursive: true });
-            return true;
-        } catch (e) {
-            console.error('ensureFolder failed', e);
-            return false;
-        }
-    },
+    ensureFolder: (folderPath) => ipcRenderer.invoke('ensure-folder', folderPath),
     restartApp: () => ipcRenderer.send('restart-app'),
     getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),

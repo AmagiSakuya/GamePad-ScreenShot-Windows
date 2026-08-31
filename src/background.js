@@ -691,6 +691,10 @@ ipcMain.handle('select-folder', async () => {
   return result.canceled ? null : result.filePaths[0]
 })
 
+ipcMain.handle('ensure-folder', async (_, folderPath) => {
+  return ensureDirectoryExists(folderPath, 'ipc');
+})
+
 ipcMain.handle('show-confirm-messageBox', async (_, title, message, detail, buttons) => {
   return showConfirmMessageBox(title, message, detail, buttons);
 })
