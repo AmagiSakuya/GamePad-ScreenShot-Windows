@@ -417,27 +417,31 @@ export default {
     async takeScreenshot() {
       if (this.screenShoting) return;
       this.screenShoting = true;
-      const m_config = await this.prepareCaptureConfig();
 
-      let filePath;
-      if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
-        filePath = await window.electronAPI.screenShot(m_config)
-      } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
-        filePath = await this.$refs.obsConnectPageRef.takeScreenshot(m_config)
-      }
+      try {
+        const m_config = await this.prepareCaptureConfig();
+        let filePath;
+        if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
+          filePath = await window.electronAPI.screenShot(m_config)
+        } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
+          filePath = await this.$refs.obsConnectPageRef.takeScreenshot(m_config)
+        }
 
-      if (filePath == void 0 || filePath == null) {
+        if (filePath == void 0 || filePath == null) {
+          return;
+        }
+        await this.playCaptureSound();
+        await this.showCaptureNotification({
+          img: filePath,
+          title: this.$t('overlayNotify.screenshotSuccess'),
+          desc: this.$t('overlayNotify.screenshotSaved')
+        });
+      } catch (error) {
+        // 路径、权限等单次保存错误不应让截图监听状态卡死或触发渲染进程崩溃。
+        console.error('Screenshot failed:', error);
+      } finally {
         this.screenShoting = false;
-        return;
       }
-      await this.playCaptureSound();
-      await this.showCaptureNotification({
-        img: filePath,
-        title: this.$t('overlayNotify.screenshotSuccess'),
-        desc: this.$t('overlayNotify.screenshotSaved')
-      });
-
-      this.screenShoting = false;
     },
     async prepareCaptureConfig() {
       const config = JSON.parse(JSON.stringify(this.config));

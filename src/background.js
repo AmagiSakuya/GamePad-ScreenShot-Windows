@@ -41,8 +41,10 @@ ipcMain.handle = function (channel, listener) {
       // 执行原本的业务逻辑
       return await listener(event, ...args);
     } catch (error) {
-      crashAndExit('Uncaught Exception in IpcMain Handle', error);
-      throw error; // 仍然抛出，维持原本的返回特性
+      // IPC 业务错误（例如保存目录被删除或没有权限）不应导致整个应用退出。
+      // 记录错误并返回 null，让渲染进程按失败结果处理即可。
+      log.error(`[IPC ERROR] ${channel}:`, error);
+      return null;
     }
   });
 };
@@ -204,6 +206,9 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
+  // 配置中的截图目录可能已被用户手动删除，启动时自动恢复目录。
+  ensureConfiguredScreenshotPath();
+
   createWindow()
   createTray()
 
@@ -269,6 +274,44 @@ function getAssetPath(...relativePaths) {
     : path.join(__dirname, '../src', ...relativePaths);           // 开发环境路径
 }
 
+function ensureDirectoryExists(directoryPath, source = 'unknown') {
+  if (typeof directoryPath !== 'string' || directoryPath.trim() === '') {
+    return false;
+  }
+
+  try {
+    fs.mkdirSync(directoryPath.trim(), { recursive: true });
+    return true;
+  } catch (error) {
+    log.error(`[DIRECTORY ERROR] Failed to create screenshot directory (${source}): ${directoryPath}`, error);
+    return false;
+  }
+}
+
+function getConfiguredScreenshotPath() {
+  const savedGlobalConfig = configStore.get('globalConfig', void 0);
+  if (!savedGlobalConfig) {
+    return '';
+  }
+
+  try {
+    const globalConfig = typeof savedGlobalConfig === 'string'
+      ? JSON.parse(savedGlobalConfig)
+      : savedGlobalConfig;
+    return globalConfig && typeof globalConfig.path === 'string' ? globalConfig.path : '';
+  } catch (error) {
+    log.warn('Failed to parse saved screenshot configuration:', error);
+    return '';
+  }
+}
+
+function ensureConfiguredScreenshotPath() {
+  const screenshotPath = getConfiguredScreenshotPath();
+  if (screenshotPath) {
+    ensureDirectoryExists(screenshotPath, 'startup');
+  }
+}
+
 //#region 文件名冲突处理 #fouced program name#
 let filenameConflictResolutionKey = 'filenameConflictResolution';
 let screenSourceCache = [];
@@ -279,7 +322,16 @@ ipcMain.handle('file-conflict-handle', async (_, config) => {
 })
 
 async function resolveScreenshotFilePath(config) {
-  let filePath = path.join(config.path, `${config.calcedFileName}.${config.imageFormat}`);
+  if (!config || typeof config.path !== 'string' || config.path.trim() === '') {
+    throw new Error('Screenshot directory is empty');
+  }
+
+  const screenshotDirectory = config.path.trim();
+  if (!ensureDirectoryExists(screenshotDirectory, 'screenshot')) {
+    throw new Error(`Unable to create screenshot directory: ${screenshotDirectory}`);
+  }
+
+  let filePath = path.join(screenshotDirectory, `${config.calcedFileName}.${config.imageFormat}`);
   if (fs.existsSync(filePath)) {
     let filenameConflictResolution = configStore.get(filenameConflictResolutionKey, 'overwrite')
     if (filenameConflictResolution === 'appendTimestamp') {
@@ -442,9 +494,15 @@ ipcMain.handle('screen-shot', async (_, config) => {
 
   let filePath = null;
   if (config.screenShotSaveWay != ScreenShotSaveWayEnum.CilpboardOnly) {
-    filePath = await resolveScreenshotFilePath(config);
-    if (filePath != null) {
-      fs.writeFileSync(filePath, buffer);
+    try {
+      filePath = await resolveScreenshotFilePath(config);
+      if (filePath != null) {
+        fs.writeFileSync(filePath, buffer);
+      }
+    } catch (error) {
+      // 保存失败只影响本次截图，不要让 ENOENT/权限错误升级成应用崩溃。
+      log.error(`Screenshot save failed: ${config && config.path ? config.path : '<empty path>'}`, error);
+      return null;
     }
   }
 
