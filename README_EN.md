@@ -22,13 +22,16 @@
 
 ## 📖 Introduction
 
-A utility that allows you to trigger **Full-screen screenshots** or **OBS screenshots** using **Gamepad button combinations**.
+A utility that allows you to trigger **Full-screen**, **Window**, or **OBS screenshots** using **Gamepad button combinations** or **Axis values**.
 
-- ✅ Trigger via button combinations
+- ✅ Trigger via button combinations / Axis values
 - ✅ Customizable save filenames
 - ✅ Save screenshots to clipboard
 - ✅ Screenshot sound effects
 - ✅ **OBS-Websocket** integration to capture specific **OBS Scenes**
+- ✅ Long-press screenshot in OBS mode, saves replay cache video
+- ✅ Select a specific monitor for capture in multi-screen setups
+- ✅ Window-specific capture support
 
 ---
 
@@ -48,7 +51,7 @@ A utility that allows you to trigger **Full-screen screenshots** or **OBS screen
 
 ## 🎮 How to Set Up Button Combinations
 
-> **Note:** Typically, D-Pad (Up/Down/Left/Right) and triggers (L2/R2) are treated as **Axis** inputs rather than digital buttons, so they cannot currently be used as trigger buttons.
+> **Note:** **Axis** values (e.g. D-Pad Up/Down/Left/Right and L2/R2 triggers) can now also be configured as triggers.
 
 1. You can verify which button corresponds to the options in the "Button Combination" settings by using the built-in debugging tool.
 
@@ -76,17 +79,3 @@ A utility that allows you to trigger **Full-screen screenshots** or **OBS screen
 </p>
 
 6. Return to the **Screenshot Settings** page and switch the "Capture Method" to **OBS**.
-
----
-
-
-
-## ⚠️ Known Limitations
-
-**The following limitations can be bypassed by using the OBS capture method:**
-
-- Lack of support for non-16:9 aspect ratios.
-- Unable to select specific monitors in multi-screen setups.
-- Supports full-screen capture only; window-specific capture is not supported.
-
----
