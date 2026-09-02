@@ -142,6 +142,17 @@ export default {
                             ]
                         },
                         {
+                            key: 'overlayNotifyPosition',
+                            icon: 'fas fa-arrows-alt-h',
+                            type: 'select',
+                            configKey: 'overlayNotifyPosition',
+                            handler: async function() { await window.electronAPI.setStore('overlayNotifyPosition', this.config.overlayNotifyPosition) },
+                            options: [
+                                { value: 'left', label: 'SystemSettingsPage.overlayNotifyPositionEnum.topLeft' },
+                                { value: 'right', label: 'SystemSettingsPage.overlayNotifyPositionEnum.topRight' }
+                            ]
+                        },
+                        {
                             key: 'overlayNotifyDuration',
                             icon: 'fas fa-clock',
                             type: 'select',

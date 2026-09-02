@@ -130,6 +130,11 @@
             "4": "4s",
             "5": "5s"
         },
+        "overlayNotifyPosition": "Overlay Notification Position",
+        "overlayNotifyPositionEnum": {
+            "topLeft": "Top Left",
+            "topRight": "Top Right"
+        },
         "autoListenResolutionEnum": {
             "never": "Never",
             "whenDeviceAvailable": "On Device Change",

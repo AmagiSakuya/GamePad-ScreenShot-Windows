@@ -877,14 +877,16 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
     clearTimeout(overlayTimeout);
   }
 
-  // 获取主屏幕尺寸，定位到左上角
+  // 获取主屏幕尺寸，根据通知位置设置定位到左上角或右上角
   const { screen } = require('electron');
   const display = screen.getPrimaryDisplay();
-  const x = 0;
+  const overlayWidth = 480;
+  const pos = configStore.get('overlayNotifyPosition', 'left') === 'right' ? 'right' : 'left';
+  const x = pos === 'right' ? Math.max(0, display.bounds.width - overlayWidth) : 0;
   const y = 0;
 
   overlayWindow = new BrowserWindow({
-    width: 480,
+    width: overlayWidth,
     height: 150,
     x,
     y,
@@ -910,7 +912,7 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
   const overlayWindowFilePath = app.isPackaged ? path.join(process.resourcesPath, 'html', 'screenshot-notification.html') : '../src/screenshot-notification.html';
 
   overlayWindow.loadFile(overlayWindowFilePath, {
-    query: { img, title, desc, type }
+    query: { img, title, desc, type, pos }
   });
 
   overlayWindow.once('ready-to-show', () => {

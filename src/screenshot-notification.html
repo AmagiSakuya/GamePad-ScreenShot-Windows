@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-cn"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
+
   <title>截图通知</title>
   <style>
     body {
@@ -10,9 +10,6 @@
       overflow: hidden;
       width: 100vw;
       height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       pointer-events: none;
     }
     .notification {
@@ -28,8 +25,18 @@
       color: #fff;
       font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
       opacity: 0;
-      transform: translateY(40px) scale(0.98);
-      animation: fadeInUp 0.4s cubic-bezier(.4,1.7,.6,1) forwards;
+      position: fixed;
+      left: 18px;
+      top: 18px;
+      transform: translateX(-60%) scale(0.98);
+      animation: fadeInRight 0.4s cubic-bezier(.4,1.7,.6,1) forwards;
+    }
+    /* 右上角显示：从右侧进入/退出 */
+    .notification.pos-right {
+      left: auto;
+      right: 18px;
+      transform: translateX(60%) scale(0.98);
+      animation-name: fadeInLeft;
     }
     .preview {
       width: 64px;
@@ -71,64 +78,36 @@
       font-size: 14px;
       color: #bbb;
     }
-    @keyframes fadeInUp {
+    @keyframes fadeInRight {
       to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateX(0) scale(1);
       }
     }
-    @keyframes fadeOut {
+    @keyframes fadeInLeft {
+      to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+    @keyframes fadeOutRight {
       to {
         opacity: 0;
-        transform: translateY(40px) scale(0.98);
+        transform: translateX(-60%) scale(0.98);
+      }
+    }
+    @keyframes fadeOutLeft {
+      to {
+        opacity: 0;
+        transform: translateX(60%) scale(0.98);
       }
     }
     .fade-out {
-      animation: fadeOut 0.3s forwards;
+      animation: fadeOutRight 0.3s forwards;
     }
-      body {
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        overflow: hidden;
-        width: 100vw;
-        height: 100vh;
-        pointer-events: none;
-      }
-      .notification {
-        min-width: 320px;
-        max-width: 380px;
-        min-height: 80px;
-        background: rgba(30, 30, 30, 0.85);
-        border-radius: 18px;
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        padding: 18px 24px;
-        color: #fff;
-        font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
-        opacity: 0;
-        position: fixed;
-        left: 18px;
-        top: 18px;
-        transform: translateX(-60%) scale(0.98);
-        animation: fadeInRight 0.4s cubic-bezier(.4,1.7,.6,1) forwards;
-      }
-      @keyframes fadeInRight {
-        to {
-          opacity: 1;
-          transform: translateX(0) scale(1);
-        }
-      }
-      @keyframes fadeOut {
-        to {
-          opacity: 0;
-          transform: translateX(-60%) scale(0.98);
-        }
-      }
-      .fade-out {
-        animation: fadeOut 0.3s forwards;
-      }
+    .pos-right.fade-out {
+      animation-name: fadeOutLeft;
+    }
   </style>
 </head>
 <body>
@@ -154,6 +133,10 @@
     }
     if (params.get('type') === 'video' || params.get('type') === 'text') {
       document.getElementById('notification').classList.add(params.get('type'));
+    }
+    // 通知位置：right 时从右上角进入，left（默认）从左上角进入
+    if (params.get('pos') === 'right') {
+      document.getElementById('notification').classList.add('pos-right');
     }
     // 5秒后淡出
     setTimeout(() => {

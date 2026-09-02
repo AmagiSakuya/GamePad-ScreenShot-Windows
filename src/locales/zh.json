@@ -130,6 +130,11 @@
             "4": "4秒",
             "5": "5秒"
         },
+        "overlayNotifyPosition": "覆层通知位置",
+        "overlayNotifyPositionEnum": {
+            "topLeft": "左上角",
+            "topRight": "右上角"
+        },
         "autoListenResolutionEnum": {
             "never": "从不",
             "whenDeviceAvailable": "设备变化时",
