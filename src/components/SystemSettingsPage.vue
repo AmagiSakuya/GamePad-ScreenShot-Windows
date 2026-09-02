@@ -287,6 +287,7 @@ export default {
         const autoStart = await window.electronAPI.getStore(autoStartKey, false);
         const overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
         const overlayNotifyDuration = await window.electronAPI.getStore('overlayNotifyDuration', 2);
+        const overlayNotifyPosition = await window.electronAPI.getStore('overlayNotifyPosition', 'left');
 
         this.config.language = locale;
         this.config.closeType = closeType;
@@ -299,6 +300,7 @@ export default {
         this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
         this.config.overlayNotify = overlayNotify;
         this.config.overlayNotifyDuration = Number(overlayNotifyDuration) || 2;
+        this.config.overlayNotifyPosition = overlayNotifyPosition;
     },
     unmounted() {
 
