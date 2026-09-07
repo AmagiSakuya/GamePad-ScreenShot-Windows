@@ -135,6 +135,15 @@
             "topLeft": "左上角",
             "topRight": "右上角"
         },
+        "overlayNotifySize": "覆层通知大小",
+        "overlayNotifySizeEnum": {
+            "small": "小",
+            "medium": "中",
+            "large": "大"
+        },
+        "testOverlayNotify": "测试浮层通知",
+        "testOverlayNotifyTitle": "浮层通知预览",
+        "testOverlayNotifyDesc": "当前大小预览",
         "autoListenResolutionEnum": {
             "never": "从不",
             "whenDeviceAvailable": "设备变化时",

@@ -81,6 +81,7 @@ export default {
                 autoStart: false,
                 minimizeOnStartup: false,
                 overlayNotify: 'show',
+                overlayNotifySize: 'medium',
                 overlayNotifyDuration: 3,
                 listenNotifyPolicy: 'all'
                 },
@@ -151,6 +152,24 @@ export default {
                                 { value: 'left', label: 'SystemSettingsPage.overlayNotifyPositionEnum.topLeft' },
                                 { value: 'right', label: 'SystemSettingsPage.overlayNotifyPositionEnum.topRight' }
                             ]
+                        },
+                        {
+                            key: 'overlayNotifySize',
+                            icon: 'fas fa-crop',
+                            type: 'select',
+                            configKey: 'overlayNotifySize',
+                            handler: async function() { await window.electronAPI.setStore('overlayNotifySize', this.config.overlayNotifySize) },
+                            options: [
+                                { value: 'small', label: 'SystemSettingsPage.overlayNotifySizeEnum.small' },
+                                { value: 'medium', label: 'SystemSettingsPage.overlayNotifySizeEnum.medium' },
+                                { value: 'large', label: 'SystemSettingsPage.overlayNotifySizeEnum.large' }
+                            ]
+                        },
+                        {
+                            key: 'testOverlayNotify',
+                            icon: 'fas fa-bell',
+                            type: 'button',
+                            handler: this.testOverlayNotify,
                         },
                         {
                             key: 'overlayNotifyDuration',
@@ -286,6 +305,7 @@ export default {
         const proxy = await window.electronAPI.getStore(proxyKey, '');
         const autoStart = await window.electronAPI.getStore(autoStartKey, false);
         const overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
+        const overlayNotifySize = await window.electronAPI.getStore('overlayNotifySize', 'medium');
         const overlayNotifyDuration = await window.electronAPI.getStore('overlayNotifyDuration', 2);
         const overlayNotifyPosition = await window.electronAPI.getStore('overlayNotifyPosition', 'left');
 
@@ -299,6 +319,7 @@ export default {
         const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
         this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
         this.config.overlayNotify = overlayNotify;
+        this.config.overlayNotifySize = overlayNotifySize;
         this.config.overlayNotifyDuration = Number(overlayNotifyDuration) || 2;
         this.config.overlayNotifyPosition = overlayNotifyPosition;
     },
@@ -335,6 +356,16 @@ export default {
         },
         async onProxyChanged() {
             await window.electronAPI.setStore(proxyKey, this.config.proxy);
+        },
+        async testOverlayNotify() {
+            // 弹一次浮层通知，让用户预览当前大小
+            await window.electronAPI.showScreenshotNotification({
+                img: undefined,
+                title: this.$t('SystemSettingsPage.testOverlayNotifyTitle'),
+                desc: this.$t('SystemSettingsPage.testOverlayNotifyDesc'),
+                type: 'text',
+                duration: 3000
+            });
         },
         async checkForUpdates() {
             try {

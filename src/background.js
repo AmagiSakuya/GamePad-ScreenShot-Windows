@@ -880,14 +880,29 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
   // 获取主屏幕尺寸，根据通知位置设置定位到左上角或右上角
   const { screen } = require('electron');
   const display = screen.getPrimaryDisplay();
-  const overlayWidth = 480;
+
+  // 浮层大小：小/中/大。卡片内容通过 scale（CSS zoom）整体等比缩放，
+  // 窗口尺寸只需容纳对应缩放后的卡片 + 角部偏移即可（透明区域不可见）。
+  // Electron BrowserWindow 以逻辑像素（DIP）创建，会随系统缩放/DPI 自动放大。
+  const sizePreset = configStore.get('overlayNotifySize', 'medium') || 'medium';
+  const overlayBaseSizes = {
+    small: { width: 400, height: 190 },
+    medium: { width: 480, height: 210 },
+    large: { width: 590, height: 240 }
+  };
+  const overlayScales = { small: 0.8, medium: 1, large: 1.25 };
+  const base = overlayBaseSizes[sizePreset] || overlayBaseSizes.medium;
+  const scale = overlayScales[sizePreset] || overlayScales.medium;
+  const overlayWidth = base.width;
+  const overlayHeight = base.height;
+
   const pos = configStore.get('overlayNotifyPosition', 'left') === 'right' ? 'right' : 'left';
   const x = pos === 'right' ? Math.max(0, display.bounds.width - overlayWidth) : 0;
   const y = 0;
 
   overlayWindow = new BrowserWindow({
     width: overlayWidth,
-    height: 150,
+    height: overlayHeight,
     x,
     y,
     transparent: true,
@@ -912,7 +927,7 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
   const overlayWindowFilePath = app.isPackaged ? path.join(process.resourcesPath, 'html', 'screenshot-notification.html') : '../src/screenshot-notification.html';
 
   overlayWindow.loadFile(overlayWindowFilePath, {
-    query: { img, title, desc, type, pos }
+    query: { img, title, desc, type, pos, scale }
   });
 
   overlayWindow.once('ready-to-show', () => {

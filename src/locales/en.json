@@ -135,6 +135,15 @@
             "topLeft": "Top Left",
             "topRight": "Top Right"
         },
+        "overlayNotifySize": "Overlay Notification Size",
+        "overlayNotifySizeEnum": {
+            "small": "Small",
+            "medium": "Medium",
+            "large": "Large"
+        },
+        "testOverlayNotify": "Test Overlay Notification",
+        "testOverlayNotifyTitle": "Notification Preview",
+        "testOverlayNotifyDesc": "Current size preview",
         "autoListenResolutionEnum": {
             "never": "Never",
             "whenDeviceAvailable": "On Device Change",
