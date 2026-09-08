@@ -881,20 +881,22 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
   const { screen } = require('electron');
   const display = screen.getPrimaryDisplay();
 
-  // 浮层大小：小/中/大。卡片内容通过 scale（CSS zoom）整体等比缩放，
+  // 浮层大小：卡片内容通过 scale（CSS zoom）整体等比缩放，滑动条可在 0.8x–2x 间连续调节；
+  // 兼容旧版 small/medium/large 预设值（等价于 0.8x / 1x / 1.25x）。
   // 窗口尺寸只需容纳对应缩放后的卡片 + 角部偏移即可（透明区域不可见）。
   // Electron BrowserWindow 以逻辑像素（DIP）创建，会随系统缩放/DPI 自动放大。
-  const sizePreset = configStore.get('overlayNotifySize', 'medium') || 'medium';
-  const overlayBaseSizes = {
-    small: { width: 400, height: 190 },
-    medium: { width: 480, height: 210 },
-    large: { width: 590, height: 240 }
-  };
-  const overlayScales = { small: 0.8, medium: 1, large: 1.25 };
-  const base = overlayBaseSizes[sizePreset] || overlayBaseSizes.medium;
-  const scale = overlayScales[sizePreset] || overlayScales.medium;
-  const overlayWidth = base.width;
-  const overlayHeight = base.height;
+  const rawSizePreset = configStore.get('overlayNotifySize', 1);
+  let scale = Number.parseFloat(rawSizePreset);
+  if (!Number.isFinite(scale)) {
+    const legacyScales = { small: 0.8, medium: 1, large: 1.25 };
+    scale = legacyScales[String(rawSizePreset).toLowerCase()] || 1;
+  }
+  scale = Math.min(2, Math.max(0.8, scale));
+  // 以中号（scale=1）为基准尺寸，窗口随缩放比例放大/缩小
+  const baseWidth = 480;
+  const baseHeight = 210;
+  const overlayWidth = Math.round(baseWidth * scale);
+  const overlayHeight = Math.round(baseHeight * scale);
 
   const pos = configStore.get('overlayNotifyPosition', 'left') === 'right' ? 'right' : 'left';
   const x = pos === 'right' ? Math.max(0, display.bounds.width - overlayWidth) : 0;

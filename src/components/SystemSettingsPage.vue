@@ -24,6 +24,14 @@
                                 <input v-if="setting.type === 'input'" type="text" class="form-input"
                                     :placeholder="setting.placeholder" :value="config[setting.configKey]"
                                     @input="e => { config[setting.configKey] = e.target.value; setting.handler.call(this, e); }">
+                                <div v-if="setting.type === 'range'" class="form-range-wrap">
+                                    <span class="range-bound">{{ setting.min }}x</span>
+                                    <input type="range" class="form-range" :min="setting.min" :max="setting.max"
+                                        :step="setting.step" :value="config[setting.configKey]"
+                                        @input="e => { config[setting.configKey] = parseFloat(e.target.value); setting.handler.call(this, e); }">
+                                    <span class="range-bound">{{ setting.max }}x</span>
+                                    <span class="range-value-badge">{{ formatScaleValue(config[setting.configKey]) }}</span>
+                                </div>
                                 <button v-if="setting.type === 'button'" class="btn btn-primary compact"
                                     @click="setting.handler">
                                     <span>{{ $t(`SystemSettingsPage.${setting.key}`) }}</span>
@@ -156,14 +164,12 @@ export default {
                         {
                             key: 'overlayNotifySize',
                             icon: 'fas fa-crop',
-                            type: 'select',
+                            type: 'range',
                             configKey: 'overlayNotifySize',
-                            handler: async function() { await window.electronAPI.setStore('overlayNotifySize', this.config.overlayNotifySize) },
-                            options: [
-                                { value: 'small', label: 'SystemSettingsPage.overlayNotifySizeEnum.small' },
-                                { value: 'medium', label: 'SystemSettingsPage.overlayNotifySizeEnum.medium' },
-                                { value: 'large', label: 'SystemSettingsPage.overlayNotifySizeEnum.large' }
-                            ]
+                            min: 0.8,
+                            max: 2,
+                            step: 0.05,
+                            handler: async function() { await window.electronAPI.setStore('overlayNotifySize', this.config.overlayNotifySize) }
                         },
                         {
                             key: 'testOverlayNotify',
@@ -319,7 +325,8 @@ export default {
         const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
         this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
         this.config.overlayNotify = overlayNotify;
-        this.config.overlayNotifySize = overlayNotifySize;
+        // 兼容旧版 small/medium/large 预设值，统一转为 0.8x–2x 的数值缩放
+        this.config.overlayNotifySize = this.normalizeScaleValue(overlayNotifySize);
         this.config.overlayNotifyDuration = Number(overlayNotifyDuration) || 2;
         this.config.overlayNotifyPosition = overlayNotifyPosition;
     },
@@ -327,6 +334,21 @@ export default {
 
     },
     methods: {
+        // 将存储值归一化为 0.8–2 的数值缩放（兼容旧版 small/medium/large）
+        normalizeScaleValue(v) {
+            let n = Number.parseFloat(v);
+            if (!Number.isFinite(n)) {
+                const legacyScales = { small: 0.8, medium: 1, large: 1.25 };
+                n = legacyScales[String(v).toLowerCase()] || 1;
+            }
+            return Math.min(2, Math.max(0.8, n));
+        },
+        // 滑动条当前值的展示文案，如 "1x" / "1.5x"
+        formatScaleValue(v) {
+            const n = Number.parseFloat(v);
+            if (!Number.isFinite(n)) return '-';
+            return (Math.round(n * 100) / 100).toString() + 'x';
+        },
         async onLanguageChanged() {
             this.$i18n.locale = this.config.language;
             await window.electronAPI.setStore(localeKey, this.config.language);
@@ -500,6 +522,40 @@ export default {
     min-height: 36px;
     padding: 8px 12px;
     border-radius: 8px;
+}
+
+.form-range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.form-range {
+    flex: 1;
+    min-width: 120px;
+    height: 4px;
+    accent-color: #4b6cb7;
+    cursor: pointer;
+}
+
+.range-bound {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.range-value-badge {
+    min-width: 52px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2d3748;
+    background: #eef2f7;
+    border-radius: 6px;
+    padding: 4px 6px;
+    white-space: nowrap;
 }
 
 .btn.compact {
