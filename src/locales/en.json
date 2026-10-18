@@ -192,6 +192,8 @@
         "fontNormal": "Standard",
         "fontLarge": "Large",
         "fontXLarge": "Extra large",
+        "currentVersion": "Current version",
+        "newVersionHint": "New version {version} available, click to view",
         "fieldClickHint": "Click to insert",
         "minimize": "Minimize",
         "maximize": "Maximize",

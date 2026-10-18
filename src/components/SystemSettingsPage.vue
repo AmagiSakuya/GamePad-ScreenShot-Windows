@@ -112,6 +112,7 @@ let minimizeOnStartupKey = 'minimizeOnStartup';
 export default {
   name: 'SystemSettingsPage',
   components: { AppIcon },
+  emits: ['update-status'],
   props: {
     windowsNotify: {
       type: Function,
@@ -429,6 +430,8 @@ export default {
     async checkForUpdates() {
       try {
         const result = await window.electronAPI.checkForUpdates();
+        // 同步给标题栏版本号，命中新版本会显示 NEW 标记
+        this.$emit('update-status', result);
         if (result && result.hasUpdate) {
           await window.electronAPI.openReleasePage(result.releaseUrl);
           if (this.windowsNotify) {

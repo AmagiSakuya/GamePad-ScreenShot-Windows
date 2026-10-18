@@ -5,7 +5,14 @@
       <div class="brand">
         <img class="brand-logo" :src="logoSrc" alt="Gamepad Shot">
         <div class="brand-text">
-          <span class="brand-name">{{ $t('gamepadScreenShotTool') }}</span>
+          <div class="brand-title">
+            <span class="brand-name">{{ $t('gamepadScreenShotTool') }}</span>
+            <button class="ver-chip" :class="{ 'has-new': updateAvailable }" @click="openVersionInfo"
+              :title="updateAvailable ? $t('ui.newVersionHint', { version: latestVersion }) : $t('ui.currentVersion')">
+              <span>v{{ version }}</span>
+              <span v-if="updateAvailable" class="new-tag">NEW</span>
+            </button>
+          </div>
           <span class="brand-sub">Gamepad Shot</span>
         </div>
       </div>
@@ -91,7 +98,8 @@
         <MainPage v-show="view === 'screenshot'" ref="mainPageRef" :windowsNotify="windowsNotify"
           @navigate="view = $event" />
         <ControllerSettingsPage v-if="view === 'tester'" />
-        <SystemSettingsPage v-if="view === 'settings'" ref="systemPageRef" :windowsNotify="windowsNotify" />
+        <SystemSettingsPage v-if="view === 'settings'" ref="systemPageRef" :windowsNotify="windowsNotify"
+          @update-status="applyUpdateResult" />
       </main>
     </div>
   </div>
@@ -102,12 +110,12 @@ import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
 import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
+import pkg from '../package.json'
 
 const THEME_KEY = 'theme'
 const LOCALE_KEY = 'locale'
 const ACCENT_KEY = 'accentColor'
 const UI_SCALE_KEY = 'uiScale'
-
 /** 十六进制色 → rgba，用于生成 accent-soft / accent-line 这类半透明色 */
 function hexToRgba(hex, alpha) {
   const value = String(hex || '').replace('#', '')
@@ -125,6 +133,10 @@ export default {
     return {
       // 图标与主进程 BrowserWindow icon 使用同一份 gamepad.ico（放在 public 下由 webpack 直接拷贝）
       logoSrc: `${process.env.BASE_URL}gamepad.ico`,
+      version: pkg.version,
+      updateAvailable: false,
+      latestVersion: '',
+      releaseUrl: '',
       view: 'screenshot',
       listening: false,
       isDark: true,
@@ -190,13 +202,10 @@ export default {
     this.startTraySync()
     document.addEventListener('click', this.closePopovers)
 
+    // 启动时静默检测更新：命中新版本就在标题上挂 NEW 标记
     const checkOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'enabled')
     if (checkOnStartup === 'enabled') {
-      setTimeout(async () => {
-        if (this.$refs['systemPageRef']) {
-          await this.$refs['systemPageRef'].checkForUpdates()
-        }
-      }, 1500)
+      setTimeout(() => this.checkUpdateSilently(), 1500)
     }
   },
   unmounted() {
@@ -280,6 +289,30 @@ export default {
     },
     minimizeWindow() {
       if (window.electronAPI.minimizeWindow) window.electronAPI.minimizeWindow()
+    },
+    async checkUpdateSilently() {
+      try {
+        const result = await window.electronAPI.checkForUpdates()
+        this.applyUpdateResult(result, true)
+      } catch (error) {
+        // 启动检测失败保持静默，不打扰用户
+        console.warn('Startup update check failed:', error)
+      }
+    },
+    /** result 来自主进程：{ hasUpdate, latestVersion, currentVersion, releaseUrl } */
+    applyUpdateResult(result, notify = false) {
+      if (!result) return
+      this.updateAvailable = !!result.hasUpdate
+      this.latestVersion = result.latestVersion || ''
+      this.releaseUrl = result.releaseUrl || ''
+      if (this.updateAvailable && notify) {
+        this.windowsNotify(`${this.$t('SystemSettingsPage.updateAvailable')}: ${this.latestVersion}`)
+      }
+    },
+    openVersionInfo() {
+      if (this.updateAvailable && this.releaseUrl) {
+        window.electronAPI.openReleasePage(this.releaseUrl)
+      }
     },
     async toggleMaximize() {
       if (!window.electronAPI.toggleMaximizeWindow) return
@@ -458,6 +491,13 @@ body {
   min-width: 0;
 }
 
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .brand-name {
   font-size: 12.5px;
   font-weight: 650;
@@ -465,6 +505,55 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* 版本号（发现新版本时变成可点击的 NEW 标记） */
+.ver-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1;
+  flex: 0 0 auto;
+  cursor: default;
+  transition: all 0.16s ease;
+  -webkit-app-region: no-drag;
+}
+
+.ver-chip.has-new {
+  cursor: pointer;
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.ver-chip.has-new:hover {
+  filter: brightness(1.1);
+}
+
+.new-tag {
+  padding: 1.5px 3px;
+  border-radius: 3px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  animation: newPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes newPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .brand-sub {
