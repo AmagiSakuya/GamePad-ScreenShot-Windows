@@ -26,3 +26,7 @@ pnpm-debug.log*
 /dist_electron
 .workbuddy-ai
 package-lock.json
+
+# 本地 Vue DevTools 扩展（由 npm run devtools:fetch 生成）
+/devtools-extension
+*.crx
