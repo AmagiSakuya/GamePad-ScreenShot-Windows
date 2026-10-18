@@ -69,25 +69,28 @@
         </div>
       </div>
 
-      <div class="ui-card set-card about-card">
+      <div class="ui-card set-card data-card">
         <div class="ui-card-head">
           <div class="ui-card-head-left">
-            <div class="ui-card-ico"><AppIcon name="info" :size="13" /></div>
-            <span class="ui-card-title">{{ $t('ui.about') }}</span>
+            <div class="ui-card-ico warn"><AppIcon name="database" :size="13" /></div>
+            <span class="ui-card-title">{{ $t('ui.data') }}</span>
           </div>
           <span class="ui-badge">v{{ version }}</span>
         </div>
         <div class="set-rows">
-          <div class="set-row">
-            <div class="set-label"><AppIcon name="external" :size="13" /><span>{{ $t('ui.homepage') }}</span></div>
-            <div class="set-ctl">
-              <button class="ui-btn" @click="openHomepage">{{ $t('ui.open') }}</button>
+          <div class="set-row with-desc" v-for="action in dataActions" :key="action.key">
+            <div class="set-label data-label">
+              <AppIcon :name="action.icon" :size="13" class="data-ico" />
+              <div class="data-label-text">
+                <span class="data-title">{{ $t('SystemSettingsPage.' + action.key) }}</span>
+                <span class="data-desc">{{ $t('SystemSettingsPage.' + action.key + 'Desc') }}</span>
+                <span v-if="pathHint(action.key)" class="data-path">{{ pathHint(action.key) }}</span>
+              </div>
             </div>
-          </div>
-          <div class="set-row">
-            <div class="set-label"><AppIcon name="fileText" :size="13" /><span>{{ $t('SystemSettingsPage.openLogFolder') }}</span></div>
             <div class="set-ctl">
-              <button class="ui-btn" @click="openLogFolder">{{ $t('ui.open') }}</button>
+              <button class="ui-btn" :class="{ danger: action.danger }" @click="action.handler.call(this)">
+                {{ $t(action.danger ? 'SystemSettingsPage.clearButton' : 'ui.open') }}
+              </button>
             </div>
           </div>
         </div>
@@ -137,6 +140,15 @@ export default {
         overlayNotifyPosition: 'left',
         listenNotifyPolicy: 'all'
       },
+      // 数据管理相关路径（来自主进程，用于在界面上说明操作范围）
+      dataPaths: {
+        logFolder: ''
+      },
+      // 「数据」卡片中的操作项（每一项都有描述 + 二次确认）
+      dataActions: [
+        { key: 'openLogFolder', icon: 'folder', handler: this.openLogFolder },
+        { key: 'clearLogs', icon: 'trash', danger: true, handler: this.clearLogs }
+      ],
       groups: [
         {
           key: 'groupBasic',
@@ -360,6 +372,8 @@ export default {
     this.config.overlayNotifyDuration = Number(overlayNotifyDuration) || 2;
     this.config.overlayNotifyPosition = overlayNotifyPosition;
     this.config.listenNotifyPolicy = listenNotifyPolicy;
+
+    await this.loadDataPaths();
   },
   methods: {
     setValue(setting, value) {
@@ -452,8 +466,19 @@ export default {
     toggleGroup(index) {
       this.groups[index].collapsed = !this.groups[index].collapsed;
     },
-    async openHomepage() {
-      await window.electronAPI.openReleasePage('https://github.com/AmagiSakuya/GamePad-ScreenShot-Windows');
+    /** 读取日志文件夹路径，用于在界面和确认框里说明操作范围 */
+    async loadDataPaths() {
+      try {
+        const logFolder = await window.electronAPI.getLogFolder();
+        this.dataPaths = { logFolder: logFolder || '' };
+      } catch (error) {
+        console.error('Failed to load log folder:', error);
+      }
+    },
+    /** 每个数据操作影响的路径提示 */
+    pathHint(key) {
+      if (key === 'clearLogs') return this.dataPaths.logFolder;
+      return '';
     },
     async openLogFolder() {
       const logPath = await window.electronAPI.getLogFolder();
@@ -461,6 +486,24 @@ export default {
       const ensured = await window.electronAPI.ensureFolder(logPath);
       if (!ensured) return;
       await window.electronAPI.openFolder(logPath);
+    },
+    /** 清空日志：先确认，再删除日志文件夹内的所有日志文件 */
+    async clearLogs() {
+      const confirmed = await window.electronAPI.showConfirmMessageBox(
+        this.$t('SystemSettingsPage.clearLogsConfirmTitle'),
+        this.$t('SystemSettingsPage.clearLogsConfirmMessage'),
+        this.$t('SystemSettingsPage.clearLogsConfirmDetail', { path: this.dataPaths.logFolder || '-' }),
+        [this.$t('SystemSettingsPage.confirmButton'), this.$t('SystemSettingsPage.cancelButton')]
+      );
+      if (!confirmed) return;
+
+      const result = await window.electronAPI.clearLogFiles();
+      if (this.windowsNotify) {
+        this.windowsNotify(result && result.ok
+          ? this.$t('SystemSettingsPage.clearLogsDone')
+          : this.$t('SystemSettingsPage.clearLogsFailed'));
+      }
+      await this.loadDataPaths();
     }
   }
 }
@@ -478,9 +521,57 @@ export default {
   padding: 12px 16px 8px;
 }
 
-.about-card {
+.about-card,
+.data-card {
   grid-column: span 2;
   align-self: start;
+}
+
+/* ---------- 「数据」卡片 ---------- */
+.set-row.with-desc {
+  align-items: flex-start;
+  padding: 12px 0;
+  min-height: 62px;
+}
+
+.data-label {
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.data-label .data-ico {
+  margin-top: 1px;
+}
+
+.data-label-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.data-title {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.data-desc {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+.data-path {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 9.5px;
+  color: var(--ink-3);
+  opacity: 0.75;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.set-row.with-desc .set-ctl {
+  padding-top: 2px;
 }
 
 .set-head {

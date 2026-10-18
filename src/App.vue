@@ -91,6 +91,14 @@
           <AppIcon :name="item.icon" :size="20" />
           <span>{{ $t(item.label) }}</span>
         </button>
+
+        <!-- 底部：GitHub 项目主页 -->
+        <div class="rail-foot">
+          <button class="rail-btn rail-github" :title="$t('ui.projectHomepage')" @click="openProjectHomepage">
+            <AppIcon name="github" :size="19" />
+            <span>GitHub</span>
+          </button>
+        </div>
       </nav>
 
       <!-- ===== 内容区 ===== -->
@@ -327,6 +335,15 @@ export default {
       this.locale = next
       await window.electronAPI.setStore(LOCALE_KEY, next)
       await window.electronAPI.restartApp()
+    },
+    /** 打开项目 GitHub 主页（等同系统设置里原来的「关于 - 项目主页」） */
+    openProjectHomepage() {
+      const url = 'https://github.com/AmagiSakuya/GamePad-ScreenShot-Windows'
+      if (window.electronAPI.openExternal) {
+        window.electronAPI.openExternal(url)
+      } else {
+        window.electronAPI.openReleasePage(url)
+      }
     },
     windowsNotify(message) {
       new Notification('', { body: message })
@@ -894,6 +911,27 @@ html.theme-light .accent-swatch {
   border-radius: 0 3px 3px 0;
   background: var(--accent);
   box-shadow: 0 0 12px var(--accent-line);
+}
+
+/* 底部固定区（GitHub 入口） */
+.rail-foot {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.rail-github {
+  border-radius: 12px;
+}
+
+.rail-github:hover {
+  color: var(--ink);
+  background: var(--surface-2);
 }
 
 .stage {

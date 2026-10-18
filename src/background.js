@@ -850,6 +850,100 @@ ipcMain.handle('get-log-folder', async () => {
 
 //#endregion
 
+//#region 数据管理（日志 / 外部链接）
+/** 打开外部网页链接（仅允许 http/https） */
+ipcMain.handle('open-external', async (_, url) => {
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+    return false;
+  }
+  await shell.openExternal(url);
+  return true;
+});
+
+/** 递归删除目录（逐个文件删除，被占用的文件跳过并计数，避免整体失败） */
+function removeDirectoryRecursive(targetPath) {
+  const result = { removed: 0, failed: 0 };
+  const walk = (currentPath) => {
+    let stat;
+    try {
+      stat = fs.lstatSync(currentPath);
+    } catch (error) {
+      result.failed++;
+      return;
+    }
+    if (!stat.isDirectory()) {
+      try {
+        fs.unlinkSync(currentPath);
+        result.removed++;
+      } catch (error) {
+        result.failed++;
+      }
+      return;
+    }
+    let entries = [];
+    try {
+      entries = fs.readdirSync(currentPath);
+    } catch (error) {
+      result.failed++;
+      return;
+    }
+    for (const entry of entries) {
+      walk(path.join(currentPath, entry));
+    }
+    try {
+      fs.rmdirSync(currentPath);
+      result.removed++;
+    } catch (error) {
+      result.failed++;
+    }
+  };
+  walk(targetPath);
+  return result;
+}
+
+/** 清空日志：当前日志文件用 electron-log 自带方法清空，其余文件直接删除 */
+ipcMain.handle('clear-log-files', async () => {
+  const logFile = log.transports.file.getFile().path;
+  const logFolder = path.dirname(logFile);
+  let removed = 0;
+  let failed = 0;
+
+  try {
+    log.transports.file.getFile().clear();
+    removed++;
+  } catch (error) {
+    failed++;
+    log.error('[DATA] Failed to clear current log file:', error);
+  }
+
+  let entries = [];
+  try {
+    entries = fs.readdirSync(logFolder, { withFileTypes: true });
+  } catch (error) {
+    entries = [];
+  }
+
+  for (const entry of entries) {
+    const fullPath = path.join(logFolder, entry.name);
+    if (path.resolve(fullPath) === path.resolve(logFile)) continue;
+    try {
+      if (entry.isDirectory()) {
+        const result = removeDirectoryRecursive(fullPath);
+        removed += result.removed;
+        failed += result.failed;
+      } else {
+        fs.unlinkSync(fullPath);
+        removed++;
+      }
+    } catch (error) {
+      failed++;
+    }
+  }
+
+  return { ok: failed === 0, removed, failed, folder: logFolder };
+});
+//#endregion
+
 //#region store
 ipcMain.handle('set-store', (_, key, value) => {
   configStore.set(key, value)

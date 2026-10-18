@@ -43,6 +43,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fileConflictHandle: (config) => ipcRenderer.invoke('file-conflict-handle', config),
     openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
     getLogFolder: () => ipcRenderer.invoke('get-log-folder'),
+    // 打开外部网页链接（GitHub 项目主页等）
+    openExternal: (url) => ipcRenderer.invoke('open-external', url),
+    // 数据管理：清空日志
+    clearLogFiles: () => ipcRenderer.invoke('clear-log-files'),
     // Ensure folder exists (creates recursively). Returns true on success, false on failure.
     ensureFolder: (folderPath) => ipcRenderer.invoke('ensure-folder', folderPath),
     restartApp: () => ipcRenderer.send('restart-app'),
