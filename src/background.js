@@ -1,10 +1,11 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell, clipboard, nativeImage } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell, clipboard, nativeImage, session } from 'electron'
 const log = require('electron-log');
 const { uIOhook, UiohookKey } = require('uiohook-napi')
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+// Vue DevTools 改为「只读本地扩展目录」，不再联网下载（国内网络下载 clients2.google.com 会超时刷屏）
+const { installDevtoolsSafe } = require('@/lib/devtools')
 const activeWin = require('active-win');
 const screenshot = require('screenshot-desktop');
 const { Window: ScreenshotWindow } = require('node-screenshots');
@@ -65,12 +66,18 @@ const packagePath = path.join(app.getAppPath(), 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
 async function createWindow() {
+  // 自绘标题栏：去掉 Windows 原生外框，最小化/最大化/关闭交给渲染进程的顶栏按钮
+  const theme = configStore.get('theme', 'dark')
   // Create the browser window.
   win = new BrowserWindow({
     title: $t('gamepadScreenShotTool') + ` ver.${packageJson.version}`,
-    width: 700,
-    height: 900,
+    width: 1280,
+    height: 980,
+    minWidth: 1040,
+    minHeight: 760,
+    frame: false,
     autoHideMenuBar: true,
+    backgroundColor: theme === 'light' ? '#F4F6F1' : '#08090C',
     icon: path.join(__dirname, '../src/gamepad.ico'),
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
@@ -83,6 +90,15 @@ async function createWindow() {
     }
   })
 
+  applyUiScaleToWindow();
+
+  // 最大化状态同步给渲染进程，用于切换「最大化 / 还原」按钮图标
+  win.on('maximize', () => {
+    if (win && win.webContents) win.webContents.send('window-maximized-changed', true)
+  })
+  win.on('unmaximize', () => {
+    if (win && win.webContents) win.webContents.send('window-maximized-changed', false)
+  })
 
   // --- 拦截关闭事件 ---
   win.on('close', (event) => {
@@ -113,6 +129,58 @@ async function createWindow() {
     win.loadURL('app://./index.html')
   }
 }
+
+//#region 界面缩放（界面字体大小）
+const uiScaleKey = 'uiScale';
+
+/** 读取并校正界面缩放比例（0.9x ~ 1.25x） */
+function readUiScale() {
+  const raw = Number.parseFloat(configStore.get(uiScaleKey, 1));
+  if (!Number.isFinite(raw)) return 1;
+  return Math.min(1.25, Math.max(0.9, raw));
+}
+
+/** 缩放整页渲染（等价于浏览器 Ctrl +/-），文字与控件同步放大，不会出现布局错位 */
+function applyUiScaleToWindow() {
+  if (!win || !win.webContents) return;
+  const scale = readUiScale();
+  win.webContents.setZoomFactor(scale);
+  // 页面导航后缩放会被重置，加载完成后再应用一次
+  win.webContents.on('did-finish-load', () => {
+    if (win && win.webContents) win.webContents.setZoomFactor(readUiScale());
+  });
+}
+
+ipcMain.handle('set-ui-scale', (_, scale) => {
+  const value = Math.min(1.25, Math.max(0.9, Number.parseFloat(scale) || 1));
+  configStore.set(uiScaleKey, value);
+  if (win && win.webContents) win.webContents.setZoomFactor(value);
+  return value;
+});
+//#endregion
+
+//#region 自绘标题栏窗口控制
+ipcMain.handle('window-minimize', () => {
+  if (win) win.minimize();
+});
+
+ipcMain.handle('window-toggle-maximize', () => {
+  if (!win) return false;
+  if (win.isMaximized()) {
+    win.unmaximize();
+  } else {
+    win.maximize();
+  }
+  return win.isMaximized();
+});
+
+ipcMain.handle('window-close', () => {
+  // 走 close 事件，保留「关闭到托盘 / 退出」的策略
+  if (win) win.close();
+});
+
+ipcMain.handle('window-is-maximized', () => (win ? win.isMaximized() : false));
+//#endregion
 
 // 创建系统托盘
 function createTray() {
@@ -199,12 +267,8 @@ app.on('activate', () => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    try {
-      await installExtension(VUEJS_DEVTOOLS)
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
+    // 加载本地 Vue DevTools（纯本地读取，不联网、失败不影响启动）
+    await installDevtoolsSafe({ app, session, isDevelopment })
   }
   // 配置中的截图目录可能已被用户手动删除，启动时自动恢复目录。
   ensureConfiguredScreenshotPath();
@@ -518,9 +582,78 @@ ipcMain.handle('screen-shot', async (_, config) => {
 //#region SDL2方法
 let device_instance;
 let buttons = new Array(20).fill(false);
-let hats = [false, false, false, false];
 let axes = new Array(10).fill(0);
-let isXboxController = false;
+// 每个 hat 一个方向字符串（SDL 原生取值：centered / up / right / down / left / rightup / rightdown / leftup / leftdown）
+let hatStates = [];
+let hatCount = 0;
+
+const HAT_DIRECTION_KEYS = ['up', 'right', 'down', 'left'];
+
+/**
+ * 把 SDL 的 hat 位置字符串展开成 [上, 右, 下, 左] 四个布尔值。
+ * 斜向（rightup / leftdown 等）会同时命中两个方向。
+ */
+function hatValueToDirections(value) {
+  const directions = [false, false, false, false];
+  const v = String(value === undefined || value === null ? 'centered' : value).toLowerCase();
+  if (!v || v === 'centered') {
+    return directions;
+  }
+  for (let i = 0; i < HAT_DIRECTION_KEYS.length; i++) {
+    if (v.includes(HAT_DIRECTION_KEYS[i])) {
+      directions[i] = true;
+    }
+  }
+  return directions;
+}
+
+/** 把所有 hat 的方向展开成一维布尔数组（多个 hat 依次拼接）。 */
+function flattenHatStates() {
+  const result = [];
+  for (let i = 0; i < hatCount; i++) {
+    result.push(...hatValueToDirections(hatStates[i]));
+  }
+  return result;
+}
+
+/**
+ * 从设备实例同步一次 hat 状态。
+ * hatMotion 事件在某些驱动/设备上会被合并甚至丢失，读取时再同步一次更可靠。
+ */
+function syncHatStatesFromDevice() {
+  if (!device_instance || hatCount === 0) {
+    return;
+  }
+  let current;
+  try {
+    current = device_instance.hats;
+  } catch (e) {
+    return;
+  }
+  if (!current) {
+    return;
+  }
+  for (let i = 0; i < hatCount; i++) {
+    if (current[i] !== undefined) {
+      hatStates[i] = current[i];
+    }
+  }
+}
+
+function resetDeviceState() {
+  const buttonCount = (device_instance && device_instance.buttons && device_instance.buttons.length)
+    ? device_instance.buttons.length
+    : 20;
+  buttons = new Array(buttonCount).fill(false);
+  const axisCount = (device_instance && device_instance.axes && device_instance.axes.length)
+    ? device_instance.axes.length
+    : 10;
+  axes = new Array(axisCount).fill(0);
+  hatCount = (device_instance && device_instance.hats && device_instance.hats.length)
+    ? device_instance.hats.length
+    : 0;
+  hatStates = new Array(hatCount).fill('centered');
+}
 
 ipcMain.handle('get-all-gamepad', () => {
   return sdl.joystick.devices
@@ -552,17 +685,7 @@ ipcMain.handle('open-sdl2-device', async (_, device) => {
     return false;
   }
 
-  isXboxController = device_instance._device && device_instance._device.vendor == 1118 && device_instance._device.product == 654;
-
-  buttons = new Array(20).fill(false);
-  hats = [false, false, false, false];
-  const axisCount = (device_instance.axes && device_instance.axes.length) ? device_instance.axes.length : 10;
-  axes = new Array(axisCount).fill(0);
-  if (device_instance.axes) {
-    for (let i = 0; i < device_instance.axes.length; i++) {
-      axes[i] = device_instance.axes[i] || 0;
-    }
-  }
+  resetDeviceState();
 
   device_instance.on('buttonDown', (data) => {
     buttons[data.button] = true;
@@ -572,25 +695,26 @@ ipcMain.handle('open-sdl2-device', async (_, device) => {
     buttons[data.button] = false;
   })
 
+  // 十字键（hat）：不再限定 Xbox 型号，任何带 hat 的设备都会记录
   device_instance.on('hatMotion', (data) => {
-    hats = mapHatMotionToDirections(data.value);
+    const index = Number.isInteger(data.hat) ? data.hat : 0;
+    if (index >= 0 && index < hatCount) {
+      hatStates[index] = data.value;
+    }
   })
 
   device_instance.on('axisMotion', (data) => {
     axes[data.axis] = data.value;
   })
 
-  return true;
+  return true
 })
 
 ipcMain.handle('remove-sdl2-device-instance-all-listeners', async () => {
   if (device_instance) {
-    buttons = new Array(20).fill(false);
-    hats = [false, false, false, false];
-    const axisCount = (device_instance.axes && device_instance.axes.length) ? device_instance.axes.length : 10;
-    axes = new Array(axisCount).fill(0);
     device_instance.removeAllListeners();
   }
+  resetDeviceState();
 })
 
 ipcMain.handle('close-sdl2-instance-device', async () => {
@@ -603,20 +727,29 @@ ipcMain.handle('close-sdl2-instance-device', async () => {
     }
     device_instance = void 0;
   }
+  hatStates = [];
+  hatCount = 0;
 })
 
 ipcMain.handle('get-current-buttons-value', async () => {
-  if (isXboxController) {
-    let res = [];
-    if (device_instance && device_instance.buttons) {
-      res = buttons.slice(0, device_instance.buttons.length);
-    } else {
-      res = buttons.slice(0, 16);
-    }
-    res = res.concat(hats);
-    return res;
+  if (!device_instance) {
+    return buttons;
   }
-  return buttons
+
+  syncHatStatesFromDevice();
+
+  let physicalButtons;
+  try {
+    physicalButtons = device_instance.buttons ? Array.from(device_instance.buttons) : buttons.slice();
+  } catch (e) {
+    physicalButtons = buttons.slice();
+  }
+
+  // 十字键作为虚拟按键追加在物理按键之后，索引 = 物理按键数 + hat * 4 + 方向
+  if (hatCount > 0) {
+    return physicalButtons.concat(flattenHatStates());
+  }
+  return physicalButtons;
 })
 
 ipcMain.handle('get-current-axes-value', async () => {
@@ -631,7 +764,8 @@ ipcMain.handle('get-current-axes-value', async () => {
 })
 
 ipcMain.handle('get-current-hats-value', async () => {
-  return hats
+  syncHatStatesFromDevice();
+  return flattenHatStates();
 })
 
 sdl.joystick.on('deviceAdd', (device) => {
@@ -644,12 +778,21 @@ sdl.joystick.on('deviceRemove', (device) => {
 
 ipcMain.handle('get-device-instance-button-number', async () => {
   if (device_instance) {
-    if (isXboxController) {
-      return (device_instance.buttons ? device_instance.buttons.length : 0) + 4;
-    }
-    return device_instance.buttons ? device_instance.buttons.length : 0;
+    const physicalButtonCount = device_instance.buttons ? device_instance.buttons.length : 0;
+    return physicalButtonCount + hatCount * 4;
   }
   return 0
+})
+
+ipcMain.handle('get-device-instance-physical-button-number', async () => {
+  if (device_instance && device_instance.buttons) {
+    return device_instance.buttons.length;
+  }
+  return 0
+})
+
+ipcMain.handle('get-device-instance-hat-number', async () => {
+  return hatCount;
 })
 
 ipcMain.handle('get-device-instance-axis-number', async () => {
@@ -658,28 +801,6 @@ ipcMain.handle('get-device-instance-axis-number', async () => {
   }
   return 0;
 })
-
-function mapHatMotionToDirections(motion) {
-  // 初始化 [上, 右, 下, 左] 全为 false (0)
-  let directions = [false, false, false, false];
-
-  // 如果是中心点，直接返回全 false
-  if (motion === 'hatMotion centered') {
-    return directions;
-  }
-
-  // 转为小写，方便模糊匹配，防止大小写拼写错误
-  const m = motion.toLowerCase();
-
-  // 检查是否包含对应的方向关键字
-  if (m.includes('up')) directions[0] = true; // 0 是上
-  if (m.includes('right')) directions[1] = true; // 1 是右
-  if (m.includes('down')) directions[2] = true; // 2 是下
-  if (m.includes('left')) directions[3] = true; // 3 是左
-
-  return directions;
-}
-
 
 //#endregion
 

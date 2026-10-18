@@ -1,40 +1,98 @@
 <template>
-  <div class="app-container">
-    <!-- Tab 导航 -->
-    <div class="tabs-header">
-      <button class="tab-btn" :class="{ active: activeTab === 'home' }" @click="activeTab = 'home'">
-        <i class="fas fa-home"></i>
-        <span>{{ $t('screenshotSettings') }}</span>
-      </button>
-
-      <button class="tab-btn" :class="{ active: activeTab === 'debug' }" @click="activeTab = 'debug'">
-        <i class="fas fa-bug"></i>
-        <span>{{ $t('gamepadTester') }}</span>
-      </button>
-
-      <button class="tab-btn" :class="{ active: activeTab === 'system' }" @click="activeTab = 'system'">
-        <i class="fas fa-system"></i>
-        <span>{{ $t('systemSettings') }}</span>
-      </button>
-    </div>
-
-    <!-- Tab 内容 -->
-    <div class="tab-content">
-      <!-- 首页内容 -->
-      <div v-if="activeTab === 'home'" class="tab-pane">
-        <MainPage ref="mainPageRef" :windowsNotify="windowsNotify"></MainPage>
+  <div class="app-shell" :class="{ 'is-max': maximized }">
+    <!-- ===== 顶部应用栏（自绘标题栏：可拖动 / 双击最大化） ===== -->
+    <header class="app-bar">
+      <div class="brand">
+        <img class="brand-logo" :src="logoSrc" alt="Gamepad Shot">
+        <div class="brand-text">
+          <span class="brand-name">{{ $t('gamepadScreenShotTool') }}</span>
+          <span class="brand-sub">Gamepad Shot</span>
+        </div>
       </div>
 
-      <!-- Debug 页面内容 -->
-      <div v-if="activeTab === 'debug'" class="tab-pane">
-        <ControllerSettingsPage></ControllerSettingsPage>
+      <div class="bar-mid">
+        <span class="state-pill" :class="listening ? 'on' : 'off'">
+          <i></i>{{ listening ? $t('ui.listening') : $t('ui.idle') }}
+        </span>
       </div>
 
-      <!-- 系统设置 -->
-      <div v-show="activeTab === 'system'" class="tab-pane">
-        <SystemSettingsPage ref="systemPageRef" :windowsNotify="windowsNotify"></SystemSettingsPage>
+      <div class="bar-actions">
+        <button class="icon-btn" :title="$t('ui.themeToggle')" @click="toggleTheme">
+          <AppIcon :name="isDark ? 'sun' : 'moon'" :size="15" />
+        </button>
+
+        <!-- 主题颜色 -->
+        <div class="pop-wrap">
+          <button class="icon-btn" :class="{ on: accentOpen }" :title="$t('ui.accentColor')"
+            @click.stop="togglePopover('accent')">
+            <span class="accent-dot" :style="{ background: currentAccentHex }"></span>
+          </button>
+          <div v-if="accentOpen" class="popover pop-accent" @click.stop>
+            <div class="pop-title">{{ $t('ui.accentColor') }}</div>
+            <div class="accent-grid">
+              <button v-for="color in accentColors" :key="color.key" class="accent-swatch"
+                :class="{ on: accent === color.key }" :style="{ background: swatchColor(color) }"
+                :title="$t('ui.accent.' + color.key)" @click="setAccent(color.key)">
+                <AppIcon v-if="accent === color.key" name="check" :size="12" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 界面字体大小 -->
+        <div class="pop-wrap">
+          <button class="icon-btn" :class="{ on: fontOpen }" :title="$t('ui.fontSize')"
+            @click.stop="togglePopover('font')">
+            <AppIcon name="textSize" :size="15" />
+          </button>
+          <div v-if="fontOpen" class="popover pop-font" @click.stop>
+            <div class="pop-title">{{ $t('ui.fontSize') }}</div>
+            <div class="font-list">
+              <button v-for="option in fontOptions" :key="option.value" class="font-opt"
+                :class="{ on: uiScale === option.value }" @click="setUiScale(option.value)">
+                <span>{{ $t(option.label) }}</span>
+                <span class="font-pct">{{ Math.round(option.value * 100) }}%</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button class="icon-btn lang-btn" :title="$t('SystemSettingsPage.language')" @click="toggleLanguage">
+          {{ locale === 'zh' ? '中' : 'EN' }}
+        </button>
       </div>
 
+      <!-- 窗口控制 -->
+      <div class="win-ctrls">
+        <button class="win-btn" :title="$t('ui.minimize')" @click="minimizeWindow">
+          <AppIcon name="minus" :size="14" />
+        </button>
+        <button class="win-btn" :title="maximized ? $t('ui.restore') : $t('ui.maximize')" @click="toggleMaximize">
+          <AppIcon :name="maximized ? 'restore' : 'square'" :size="maximized ? 13 : 12" />
+        </button>
+        <button class="win-btn close" :title="$t('ui.close')" @click="closeWindow">
+          <AppIcon name="close" :size="14" />
+        </button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <!-- ===== 左侧导航 ===== -->
+      <nav class="rail">
+        <button v-for="item in navItems" :key="item.key" class="rail-btn" :class="{ on: view === item.key }"
+          @click="view = item.key">
+          <AppIcon :name="item.icon" :size="20" />
+          <span>{{ $t(item.label) }}</span>
+        </button>
+      </nav>
+
+      <!-- ===== 内容区 ===== -->
+      <main class="stage">
+        <MainPage v-show="view === 'screenshot'" ref="mainPageRef" :windowsNotify="windowsNotify"
+          @navigate="view = $event" />
+        <ControllerSettingsPage v-if="view === 'tester'" />
+        <SystemSettingsPage v-if="view === 'settings'" ref="systemPageRef" :windowsNotify="windowsNotify" />
+      </main>
     </div>
   </div>
 </template>
@@ -43,182 +101,1170 @@
 import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
 import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
+import AppIcon from '@/components/AppIcon.vue'
 
-import { ref } from 'vue';
+const THEME_KEY = 'theme'
+const LOCALE_KEY = 'locale'
+const ACCENT_KEY = 'accentColor'
+const UI_SCALE_KEY = 'uiScale'
+
+/** 十六进制色 → rgba，用于生成 accent-soft / accent-line 这类半透明色 */
+function hexToRgba(hex, alpha) {
+  const value = String(hex || '').replace('#', '')
+  if (value.length < 6) return `rgba(180, 244, 97, ${alpha})`
+  const r = parseInt(value.substring(0, 2), 16)
+  const g = parseInt(value.substring(2, 4), 16)
+  const b = parseInt(value.substring(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 export default {
   name: 'App',
-  components: {
-    MainPage,
-    ControllerSettingsPage,
-    SystemSettingsPage
-  },
+  components: { MainPage, ControllerSettingsPage, SystemSettingsPage, AppIcon },
   data() {
     return {
-      activeTab: 'home',
+      // 图标与主进程 BrowserWindow icon 使用同一份 gamepad.ico（放在 public 下由 webpack 直接拷贝）
+      logoSrc: `${process.env.BASE_URL}gamepad.ico`,
+      view: 'screenshot',
+      listening: false,
+      isDark: true,
+      locale: 'zh',
+      accent: 'lime',
+      uiScale: 1,
+      accentOpen: false,
+      fontOpen: false,
+      maximized: false,
+      // 每套主题各有一套色值，切换深浅色时自动跟随
+      accentColors: [
+        { key: 'lime', dark: { accent: '#B4F461', hi: '#CBFF74', ink: '#0A0C08' }, light: { accent: '#5CA22F', hi: '#6FBF3A', ink: '#FFFFFF' } },
+        { key: 'violet', dark: { accent: '#A996FF', hi: '#BFB2FF', ink: '#0A0A12' }, light: { accent: '#6A4BE0', hi: '#7F63EE', ink: '#FFFFFF' } },
+        { key: 'cyan', dark: { accent: '#6EE3F0', hi: '#8DEDF7', ink: '#04161A' }, light: { accent: '#1E9FB8', hi: '#2CB7D2', ink: '#FFFFFF' } },
+        { key: 'amber', dark: { accent: '#FFC15E', hi: '#FFD489', ink: '#1A1204' }, light: { accent: '#C97B14', hi: '#E08C1C', ink: '#FFFFFF' } },
+        { key: 'rose', dark: { accent: '#FF8CA0', hi: '#FFA7B7', ink: '#1C0609' }, light: { accent: '#D94A5E', hi: '#E85B6F', ink: '#FFFFFF' } },
+        { key: 'azure', dark: { accent: '#7CB8FF', hi: '#9DCAFF', ink: '#040C18' }, light: { accent: '#2F6FD0', hi: '#3D80E6', ink: '#FFFFFF' } }
+      ],
+      fontOptions: [
+        { value: 0.9, label: 'ui.fontSmall' },
+        { value: 1, label: 'ui.fontNormal' },
+        { value: 1.1, label: 'ui.fontLarge' },
+        { value: 1.25, label: 'ui.fontXLarge' }
+      ],
       traySyncTimer: null,
-      currentTrayListening: false
+      currentTrayListening: false,
+      navItems: [
+        { key: 'screenshot', icon: 'camera', label: 'screenshotSettings' },
+        { key: 'tester', icon: 'gamepad', label: 'gamepadTester' },
+        { key: 'settings', icon: 'settings', label: 'systemSettings' }
+      ]
+    }
+  },
+  computed: {
+    currentAccent() {
+      return this.accentColors.find((color) => color.key === this.accent) || this.accentColors[0]
+    },
+    currentAccentHex() {
+      return this.isDark ? this.currentAccent.dark.accent : this.currentAccent.light.accent
     }
   },
   async beforeMount() {
+    const theme = await window.electronAPI.getStore(THEME_KEY, 'dark')
+    this.isDark = theme !== 'light'
+    this.applyTheme()
 
+    this.accent = await window.electronAPI.getStore(ACCENT_KEY, 'lime')
+    this.uiScale = await window.electronAPI.getStore(UI_SCALE_KEY, 1)
+    this.applyAccent()
+
+    this.locale = await window.electronAPI.getStore(LOCALE_KEY, 'zh')
+
+    if (window.electronAPI.onWindowMaximizedChanged) {
+      window.electronAPI.onWindowMaximizedChanged((_, state) => {
+        this.maximized = !!state
+      })
+    }
+    if (window.electronAPI.isWindowMaximized) {
+      this.maximized = await window.electronAPI.isWindowMaximized()
+    }
   },
   async mounted() {
-    this.startTraySync();
-    // 检查是否启用启动时更新检测
-    const checkOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'enabled');
+    this.startTraySync()
+    document.addEventListener('click', this.closePopovers)
+
+    const checkOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'enabled')
     if (checkOnStartup === 'enabled') {
-      // 非阻塞检测，避免启动失败
       setTimeout(async () => {
-        //console.log('Checking for updates on startup...');
-        await this.$refs['systemPageRef'].checkForUpdates();
-      }, 1000); // 延迟1秒
+        if (this.$refs['systemPageRef']) {
+          await this.$refs['systemPageRef'].checkForUpdates()
+        }
+      }, 1500)
     }
   },
   unmounted() {
     if (this.traySyncTimer) {
-      clearInterval(this.traySyncTimer);
-      this.traySyncTimer = null;
+      clearInterval(this.traySyncTimer)
+      this.traySyncTimer = null
     }
+    document.removeEventListener('click', this.closePopovers)
   },
   methods: {
     startTraySync() {
-      const syncTrayState = () => {
-        const listening = this.$refs['mainPageRef'] == void 0 ? false : this.$refs['mainPageRef'].listening
-        if (listening !== this.currentTrayListening) {
-          this.currentTrayListening = listening;
-          window.electronAPI.updateTrayIcon(listening);
-          window.electronAPI.updateTrayListeningState(listening);
+      const sync = () => {
+        const listening = this.$refs['mainPageRef'] ? !!this.$refs['mainPageRef'].listening : false
+        if (listening !== this.listening) {
+          this.listening = listening
         }
-      };
-
-      syncTrayState();
-      this.traySyncTimer = setInterval(syncTrayState, 300);
+        if (listening !== this.currentTrayListening) {
+          this.currentTrayListening = listening
+          window.electronAPI.updateTrayIcon(listening)
+          window.electronAPI.updateTrayListeningState(listening)
+        }
+      }
+      sync()
+      this.traySyncTimer = setInterval(sync, 300)
+    },
+    applyTheme() {
+      const root = document.documentElement
+      root.classList.toggle('theme-dark', this.isDark)
+      root.classList.toggle('theme-light', !this.isDark)
+    },
+    /**
+     * 把主题色写进 CSS 变量。
+     * 深/浅色各有一套色值，同时派生 soft / line / 背景光晕等半透明色，
+     * 这样所有组件（按钮、开关、滑块、进度条）都会自动跟随主题色。
+     */
+    applyAccent() {
+      const palette = this.isDark ? this.currentAccent.dark : this.currentAccent.light
+      const root = document.documentElement.style
+      root.setProperty('--accent', palette.accent)
+      root.setProperty('--accent-hi', palette.hi)
+      root.setProperty('--accent-ink', palette.ink)
+      root.setProperty('--accent-soft', hexToRgba(palette.accent, this.isDark ? 0.13 : 0.12))
+      root.setProperty('--accent-line', hexToRgba(palette.accent, this.isDark ? 0.32 : 0.32))
+      root.setProperty('--bg-glow-a', hexToRgba(palette.accent, this.isDark ? 0.10 : 0.12))
+    },
+    toggleTheme() {
+      this.isDark = !this.isDark
+      this.applyTheme()
+      this.applyAccent()
+      window.electronAPI.setStore(THEME_KEY, this.isDark ? 'dark' : 'light')
+    },
+    swatchColor(color) {
+      return this.isDark ? color.dark.accent : color.light.accent
+    },
+    setAccent(key) {
+      this.accent = key
+      this.applyAccent()
+      this.accentOpen = false
+      window.electronAPI.setStore(ACCENT_KEY, key)
+    },
+    async setUiScale(scale) {
+      this.uiScale = scale
+      this.fontOpen = false
+      await window.electronAPI.setStore(UI_SCALE_KEY, scale)
+      if (window.electronAPI.setUiScale) {
+        await window.electronAPI.setUiScale(scale)
+      }
+    },
+    togglePopover(name) {
+      if (name === 'accent') {
+        this.accentOpen = !this.accentOpen
+        this.fontOpen = false
+      } else {
+        this.fontOpen = !this.fontOpen
+        this.accentOpen = false
+      }
+    },
+    closePopovers() {
+      this.accentOpen = false
+      this.fontOpen = false
+    },
+    minimizeWindow() {
+      if (window.electronAPI.minimizeWindow) window.electronAPI.minimizeWindow()
+    },
+    async toggleMaximize() {
+      if (!window.electronAPI.toggleMaximizeWindow) return
+      const state = await window.electronAPI.toggleMaximizeWindow()
+      if (typeof state === 'boolean') this.maximized = state
+    },
+    closeWindow() {
+      if (window.electronAPI.closeWindow) window.electronAPI.closeWindow()
+    },
+    async toggleLanguage() {
+      const next = this.locale === 'zh' ? 'en' : 'zh'
+      this.locale = next
+      await window.electronAPI.setStore(LOCALE_KEY, next)
+      await window.electronAPI.restartApp()
     },
     windowsNotify(message) {
-      new Notification('', {
-        body: message
-      })
+      new Notification('', { body: message })
     }
   }
 }
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  width: 100%;
-  height: 100%;
+/* =========================================================
+   设计令牌
+   ========================================================= */
+:root,
+html.theme-dark {
+  --bg: #08090C;
+  --bg-glow-a: rgba(180, 244, 97, 0.10);
+  --bg-glow-b: rgba(124, 92, 255, 0.16);
+  --bar: rgba(10, 11, 15, 0.72);
+  --surface: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
+  --surface-flat: #0F1116;
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --field: rgba(8, 9, 12, 0.7);
+  --field-focus: rgba(8, 9, 12, 0.95);
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --ink: #F2F4F8;
+  --ink-2: #98A1B0;
+  --ink-3: #6A7280;
+  --accent: #B4F461;
+  --accent-hi: #CBFF74;
+  --accent-soft: rgba(180, 244, 97, 0.13);
+  --accent-line: rgba(180, 244, 97, 0.30);
+  --accent-ink: #0A0C08;
+  --violet: #A996FF;
+  --violet-soft: rgba(124, 92, 255, 0.14);
+  --cyan: #6EE3F0;
+  --cyan-soft: rgba(79, 216, 232, 0.12);
+  --ok: #3CD39E;
+  --warn: #FFB240;
+  --danger: #FB5F76;
+  --shadow: 0 18px 40px -32px #000;
+  --radius: 14px;
+  --radius-s: 9px;
+  --scroll-thumb: rgba(255, 255, 255, 0.14);
+}
+
+html.theme-light {
+  --bg: #F4F6F1;
+  --bg-glow-a: rgba(126, 190, 60, 0.10);
+  --bg-glow-b: rgba(124, 92, 255, 0.07);
+  --bar: rgba(255, 255, 255, 0.86);
+  --surface: #FFFFFF;
+  --surface-flat: #FFFFFF;
+  --surface-2: #F1F3ED;
+  --field: #F4F6F1;
+  --field-focus: #FFFFFF;
+  --line: rgba(22, 32, 22, 0.10);
+  --line-strong: rgba(22, 32, 22, 0.18);
+  --ink: #161C17;
+  --ink-2: #5E6B60;
+  --ink-3: #8D9A90;
+  --accent: #5CA22F;
+  --accent-hi: #6FBF3A;
+  --accent-soft: rgba(92, 162, 47, 0.12);
+  --accent-line: rgba(92, 162, 47, 0.30);
+  --accent-ink: #FFFFFF;
+  --violet: #6A4BE0;
+  --violet-soft: rgba(106, 75, 224, 0.10);
+  --cyan: #1E9FB8;
+  --cyan-soft: rgba(30, 159, 184, 0.10);
+  --ok: #2F8C63;
+  --warn: #C97B14;
+  --danger: #D94A5E;
+  --shadow: 0 14px 30px -26px rgba(0, 0, 0, 0.45);
+  --scroll-thumb: rgba(22, 32, 22, 0.18);
 }
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
 }
 
-html {
+html,
+body,
+#app {
   height: 100%;
   margin: 0;
-  /* 顺便去掉 body 默认的外边距 */
+  padding: 0;
 }
 
 body {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  height: 100%;
-  margin: 0;
+  font-family: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
   overflow: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* 背景光晕 */
+.app-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
+/* 窗口最大化时不需要外框描边，避免和屏幕边缘出现双重线条 */
+.app-shell.is-max {
+  border-color: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+.app-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(820px 460px at 82% -10%, var(--bg-glow-a), transparent 62%),
+    radial-gradient(720px 420px at 4% 112%, var(--bg-glow-b), transparent 62%);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+/* =========================================================
+   顶部栏
+   ========================================================= */
+.app-bar {
+  height: 46px;
+  flex: 0 0 46px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 0 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bar);
+  position: relative;
+  z-index: 3;
+  /* 自绘标题栏：整条顶栏可拖动窗口，交互元素单独设 no-drag */
+  -webkit-app-region: drag;
+  user-select: none;
 }
 
-thead,
-tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
-tbody {
+.brand-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+  -webkit-user-drag: none;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.brand-name {
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-sub {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.bar-mid {
+  /* 相对整条标题栏绝对居中，避免被左侧品牌区/右侧按钮区的宽度差挤偏 */
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 让这块保持可拖动（点击穿透到标题栏） */
+  pointer-events: none;
+}
+
+.state-pill {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border-radius: 99px;
+  font-size: 11px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+  background: var(--surface-2);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.state-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
   display: block;
-  max-height: 600px;
-  /* 设置tbody的最大高度 */
-  /* overflow-y: auto; */
-  /* 垂直滚动条 */
+}
+
+.state-pill.on {
+  border-color: var(--accent-line);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.state-pill.on i {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.16s ease;
+  font-family: inherit;
+  padding: 0;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.icon-btn.on {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.lang-btn {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- 主题色 / 字体大小 浮层 ---------- */
+.pop-wrap {
+  position: relative;
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+
+.accent-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: block;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: -6px;
+  min-width: 168px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-flat);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 22px 44px -22px rgba(0, 0, 0, 0.65);
+  z-index: 20;
+  animation: popIn 0.14s ease;
+}
+
+html.theme-light .popover {
+  box-shadow: 0 18px 36px -20px rgba(22, 32, 22, 0.35);
+}
+
+.pop-accent {
+  min-width: 178px;
+}
+
+.pop-font {
+  min-width: 164px;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pop-title {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  margin-bottom: 9px;
+  white-space: nowrap;
+}
+
+.accent-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 7px;
+}
+
+.accent-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: #0A0C08;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+
+html.theme-light .accent-swatch {
+  color: #FFFFFF;
+}
+
+.accent-swatch:hover {
+  transform: scale(1.12);
+}
+
+.accent-swatch.on {
+  box-shadow: 0 0 0 2px var(--surface-flat), 0 0 0 4px var(--accent);
+}
+
+.font-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.font-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+}
+
+.font-opt:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.font-opt.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.font-pct {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.font-opt.on .font-pct {
+  color: var(--accent);
+}
+
+/* ---------- 窗口控制按钮 ---------- */
+.win-ctrls {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  flex: 0 0 auto;
+  -webkit-app-region: no-drag;
+}
+
+.win-btn {
+  width: 44px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+  -webkit-app-region: no-drag;
+  padding: 0;
+}
+
+.win-btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.win-btn.close:hover {
+  background: #E81123;
+  color: #FFFFFF;
+}
+
+/* =========================================================
+   主体：左导航 + 内容
+   ========================================================= */
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  position: relative;
+  z-index: 1;
+}
+
+.rail {
+  width: 78px;
+  flex: 0 0 78px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  background: var(--bar);
+}
+
+.rail-btn {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.16s ease;
+  font-family: inherit;
+  padding: 0;
+}
+
+.rail-btn span {
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+}
+
+.rail-btn:hover {
+  color: var(--ink-2);
+  background: var(--surface-2);
+}
+
+.rail-btn.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.rail-btn.on::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 16px;
+  width: 3px;
+  height: 22px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-line);
+}
+
+.stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
-.tabs-header {
-  display: flex;
-  background: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-  padding: 0 20px;
-  height: 45px;
+.stage::-webkit-scrollbar {
+  width: 10px;
 }
 
-.tab-btn {
+.stage::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.stage::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* =========================================================
+   通用控件
+   ========================================================= */
+.page {
+  padding: 16px 20px 18px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.page-title {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.page-sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.page-sub .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+
+.ui-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  box-shadow: var(--shadow);
+}
+
+html.theme-light .ui-card {
+  box-shadow: 0 1px 2px rgba(22, 32, 22, 0.04);
+}
+
+.ui-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+
+.ui-card-head-left {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
+  min-width: 0;
+}
+
+.ui-card-ico {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+
+.ui-card-ico.violet {
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+
+.ui-card-ico.cyan {
+  background: var(--cyan-soft);
+  color: var(--cyan);
+}
+
+.ui-card-ico.warn {
+  background: rgba(255, 178, 64, 0.12);
+  color: var(--warn);
+}
+
+.ui-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ui-card-hint {
+  font-size: 10px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-badge {
+  font-size: 10px;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  padding: 2.5px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  font-family: "Cascadia Mono", Consolas, monospace;
+}
+
+.ui-badge.on {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.ui-rows {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.ui-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 0;
+}
+
+.ui-label {
+  font-size: 12px;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.ui-label .app-icon {
+  color: var(--ink-3);
+}
+
+.ui-ctl {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.ui-select {
+  height: 32px;
+  min-width: 120px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 0 10px;
+  background: var(--field);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-family: inherit;
   cursor: pointer;
-  font-size: 14px;
-  color: #6c757d;
-  transition: all 0.3s ease;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
-.tab-btn:hover {
-  color: #495057;
-  background: #e9ecef;
+.ui-select:hover {
+  border-color: var(--accent-line);
 }
 
-.tab-btn.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
-  background: white;
-  font-weight: 500;
+.ui-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--field-focus);
 }
 
-.tab-content {
-  background: white;
-  height: calc(100% - 45px);
+.ui-input {
+  height: 32px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  background: var(--field);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  text-overflow: ellipsis;
 }
 
-.tab-pane {
-  /* padding: 20px; */
-  height: 100%;
+.ui-input:hover {
+  border-color: var(--accent-line);
 }
 
-.app-container {
-  height: 100%;
+.ui-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--field-focus);
+}
+
+.ui-input::placeholder {
+  color: var(--ink-3);
+}
+
+.ui-input.mono {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10.5px;
+}
+
+.ui-seg {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--field);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  height: 32px;
+}
+
+.ui-seg button {
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 0 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+}
+
+.ui-seg button:hover {
+  color: var(--ink-2);
+}
+
+.ui-seg button.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.ui-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  position: relative;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  padding: 0;
+}
+
+.ui-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.ui-switch.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.ui-switch.on::after {
+  transform: translateX(16px);
+  background: var(--accent-ink);
+}
+
+.ui-btn {
+  height: 32px;
+  padding: 0 13px;
+  border-radius: var(--radius-s);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.16s ease;
+}
+
+.ui-btn:hover {
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.ui-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ui-btn:disabled:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.ui-btn.primary {
+  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+  border-color: transparent;
+  color: var(--accent-ink);
+  font-weight: 650;
+  box-shadow: 0 10px 24px -14px var(--accent);
+}
+
+.ui-btn.primary:hover {
+  filter: brightness(1.06);
+  color: var(--accent-ink);
+}
+
+.ui-btn.danger {
+  background: rgba(251, 95, 118, 0.12);
+  border-color: rgba(251, 95, 118, 0.35);
+  color: var(--danger);
+}
+
+.ui-btn.danger:hover {
+  background: rgba(251, 95, 118, 0.18);
+  color: var(--danger);
+}
+
+.ui-btn.ghost {
+  background: transparent;
+}
+
+.ui-btn.sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.ui-btn.icon-only {
+  width: 32px;
+  padding: 0;
+}
+
+.ui-chip {
+  height: 26px;
+  min-width: 34px;
+  padding: 0 9px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  white-space: nowrap;
+}
+
+.ui-chip.muted {
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.ui-hint {
+  font-size: 9.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.ui-hint.mono {
+  font-family: "Cascadia Mono", Consolas, monospace;
+}
+
+.ui-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  background: rgba(251, 95, 118, 0.10);
+  border: 1px solid rgba(251, 95, 118, 0.28);
+  color: var(--danger);
+  margin-bottom: 12px;
+}
+
+.ui-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 8px 0;
+}
+
+/* 监听中锁定 */
+.is-locked {
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+button,
+select,
+input {
+  font-family: inherit;
 }
 </style>

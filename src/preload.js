@@ -34,6 +34,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getCurrentAxesValue: () => ipcRenderer.invoke('get-current-axes-value'),
     getCurrentHatValue: () => ipcRenderer.invoke('get-current-hats-value'),
     getDeviceInstanceButtonNumber: () => ipcRenderer.invoke('get-device-instance-button-number'),
+    getDeviceInstancePhysicalButtonNumber: () => ipcRenderer.invoke('get-device-instance-physical-button-number'),
+    getDeviceInstanceHatNumber: () => ipcRenderer.invoke('get-device-instance-hat-number'),
     getDeviceInstanceAxisNumber: () => ipcRenderer.invoke('get-device-instance-axis-number'),
     setStore: (key, value) => ipcRenderer.invoke('set-store', key, value),
     getStore: (key, defaultValue) => ipcRenderer.invoke('get-store', key, defaultValue),
@@ -59,4 +61,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     logWarn: (...args) => log.warn(...args),
     logError: (...args) => log.error(...args),
     sendFatalError: (error) => ipcRenderer.send('renderer-fatal-error', error.message || error.toString()),
+    // 自绘标题栏
+    minimizeWindow: () => ipcRenderer.invoke('window-minimize'),
+    toggleMaximizeWindow: () => ipcRenderer.invoke('window-toggle-maximize'),
+    closeWindow: () => ipcRenderer.invoke('window-close'),
+    isWindowMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+    onWindowMaximizedChanged: (callback) => ipcRenderer.on('window-maximized-changed', callback),
+    // 界面字体大小（整页缩放）
+    setUiScale: (scale) => ipcRenderer.invoke('set-ui-scale', scale),
 })

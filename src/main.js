@@ -14,6 +14,11 @@ app.config.errorHandler = (err, instance, info) => {
 
 let localeKey = 'locale';
 
+// 主题需要在挂载前落到 <html> 上，避免首帧闪白
+const theme = await window.electronAPI.getStore('theme', 'dark');
+document.documentElement.classList.toggle('theme-dark', theme !== 'light');
+document.documentElement.classList.toggle('theme-light', theme === 'light');
+
 const locale = await window.electronAPI.getStore(localeKey, 'zh');
 
 const i18n = createI18n({
