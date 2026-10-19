@@ -123,10 +123,6 @@
             "stop": "À l'arrêt seulement",
             "none": "Aucune"
         },
-        "overlayNotifyEnum": {
-            "show": "Afficher",
-            "hide": "Masquer"
-        },
         "overlayNotifyDuration": "Durée de la notification",
         "overlayNotifyDurationEnum": {
             "1": "1 s",
@@ -141,19 +137,9 @@
             "topRight": "En haut à droite"
         },
         "overlayNotifySize": "Taille de la notification",
-        "overlayNotifySizeEnum": {
-            "small": "Petite",
-            "medium": "Moyenne",
-            "large": "Grande"
-        },
         "testOverlayNotify": "Tester la notification",
         "testOverlayNotifyTitle": "Aperçu de la notification",
         "testOverlayNotifyDesc": "Aperçu de la taille actuelle",
-        "autoListenResolutionEnum": {
-            "never": "Jamais",
-            "whenDeviceAvailable": "Au changement de périphérique",
-            "onAppStart": "Au démarrage de l'application"
-        },
         "checkUpdateOnStartup": "Rechercher des mises à jour au démarrage",
         "enabled": "Activé",
         "disabled": "Désactivé",

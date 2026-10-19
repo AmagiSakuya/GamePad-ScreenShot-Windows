@@ -123,10 +123,6 @@
             "stop": "僅停止時",
             "none": "不通知"
         },
-        "overlayNotifyEnum": {
-            "show": "顯示",
-            "hide": "關閉"
-        },
         "overlayNotifyDuration": "覆蓋通知持續時間",
         "overlayNotifyDurationEnum": {
             "1": "1 秒",
@@ -141,19 +137,9 @@
             "topRight": "右上角"
         },
         "overlayNotifySize": "覆蓋通知大小",
-        "overlayNotifySizeEnum": {
-            "small": "小",
-            "medium": "中",
-            "large": "大"
-        },
         "testOverlayNotify": "測試覆層通知",
         "testOverlayNotifyTitle": "覆層通知預覽",
         "testOverlayNotifyDesc": "目前大小預覽",
-        "autoListenResolutionEnum": {
-            "never": "從不",
-            "whenDeviceAvailable": "裝置變更時",
-            "onAppStart": "程式啟動時"
-        },
         "checkUpdateOnStartup": "啟動時檢查更新",
         "enabled": "啟用",
         "disabled": "停用",

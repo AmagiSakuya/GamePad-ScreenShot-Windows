@@ -123,10 +123,6 @@
             "stop": "중지할 때만",
             "none": "알림 없음"
         },
-        "overlayNotifyEnum": {
-            "show": "표시",
-            "hide": "숨김"
-        },
         "overlayNotifyDuration": "오버레이 알림 지속 시간",
         "overlayNotifyDurationEnum": {
             "1": "1초",
@@ -141,19 +137,9 @@
             "topRight": "오른쪽 위"
         },
         "overlayNotifySize": "오버레이 알림 크기",
-        "overlayNotifySizeEnum": {
-            "small": "작게",
-            "medium": "보통",
-            "large": "크게"
-        },
         "testOverlayNotify": "오버레이 알림 테스트",
         "testOverlayNotifyTitle": "알림 미리보기",
         "testOverlayNotifyDesc": "현재 크기 미리보기",
-        "autoListenResolutionEnum": {
-            "never": "안 함",
-            "whenDeviceAvailable": "장치 변경 시",
-            "onAppStart": "앱 시작 시"
-        },
         "checkUpdateOnStartup": "시작 시 업데이트 확인",
         "enabled": "사용",
         "disabled": "사용 안 함",

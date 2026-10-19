@@ -123,10 +123,6 @@
             "stop": "停止時のみ",
             "none": "通知しない"
         },
-        "overlayNotifyEnum": {
-            "show": "表示",
-            "hide": "非表示"
-        },
         "overlayNotifyDuration": "オーバーレイ通知の表示時間",
         "overlayNotifyDurationEnum": {
             "1": "1 秒",
@@ -141,19 +137,9 @@
             "topRight": "右上"
         },
         "overlayNotifySize": "オーバーレイ通知のサイズ",
-        "overlayNotifySizeEnum": {
-            "small": "小",
-            "medium": "中",
-            "large": "大"
-        },
         "testOverlayNotify": "オーバーレイ通知をテスト",
         "testOverlayNotifyTitle": "通知プレビュー",
         "testOverlayNotifyDesc": "現在のサイズのプレビュー",
-        "autoListenResolutionEnum": {
-            "never": "しない",
-            "whenDeviceAvailable": "デバイス変更時",
-            "onAppStart": "アプリ起動時"
-        },
         "checkUpdateOnStartup": "起動時に更新を確認",
         "enabled": "有効",
         "disabled": "無効",

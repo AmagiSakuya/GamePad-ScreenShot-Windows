@@ -123,10 +123,6 @@
             "stop": "Только при остановке",
             "none": "Без уведомлений"
         },
-        "overlayNotifyEnum": {
-            "show": "Показывать",
-            "hide": "Скрыть"
-        },
         "overlayNotifyDuration": "Длительность уведомления",
         "overlayNotifyDurationEnum": {
             "1": "1 с",
@@ -141,19 +137,9 @@
             "topRight": "Сверху справа"
         },
         "overlayNotifySize": "Размер уведомления",
-        "overlayNotifySizeEnum": {
-            "small": "Маленький",
-            "medium": "Средний",
-            "large": "Большой"
-        },
         "testOverlayNotify": "Проверить уведомление",
         "testOverlayNotifyTitle": "Предпросмотр уведомления",
         "testOverlayNotifyDesc": "Предпросмотр текущего размера",
-        "autoListenResolutionEnum": {
-            "never": "Никогда",
-            "whenDeviceAvailable": "При смене устройства",
-            "onAppStart": "При запуске приложения"
-        },
         "checkUpdateOnStartup": "Проверять обновления при запуске",
         "enabled": "Включено",
         "disabled": "Выключено",

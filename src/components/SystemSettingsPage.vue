@@ -66,6 +66,15 @@ let proxyKey = 'proxy';
 let autoStartKey = 'autoStart';
 let minimizeOnStartupKey = 'minimizeOnStartup';
 
+/**
+ * 「自动开始监听」现在只有开 / 关两态（开 = 启动和插拔设备都自动监听）。
+ * 旧存档存的是 never / whenDeviceAvailable / onAppStart，这里统一折算成布尔值。
+ */
+function normalizeAutoListen(value) {
+  return value === true || value === 'true'
+    || value === 'whenDeviceAvailable' || value === 'onAppStart';
+}
+
 export default {
   name: 'SystemSettingsPage',
   components: { AppIcon, SettingsCard },
@@ -82,7 +91,7 @@ export default {
       config: {
         closeType: 'exit',
         filenameConflictResolution: 'overwrite',
-        autoListenResolution: 'never',
+        autoListenResolution: false,
         checkUpdateOnStartup: 'enabled',
         proxy: '',
         autoStart: false,
@@ -125,7 +134,7 @@ export default {
             {
               key: 'closeType',
               icon: 'close',
-              type: 'select',
+              type: 'seg',
               configKey: 'closeType',
               handler: this.onCloseTypeChanged,
               options: [
@@ -160,13 +169,12 @@ export default {
             {
               key: 'autoListenResolution',
               icon: 'play',
-              type: 'select',
+              type: 'seg',
               configKey: 'autoListenResolution',
               handler: this.onAutoListenResolutionChanged,
               options: [
-                { value: 'never', label: 'SystemSettingsPage.autoListenResolutionEnum.never' },
-                { value: 'whenDeviceAvailable', label: 'SystemSettingsPage.autoListenResolutionEnum.whenDeviceAvailable' },
-                { value: 'onAppStart', label: 'SystemSettingsPage.autoListenResolutionEnum.onAppStart' }
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
               ]
             },
             {
@@ -193,18 +201,19 @@ export default {
             {
               key: 'overlayNotify',
               icon: 'bell',
-              type: 'select',
+              type: 'seg',
               configKey: 'overlayNotify',
               handler: async function () { await window.electronAPI.setStore('overlayNotify', this.config.overlayNotify) },
+              // 存档值沿用 show / hide，界面按「启用 / 禁用」呈现
               options: [
-                { value: 'show', label: 'SystemSettingsPage.overlayNotifyEnum.show' },
-                { value: 'hide', label: 'SystemSettingsPage.overlayNotifyEnum.hide' }
+                { value: 'show', label: 'SystemSettingsPage.enabled' },
+                { value: 'hide', label: 'SystemSettingsPage.disabled' }
               ]
             },
             {
               key: 'overlayNotifyPosition',
               icon: 'target',
-              type: 'select',
+              type: 'seg',
               configKey: 'overlayNotifyPosition',
               handler: async function () { await window.electronAPI.setStore('overlayNotifyPosition', this.config.overlayNotifyPosition) },
               options: [
@@ -285,7 +294,7 @@ export default {
   async mounted() {
     const closeType = await window.electronAPI.getStore(closeTypeKey, 'exit');
     const filenameConflictResolution = await window.electronAPI.getStore(filenameConflictResolutionKey, 'overwrite');
-    const AutoListenResolution = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
+    const autoListenResolution = await window.electronAPI.getStore(autoListenResolutionKey, false);
     const checkUpdateOnStartup = await window.electronAPI.getStore(checkUpdateOnStartupKey, 'enabled');
     const proxy = await window.electronAPI.getStore(proxyKey, '');
     const autoStart = await window.electronAPI.getStore(autoStartKey, false);
@@ -297,7 +306,7 @@ export default {
 
     this.config.closeType = closeType;
     this.config.filenameConflictResolution = filenameConflictResolution;
-    this.config.autoListenResolution = AutoListenResolution;
+    this.config.autoListenResolution = normalizeAutoListen(autoListenResolution);
     this.config.checkUpdateOnStartup = checkUpdateOnStartup;
     this.config.proxy = proxy;
     this.config.autoStart = autoStart === 'true' || autoStart === true;
@@ -341,6 +350,7 @@ export default {
       await window.electronAPI.setStore(filenameConflictResolutionKey, this.config.filenameConflictResolution);
     },
     async onAutoListenResolutionChanged() {
+      this.config.autoListenResolution = normalizeAutoListen(this.config.autoListenResolution);
       await window.electronAPI.setStore(autoListenResolutionKey, this.config.autoListenResolution);
     },
     async onCheckUpdateOnStartupChanged() {

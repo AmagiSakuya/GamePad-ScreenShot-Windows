@@ -123,10 +123,6 @@
             "stop": "仅停止时",
             "none": "不通知"
         },
-        "overlayNotifyEnum": {
-            "show": "显示",
-            "hide": "关闭"
-        },
         "overlayNotifyDuration": "覆层通知持续时间",
         "overlayNotifyDurationEnum": {
             "1": "1秒",
@@ -141,19 +137,9 @@
             "topRight": "右上角"
         },
         "overlayNotifySize": "覆层通知大小",
-        "overlayNotifySizeEnum": {
-            "small": "小",
-            "medium": "中",
-            "large": "大"
-        },
         "testOverlayNotify": "测试覆层通知",
         "testOverlayNotifyTitle": "覆层通知预览",
         "testOverlayNotifyDesc": "当前大小预览",
-        "autoListenResolutionEnum": {
-            "never": "从不",
-            "whenDeviceAvailable": "设备变化时",
-            "onAppStart": "当软件启动"
-        },
         "checkUpdateOnStartup": "启动时检测更新",
         "enabled": "启用",
         "disabled": "禁用",

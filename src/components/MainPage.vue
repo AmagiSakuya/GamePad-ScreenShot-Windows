@@ -438,7 +438,7 @@ export default {
     window.electronAPI.onStartListenFromTray(this.onStartListenFromTray);
     window.electronAPI.onStopListenFromTray(this.onStopListenFromTray);
 
-    await this.tryStartListen('appStart');
+    await this.tryStartListen();
 
     timer = setInterval(this.handleScreenShotTrigger, 60);
 
@@ -924,22 +924,25 @@ export default {
         await this.tryStartListen();
       }
     },
-    async tryStartListen(from = 'deviceChange') {
+    // 「自动开始监听」开关打开后，软件启动和设备变化这两条路径都走这里
+    async tryStartListen() {
       await this.loadGamePadList();
-      if (this.loadedGamePads.length > 0) {
-        let res = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
-        if ((from === 'appStart' && res === 'onAppStart') || (from === 'deviceChange' && res === 'whenDeviceAvailable')) {
-          try {
-            await this.startListen();
-          } catch (error) {
-            this.showError((error && error.message) ? error.message : String(error));
-          }
-          // 界面不可见时（隐藏到托盘等）页内红色提示看不到，改用系统通知兜底，
-          // 避免「自动开始监听失败」变成一个完全无声的问题
-          if (this.errorMessage && document.hidden && this.windowsNotify) {
-            this.windowsNotify(this.errorMessage);
-          }
-        }
+      if (this.loadedGamePads.length === 0) return;
+      const autoListen = await window.electronAPI.getStore(autoListenResolutionKey, false);
+      // 兼容旧存档的字符串取值（never / whenDeviceAvailable / onAppStart），新版只存布尔值
+      const enabled = autoListen === true || autoListen === 'true'
+        || autoListen === 'whenDeviceAvailable' || autoListen === 'onAppStart';
+      if (!enabled) return;
+
+      try {
+        await this.startListen();
+      } catch (error) {
+        this.showError((error && error.message) ? error.message : String(error));
+      }
+      // 界面不可见时（隐藏到托盘等）页内红色提示看不到，改用系统通知兜底，
+      // 避免「自动开始监听失败」变成一个完全无声的问题
+      if (this.errorMessage && document.hidden && this.windowsNotify) {
+        this.windowsNotify(this.errorMessage);
       }
     },
     async handleScreenShotTrigger() {
