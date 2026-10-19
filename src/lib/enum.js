@@ -1,7 +1,10 @@
 const screenshotSoundEnum = {
     None: "None",
-    NS2: "NS2",
-    PS: "PS"
+    Sound1: "Sound1",
+    Sound2: "Sound2",
+    Sound3: "Sound3",
+    Sound4: "Sound4",
+    Sound5: "Sound5"
 }
 
 const CommonButtonEnum = {

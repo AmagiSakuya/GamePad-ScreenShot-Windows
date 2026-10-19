@@ -65,8 +65,11 @@
     },
     "screenshotSound": {
         "None": "무음",
-        "NS2": "Nintendo Switch 2",
-        "PS": "PS5 알림음"
+        "Sound1": "효과음 1",
+        "Sound2": "효과음 2",
+        "Sound3": "효과음 3",
+        "Sound4": "효과음 4",
+        "Sound5": "효과음 5"
     },
     "OBSPage": {
         "obsAddress": "OBS 서버 주소",

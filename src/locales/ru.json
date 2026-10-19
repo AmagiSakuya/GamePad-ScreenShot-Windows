@@ -65,8 +65,11 @@
     },
     "screenshotSound": {
         "None": "Без звука",
-        "NS2": "Nintendo Switch 2",
-        "PS": "Уведомление PS5"
+        "Sound1": "Звук 1",
+        "Sound2": "Звук 2",
+        "Sound3": "Звук 3",
+        "Sound4": "Звук 4",
+        "Sound5": "Звук 5"
     },
     "OBSPage": {
         "obsAddress": "Адрес сервера OBS",

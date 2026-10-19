@@ -321,10 +321,22 @@
 const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum } = require('@/lib/enum')
 const { KeyCode } = require('@/lib/keycode')
 import { Howl } from 'howler'
-import ns2SoundSrc from '@/assets/ns2截图音.mp3'
-import psSoundSrc from '@/assets/PS通知.mp3'
+import sound1Src from '@/assets/sound-canon5d.wav'
+import sound2Src from '@/assets/sound-leica-m10.wav'
+import sound3Src from '@/assets/sound-shutter.wav'
+import sound4Src from '@/assets/sound-slr-clack.wav'
+import sound5Src from '@/assets/sound-soft-chime.wav'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
+
+// 音效编号 → 音频文件。顺序即界面上「音效 1..5」的顺序
+const CAPTURE_SOUNDS = {
+  Sound1: sound1Src,   // 佳能 5D 快门
+  Sound2: sound2Src,   // 徕卡 M10 快门
+  Sound3: sound3Src,   // 单反快门
+  Sound4: sound4Src,   // 机械快门（合成）
+  Sound5: sound5Src    // 柔铃（合成）
+}
 
 let timer;
 let active_info_getter_timer;
@@ -350,7 +362,7 @@ export default {
       config: {
         path: '',
         comboKeys: [],
-        sound: screenshotSoundEnum.NS2,
+        sound: screenshotSoundEnum.Sound1,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
         captureTargetType: CaptureTargetTypeEnum.Screen,
@@ -530,7 +542,8 @@ export default {
     },
     async playCaptureSound() {
       if (this.config.sound == screenshotSoundEnum.None) return;
-      var soundSrc = this.config.sound == screenshotSoundEnum.NS2 ? ns2SoundSrc : psSoundSrc;
+      var soundSrc = CAPTURE_SOUNDS[this.config.sound];
+      if (!soundSrc) return;
       const sound = new Howl({
         src: [soundSrc], volume: this.config.soundPower, onend: function () {
           this.unload();
@@ -637,7 +650,18 @@ export default {
         const globalParsed = JSON.parse(savedGlobal);
         this.config = { ...this.config, ...globalParsed };
       }
+      this.normalizeLegacySound();
       this.config.comboKeys = [];
+    },
+    /**
+     * 旧存档的音效值是 NS2 / PS，平台音效已废弃，统一回落到音效 1。
+     * loadConfig（有手柄）与 loadGlobalConfig（无手柄）两条路径都要走一遍，否则下拉会显示空白。
+     */
+    normalizeLegacySound() {
+      if (this.config.sound === screenshotSoundEnum.None) return;
+      if (!Object.prototype.hasOwnProperty.call(CAPTURE_SOUNDS, this.config.sound)) {
+        this.config.sound = screenshotSoundEnum.Sound1;
+      }
     },
     async saveCurrentConfig() {
       const globalConfig = { ...this.config };
@@ -670,6 +694,9 @@ export default {
       if (Array.isArray(this.config.comboKeys)) {
         this.config.comboKeys = this.config.comboKeys.map(k => typeof k === 'number' ? 'Button' + k : k);
       }
+
+      // 旧存档里的音效值是 NS2 / PS，已随平台音效一并废弃，回落到音效 1
+      this.normalizeLegacySound();
 
       if (this.config.fileNameTemplate == null || this.config.fileNameTemplate == undefined || this.config.fileNameTemplate.trim() == '') {
         this.config.fileNameTemplate = 'Screenshot_%timestamp%'
@@ -709,7 +736,7 @@ export default {
       this.config = {
         path: '',
         comboKeys: [],
-        sound: screenshotSoundEnum.NS2,
+        sound: screenshotSoundEnum.Sound1,
         soundPower: 1,
         screenshotWay: ScreenShotWayEnum.DesktopCapturer,
         captureTargetType: CaptureTargetTypeEnum.Screen,

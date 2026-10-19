@@ -65,8 +65,11 @@
     },
     "screenshotSound": {
         "None": "Stumm",
-        "NS2": "Nintendo Switch 2",
-        "PS": "PS5-Benachrichtigung"
+        "Sound1": "Sound 1",
+        "Sound2": "Sound 2",
+        "Sound3": "Sound 3",
+        "Sound4": "Sound 4",
+        "Sound5": "Sound 5"
     },
     "OBSPage": {
         "obsAddress": "OBS-Serveradresse",
