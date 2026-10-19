@@ -1,0 +1,110 @@
+# 🎮 GamePad-ScreenShot
+
+<p align="center">
+  <a href="../README.md">简体中文</a> | <a href="README_ZH-TW.md">繁體中文</a> | <a href="README_EN.md">English</a> | <a href="README_JA.md">日本語</a> | <a href="README_KO.md">한국어</a> | <a href="README_DE.md">Deutsch</a> | <a href="README_FR.md">Français</a> | <a href="README_ES.md">Español</a> | <a href="README_RU.md">Русский</a>
+</p>
+
+<p align="center">
+  <img src="../src/gamepad.ico" alt="GamePad Icon" width="120" />
+</p>
+
+<p align="center">
+  <strong>ゲームパッドのボタンだけで全画面・ウィンドウ・OBS のスクリーンショットを撮るツール</strong>
+</p>
+
+<div align="center">
+  <img src="https://img.shields.io/github/license/AmagiSakuya/GamePad-ScreenShot-Windows" alt="license">
+  <img src="https://img.shields.io/badge/Platform-Windows-blue" alt="platform">
+  <img src="https://img.shields.io/badge/Twitter-@昨夜丶-1DA1F2?logo=twitter" alt="twitter">
+</div>
+
+---
+
+## 📖 はじめに
+
+キーボードの代わりにゲームパッドの**ボタン組み合わせ**や**軸の値**でスクリーンショットを撮れる Windows ツールです。マウスを奪うゲームやフルスクリーン動作のゲームに最適。ファイルやクリップボードに保存できるほか、WebSocket 経由で **OBS** に接続して任意のシーンをキャプチャすることもできます。
+
+- ✅ ボタンの組み合わせ / 軸の値（十字キー、L2 / R2 など）でトリガー
+- ✅ 追加のキーボードトリガー
+- ✅ フルスクリーン撮影（撮影する画面を選択可能）／ウィンドウ単位の撮影
+- ✅ ファイル・クリップボード・両方に保存 — JPG / PNG
+- ✅ ファイル名テンプレートを自由に設定：`%activeWinTitle%`、`%timestamp%`、`%datetime%` など
+- ✅ ファイル名の競合処理：上書き / タイムスタンプを付加 / 保存しない / 毎回確認
+- ✅ スクリーンショット効果音 — 内蔵 5 種類、音量調整可能
+- ✅ オーバーレイ通知（位置・表示時間・サイズを設定可能）
+- ✅ **OBS-WebSocket** 連携で任意の OBS シーンをキャプチャ
+- ✅ ショートカットの長押しで **OBS のリプレイバッファー**をクリップとして保存
+- ✅ 内蔵コントローラー診断 — ボタン・軸・十字キーがリアルタイムに点灯
+- ✅ 9 言語の UI、ダーク / ライトテーマ、6 色のアクセントカラー
+- ✅ スタートアップ登録、サイレント起動、トレイに格納、自動で待機開始
+- ✅ アプリ内アップデート
+
+---
+
+## 🖼️ 画面
+
+### メイン画面
+
+<p align="center">
+  <img src="images/shot-main.png" alt="メイン画面" width="720" />
+</p>
+
+### ライトテーマ
+
+<p align="center">
+  <img src="images/shot-main-light.png" alt="ライトテーマ" width="720" />
+</p>
+
+### オーバーレイ通知
+
+<p align="center">
+  <img src="images/shot-overlay.png" alt="オーバーレイ通知" width="720" />
+</p>
+
+### コントローラー診断
+
+<p align="center">
+  <img src="images/shot-tester.png" alt="コントローラー診断" width="720" />
+</p>
+
+### システム設定
+
+<p align="center">
+  <img src="images/shot-settings.png" alt="システム設定" width="720" />
+</p>
+
+---
+
+## 🎮 組み合わせボタンの設定方法
+
+> **メモ:** 軸の値（十字キーの方向、L2 / R2 など）もトリガーに使えます。軸は **±0.85** を超えた場合のみ「押された」と判定されます。
+
+1. **コントローラー · ショートカット**カードでキーを追加します。どの物理ボタンに対応しているかは、内蔵の**コントローラー診断**ページで確認できます。ボタンを押すとリアルタイムに点灯します。
+
+<p align="center">
+  <img src="images/shot-shortcut.png" alt="ショートカット設定" width="720" />
+</p>
+
+> **ヒント:** 一部のコントローラーは Bluetooth 接続でボタン番号が変わります。ショートカットの設定は **USB 有線接続**で行うのがおすすめです。
+
+---
+
+## ⚙️ OBS でキャプチャする
+
+1. OBS で **WebSocket サーバー**を手動で有効にします（通常は「ツール」メニューにあります）。
+2. **スクショ**ページを開き、**キャプチャ方法**を **OBS** に切り替えます。OBS 接続パネルが下に展開されます。
+
+<p align="center">
+  <img src="images/shot-obs.png" alt="OBS 接続" width="720" />
+</p>
+
+3. OBS サーバーの**アドレス**（`ws://IP:ポート`）と**パスワード**を入力します。
+4. 「**OBS に接続**」をクリックします。
+5. 接続できたら、ドロップダウンからキャプチャしたい**シーン**を選択します。
+6. ショートカットを押してシーンを撮影します。「長押しでリプレイを保存」を有効にしている場合、**長押し**で OBS のリプレイバッファーをクリップとして保存できます。
+
+---
+
+## 📄 ライセンス
+
+本ソフトウェアは [GNU GPL v3](../LICENSE) の下で公開されています。
