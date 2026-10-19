@@ -20,6 +20,14 @@ const path = require('path')
 const crypto = require('crypto')
 const { spawn } = require('child_process')
 
+/**
+ * 这个进程虽然是 ELECTRON_RUN_AS_NODE 起的纯 Node，但可执行文件仍是 Electron，
+ * 一旦 asar 支持生效，`fs.statSync('...app.asar')` 会被当成「打开一个 asar 包」，
+ * 对刚写入、还没被 Electron 校验过的文件就会报 Invalid package。
+ * 助手全程只跟真实文件打交道，直接关掉。
+ */
+process.noAsar = true
+
 function parseArgs(argv) {
   const args = {}
   for (let i = 0; i < argv.length; i++) {

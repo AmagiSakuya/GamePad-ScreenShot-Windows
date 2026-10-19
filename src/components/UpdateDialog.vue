@@ -50,7 +50,7 @@
               <pre v-if="notesText">{{ notesText }}</pre>
               <span v-else>{{ $t('Update.noNotes') }}</span>
             </div>
-            <p v-if="state.mode !== 'hot'" class="upd-hint">{{ $t('Update.manualHint') }}</p>
+            <p v-if="state.mode !== 'hot'" class="upd-hint">{{ manualHint }}</p>
           </template>
 
           <!-- 下载中 -->
@@ -165,6 +165,24 @@ export default {
   computed: {
     notesText() {
       return String(this.notes || '').trim()
+    },
+    /**
+     * 手动下载的具体原因。主进程会给出 manualReason，
+     * 老版本状态里没有这个字段时退回原来的笼统提示。
+     */
+    manualHint() {
+      const map = {
+        'old-version': 'Update.manualHintOldVersion',
+        readonly: 'Update.manualHintReadonly',
+        'missing-helper': 'Update.manualHintMissingHelper',
+        dev: 'Update.manualHintDev',
+        'no-patch': 'Update.manualHintNoPatch'
+      }
+      const key = map[this.state.manualReason]
+      return this.$t(key || 'Update.manualHint', {
+        minVersion: this.state.minVersion || '',
+        current: this.state.currentVersion || ''
+      })
     },
     hasTarget() {
       return ['available', 'manual', 'downloading', 'ready', 'applying'].includes(this.state.status)

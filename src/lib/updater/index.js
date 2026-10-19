@@ -98,6 +98,14 @@ function createUpdater(deps) {
     releaseUrl: config.RELEASE_PAGE,
     /** hot = 可以原地热更新；manual = 只能去网页手动下载（开发模式 / 目录只读 / 缺补丁） */
     mode: 'manual',
+    /**
+     * manual 的具体原因，界面据此显示对应提示，避免所有情况都笼统地说
+     * 「目录不可写或缺少组件」（真实原因可能只是客户端版本低于 patch.minVersion）。
+     * dev / no-patch / old-version / readonly / missing-helper
+     */
+    manualReason: '',
+    /** 本次补丁要求的最低客户端版本（用于「版本过旧」时的提示文案） */
+    minVersion: '',
     mandatory: false,
     size: 0,
     progress: 0,
@@ -316,16 +324,25 @@ function createUpdater(deps) {
     return false
   }
 
+  /**
+   * 决定这次更新能不能原地热更。
+   * 返回 { mode, reason }：reason 会透到界面上，让用户看到真正的原因，
+   * 而不是一律提示「目录不可写」。
+   */
   function resolveMode(next) {
-    if (!app.isPackaged) return 'manual'
-    if (isDevelopment) return 'manual'
-    if (!next.patch) return 'manual'
-    if (compareVersions(currentVersion, next.patch.minVersion) < 0) return 'manual'
-    if (!isResourcesWritable()) return 'manual'
+    if (!app.isPackaged) return { mode: 'manual', reason: 'dev' }
+    if (isDevelopment) return { mode: 'manual', reason: 'dev' }
+    if (!next.patch) return { mode: 'manual', reason: 'no-patch' }
+    // 客户端比补丁要求的最低版本还老：老客户端的更新器不认识新补丁格式，
+    // 必须让用户手动装一次完整包。这是唯一「注定要手动」的情况。
+    if (compareVersions(currentVersion, next.patch.minVersion) < 0) {
+      return { mode: 'manual', reason: 'old-version' }
+    }
+    if (!isResourcesWritable()) return { mode: 'manual', reason: 'readonly' }
     // 助手必须是「已经在 resources 里的真实文件」，补丁包里的那份要等下载解包后才拿得到，
     // 而这时候还没下载，所以只能检查已安装的那份。
-    if (!fs.existsSync(helperPath)) return 'manual'
-    return 'hot'
+    if (!fs.existsSync(helperPath)) return { mode: 'manual', reason: 'missing-helper' }
+    return { mode: 'hot', reason: '' }
   }
 
   async function check(options = {}) {
@@ -358,10 +375,12 @@ function createUpdater(deps) {
           })
         }
 
-        const mode = resolveMode(next)
+        const resolved = resolveMode(next)
         return setState({
-          status: mode === 'hot' ? STATUS.AVAILABLE : STATUS.MANUAL,
-          mode,
+          status: resolved.mode === 'hot' ? STATUS.AVAILABLE : STATUS.MANUAL,
+          mode: resolved.mode,
+          manualReason: resolved.reason,
+          minVersion: next.patch ? next.patch.minVersion : '',
           latestVersion: next.version,
           notes: next.notes,
           publishedAt: next.publishedAt,

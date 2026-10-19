@@ -69,8 +69,26 @@ function normalizeEntryPath(name) {
 
 /**
  * 解压到 destDir，返回 `[{ path, size, sha256 }]`（path 为相对路径）。
+ *
+ * ⚠ 必须在解包期间关掉 Electron 的 asar 劫持：
+ *   Electron 主进程里 fs 被换成了 asar 感知版本，凡是路径里出现 `.asar` 的，
+ *   都会被当成 asar 包去解析。补丁包里正好有 `app.asar`，写到一半的文件当然
+ *   不是合法 asar，于是 writeFileSync 直接抛
+ *   `Invalid package <...>\.update-staging\app.asar`（createError @ asar_bundle.js）。
+ *   用纯 Node 跑测试不会复现，只有在真实 Electron 进程里才会踩到。
+ *   process.noAsar 是 Electron 官方提供的开关，设为 true 期间 fs 就是原生行为。
  */
 function extractZip(zipPath, destDir) {
+  const previousNoAsar = process.noAsar
+  process.noAsar = true
+  try {
+    return extractZipNative(zipPath, destDir)
+  } finally {
+    process.noAsar = previousNoAsar
+  }
+}
+
+function extractZipNative(zipPath, destDir) {
   const fd = fs.openSync(zipPath, 'r')
   const entries = []
 

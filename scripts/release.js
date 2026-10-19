@@ -29,8 +29,10 @@ const { spawn, execFileSync } = require('child_process')
 const ROOT = path.resolve(__dirname, '..')
 const PKG_PATH = path.join(ROOT, 'package.json')
 const BUILD_DIR = path.join(ROOT, 'dist_electron')
-const UNPACKED_DIR = path.join(BUILD_DIR, 'win-unpacked')
-const RESOURCES_DIR = path.join(UNPACKED_DIR, 'resources')
+// 默认打包目录；`--unpacked <dir>` 可以指到别处（例如 dist_electron 被占用时，
+// 用 `--dest` 换个输出目录再指过来）
+let UNPACKED_DIR = path.join(BUILD_DIR, 'win-unpacked')
+let RESOURCES_DIR = path.join(UNPACKED_DIR, 'resources')
 const OUT_ROOT = path.join(ROOT, 'release_upload')
 
 const REPO = 'AmagiSakuya/GamePad-ScreenShot-Windows'
@@ -38,12 +40,18 @@ const RELEASE_PAGE = `https://github.com/${REPO}/releases`
 const DOWNLOAD_BASE = `https://github.com/${REPO}/releases/download`
 
 /**
- * 第一个支持「zip 补丁」的版本。
- * 比它老的客户端（2.0.0）只会读 patch.files 逐文件下载，读不到就会自动退化成
- * 「有新版本，请手动下载完整包」——正是跨代升级应该走的路径。
- * 所以这里默认取这个值：2.0.0 的用户手动装一次，之后全走热更新。
+ * 第一个真正「能应用 zip 补丁」的客户端版本，也就是 patch.minVersion 的默认值。
+ *
+ * 判定标准是「那一版发出去的包，在真实 Electron 进程里能把补丁装进去」，不是
+ * 「代码里有没有 format 2 更新器」。2.0.0 / 2.0.1 虽然带了 format 2 更新器和
+ * apply-update.js，但解包时 fs 被 Electron 的 asar 劫持，写
+ * `.update-staging/app.asar` 会直接抛 `Invalid package`（纯 Node 测试发现不了）。
+ * 这个坑在 2.0.2 用 process.noAsar 修掉，所以 2.0.2 才是第一个可用的版本。
+ *
+ * 写成比实际更高，老客户端会被永久挡在热更新外；写成更低，老客户端会下载后
+ * 解包失败。两种情况都只能手动装完整包，但至少要让提示说的是真话。
  */
-const ZIP_PATCH_SINCE = '2.1.0'
+const ZIP_PATCH_SINCE = '2.0.2'
 
 const ASSET_MIRRORS = [
   'https://ghfast.top/',
@@ -87,6 +95,11 @@ const channel = String(args.channel || 'stable')
 const mandatory = !!args.mandatory
 const patchFrom = String(args['patch-from'] || ZIP_PATCH_SINCE)
 const notesArg = typeof args.notes === 'string' ? args.notes : ''
+const unpackedArg = typeof args.unpacked === 'string' ? args.unpacked : ''
+if (unpackedArg) {
+  UNPACKED_DIR = path.resolve(ROOT, unpackedArg)
+  RESOURCES_DIR = path.join(UNPACKED_DIR, 'resources')
+}
 
 function fail(message) {
   console.error(`\n✖ ${message}\n`)
@@ -520,7 +533,7 @@ function writeUploadGuide(outDir, info) {
     `> 请用 \`--patch-from ${info.version}\` 重新发布，让老版本走完整包下载。`,
     '>',
     `> 当前 \`patch.minVersion = ${info.patchFrom}\`：低于这个版本的客户端会提示手动下载完整包。`,
-    `> 第一个支持 zip 补丁的版本是 ${ZIP_PATCH_SINCE}，比它老的（2.0.0）必须手动装一次。`
+    `> 第一个支持 zip 补丁的版本是 ${ZIP_PATCH_SINCE}，比它更老的客户端必须手动装一次。`
   ]
 
   fs.writeFileSync(path.join(outDir, 'UPLOAD.md'), `${lines.filter((line) => line !== '').join('\n')}\n`, 'utf8')
