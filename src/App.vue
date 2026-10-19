@@ -64,9 +64,23 @@
           </div>
         </div>
 
-        <button class="icon-btn lang-btn" :title="$t('SystemSettingsPage.language')" @click="toggleLanguage">
-          {{ locale === 'zh' ? '中' : 'EN' }}
-        </button>
+        <!-- 语言 -->
+        <div class="pop-wrap">
+          <button class="icon-btn lang-btn" :class="{ on: langOpen }" :title="$t('SystemSettingsPage.language')"
+            @click.stop="togglePopover('lang')">
+            {{ currentLanguage.short }}
+          </button>
+          <div v-if="langOpen" class="popover pop-lang" @click.stop>
+            <div class="pop-title">{{ $t('SystemSettingsPage.language') }}</div>
+            <div class="lang-list">
+              <button v-for="lang in languages" :key="lang.code" class="lang-opt"
+                :class="{ on: currentLocale === lang.code }" @click="setLanguage(lang.code)">
+                <span class="lang-native">{{ lang.native }}</span>
+                <AppIcon v-if="currentLocale === lang.code" name="check" :size="12" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 窗口控制 -->
@@ -87,7 +101,7 @@
       <!-- ===== 左侧导航 ===== -->
       <nav class="rail">
         <button v-for="item in navItems" :key="item.key" class="rail-btn" :class="{ on: view === item.key }"
-          @click="view = item.key">
+          :title="$t(item.title)" @click="view = item.key">
           <AppIcon :name="item.icon" :size="20" />
           <span>{{ $t(item.label) }}</span>
         </button>
@@ -110,6 +124,14 @@
           @update-status="applyUpdateResult" />
       </main>
     </div>
+
+    <!-- 语言切换提示（主界面文案与托盘菜单均已热更新，无需重启） -->
+    <transition name="lang-toast">
+      <div v-if="langToast" class="lang-toast">
+        <AppIcon name="check" :size="12" />
+        <span>{{ $t('ui.languageSwitched') }}</span>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -118,6 +140,7 @@ import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
 import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
+import { LANGUAGES, getLanguage, normalizeLocale } from '@/locales/languages'
 import pkg from '../package.json'
 
 const THEME_KEY = 'theme'
@@ -148,11 +171,14 @@ export default {
       view: 'screenshot',
       listening: false,
       isDark: true,
-      locale: 'zh',
       accent: 'lime',
       uiScale: 1,
       accentOpen: false,
       fontOpen: false,
+      langOpen: false,
+      langToast: false,
+      langToastTimer: null,
+      languages: LANGUAGES,
       maximized: false,
       // 每套主题各有一套色值，切换深浅色时自动跟随
       accentColors: [
@@ -172,13 +198,21 @@ export default {
       traySyncTimer: null,
       currentTrayListening: false,
       navItems: [
-        { key: 'screenshot', icon: 'camera', label: 'screenshotSettings' },
-        { key: 'tester', icon: 'gamepad', label: 'gamepadTester' },
-        { key: 'settings', icon: 'settings', label: 'systemSettings' }
+        // label 用导航栏专用的短文案（导航宽度有限，长语言放不下），title 是完整页面名，悬停可见
+        { key: 'screenshot', icon: 'camera', label: 'navScreenshot', title: 'screenshotSettings' },
+        { key: 'tester', icon: 'gamepad', label: 'navTester', title: 'gamepadTester' },
+        { key: 'settings', icon: 'settings', label: 'navSettings', title: 'systemSettings' }
       ]
     }
   },
   computed: {
+    /** 当前语言直接取自 i18n，设置页或顶栏任一处切换都能保持一致 */
+    currentLocale() {
+      return this.$i18n.locale
+    },
+    currentLanguage() {
+      return getLanguage(this.currentLocale)
+    },
     currentAccent() {
       return this.accentColors.find((color) => color.key === this.accent) || this.accentColors[0]
     },
@@ -195,7 +229,8 @@ export default {
     this.uiScale = await window.electronAPI.getStore(UI_SCALE_KEY, 1)
     this.applyAccent()
 
-    this.locale = await window.electronAPI.getStore(LOCALE_KEY, 'zh')
+    // 语言已由 main.js 读取并初始化，这里只做未知值的兜底校正
+    this.$i18n.locale = normalizeLocale(this.$i18n.locale)
 
     if (window.electronAPI.onWindowMaximizedChanged) {
       window.electronAPI.onWindowMaximizedChanged((_, state) => {
@@ -220,6 +255,10 @@ export default {
     if (this.traySyncTimer) {
       clearInterval(this.traySyncTimer)
       this.traySyncTimer = null
+    }
+    if (this.langToastTimer) {
+      clearTimeout(this.langToastTimer)
+      this.langToastTimer = null
     }
     document.removeEventListener('click', this.closePopovers)
   },
@@ -283,17 +322,19 @@ export default {
       }
     },
     togglePopover(name) {
-      if (name === 'accent') {
-        this.accentOpen = !this.accentOpen
-        this.fontOpen = false
-      } else {
-        this.fontOpen = !this.fontOpen
-        this.accentOpen = false
+      const next = {
+        accent: name === 'accent' ? !this.accentOpen : false,
+        font: name === 'font' ? !this.fontOpen : false,
+        lang: name === 'lang' ? !this.langOpen : false
       }
+      this.accentOpen = next.accent
+      this.fontOpen = next.font
+      this.langOpen = next.lang
     },
     closePopovers() {
       this.accentOpen = false
       this.fontOpen = false
+      this.langOpen = false
     },
     minimizeWindow() {
       if (window.electronAPI.minimizeWindow) window.electronAPI.minimizeWindow()
@@ -330,11 +371,28 @@ export default {
     closeWindow() {
       if (window.electronAPI.closeWindow) window.electronAPI.closeWindow()
     },
-    async toggleLanguage() {
-      const next = this.locale === 'zh' ? 'en' : 'zh'
-      this.locale = next
-      await window.electronAPI.setStore(LOCALE_KEY, next)
-      await window.electronAPI.restartApp()
+    /**
+     * 切换语言：界面立即热更新，同时通知主进程重建托盘菜单 / 刷新窗口标题，
+     * 全程不需要重启应用。
+     */
+    async setLanguage(code) {
+      this.langOpen = false
+      if (code === this.currentLocale) return
+      this.$i18n.locale = code
+      await window.electronAPI.setStore(LOCALE_KEY, code)
+      if (window.electronAPI.applyLocale) {
+        await window.electronAPI.applyLocale(code)
+      }
+      this.showLanguageToast()
+    },
+    /** 切换成功后给一个轻量提示，避免用户以为没反应 */
+    showLanguageToast() {
+      this.langToast = true
+      if (this.langToastTimer) clearTimeout(this.langToastTimer)
+      this.langToastTimer = setTimeout(() => {
+        this.langToast = false
+        this.langToastTimer = null
+      }, 1900)
     },
     /** 打开项目 GitHub 主页（等同系统设置里原来的「关于 - 项目主页」） */
     openProjectHomepage() {
@@ -491,6 +549,9 @@ body {
   align-items: center;
   gap: 10px;
   min-width: 0;
+  /* 长语言的产品名不能挤到中间的监听状态胶囊，超出用省略号 */
+  max-width: min(380px, 44vw);
+  overflow: hidden;
 }
 
 .brand-logo {
@@ -513,6 +574,7 @@ body {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .brand-name {
@@ -579,6 +641,9 @@ body {
   text-transform: uppercase;
   color: var(--ink-3);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bar-mid {
@@ -719,6 +784,83 @@ html.theme-light .popover {
   min-width: 164px;
 }
 
+.pop-lang {
+  min-width: 172px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lang-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.lang-opt:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.lang-opt.on {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.lang-native {
+  font-size: 12px;
+}
+
+/* 语言切换成功的轻提示 */
+.lang-toast {
+  position: fixed;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  color: var(--accent);
+  background: var(--surface-flat);
+  border: 1px solid var(--accent-line);
+  box-shadow: 0 16px 34px -20px rgba(0, 0, 0, 0.7);
+  z-index: 60;
+  pointer-events: none;
+}
+
+.lang-toast-enter-active,
+.lang-toast-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.lang-toast-enter-from,
+.lang-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-7px);
+}
+
 @keyframes popIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -856,8 +998,8 @@ html.theme-light .accent-swatch {
 }
 
 .rail {
-  width: 78px;
-  flex: 0 0 78px;
+  width: 84px;
+  flex: 0 0 84px;
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -868,14 +1010,15 @@ html.theme-light .accent-swatch {
 }
 
 .rail-btn {
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  min-height: 54px;
+  height: auto;
   border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   border: 0;
   background: transparent;
   color: var(--ink-3);
@@ -883,12 +1026,27 @@ html.theme-light .accent-swatch {
   position: relative;
   transition: all 0.16s ease;
   font-family: inherit;
-  padding: 0;
+  padding: 8px 3px 7px;
+  flex: 0 0 auto;
 }
 
+/*
+ * 多语言下导航文案长度差异很大（德语 Screenshot-Einstellungen、日语 スクリーンショット設定…），
+ * 这里固定两行并裁切，避免文字撑出按钮/导航栏压到内容区。
+ */
 .rail-btn span {
-  font-size: 9.5px;
-  letter-spacing: 0.02em;
+  width: 100%;
+  min-width: 0;
+  font-size: 9px;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rail-btn:hover {
@@ -904,7 +1062,7 @@ html.theme-light .accent-swatch {
 .rail-btn.on::before {
   content: "";
   position: absolute;
-  left: -12px;
+  left: -13px;
   top: 16px;
   width: 3px;
   height: 22px;

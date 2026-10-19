@@ -39,7 +39,7 @@
               <select v-else-if="setting.type === 'select'" class="ui-select" :value="config[setting.configKey]"
                 @change="onSelectChange(setting, $event)">
                 <option v-for="(option, optionIndex) in setting.options" :key="optionIndex" :value="option.value">
-                  {{ $t(option.label) }}
+                  {{ option.text || $t(option.label) }}
                 </option>
               </select>
 
@@ -102,6 +102,7 @@
 <script>
 import pkg from '../../package.json';
 import AppIcon from '@/components/AppIcon.vue';
+import { LANGUAGES, normalizeLocale } from '@/locales/languages';
 
 let localeKey = 'locale';
 let closeTypeKey = 'closeType';
@@ -162,10 +163,8 @@ export default {
               type: 'select',
               configKey: 'language',
               handler: this.onLanguageChanged,
-              options: [
-                { value: 'zh', label: 'SystemSettingsPage.languageChinese' },
-                { value: 'en', label: 'SystemSettingsPage.languageEnglish' }
-              ]
+              // 语言名统一显示母语写法，切换后不会找不到自己熟悉的语言
+              options: LANGUAGES.map((lang) => ({ value: lang.code, text: lang.native }))
             },
             {
               key: 'autoStart',
@@ -358,7 +357,7 @@ export default {
     const overlayNotifyPosition = await window.electronAPI.getStore('overlayNotifyPosition', 'left');
     const listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
 
-    this.config.language = locale;
+    this.config.language = normalizeLocale(locale);
     this.config.closeType = closeType;
     this.config.filenameConflictResolution = filenameConflictResolution;
     this.config.autoListenResolution = AutoListenResolution;
@@ -404,9 +403,14 @@ export default {
       return (Math.round(n * 100) / 100).toString() + 'x';
     },
     async onLanguageChanged() {
-      this.$i18n.locale = this.config.language;
-      await window.electronAPI.setStore(localeKey, this.config.language);
-      await window.electronAPI.restartApp();
+      // 语言热切换：界面立即更新，主进程同步重建托盘菜单，不重启应用
+      const code = normalizeLocale(this.config.language)
+      this.config.language = code
+      this.$i18n.locale = code
+      await window.electronAPI.setStore(localeKey, code)
+      if (window.electronAPI.applyLocale) {
+        await window.electronAPI.applyLocale(code)
+      }
     },
     async onCloseTypeChanged() {
       await window.electronAPI.setStore(closeTypeKey, this.config.closeType);

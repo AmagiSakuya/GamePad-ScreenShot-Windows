@@ -50,6 +50,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Ensure folder exists (creates recursively). Returns true on success, false on failure.
     ensureFolder: (folderPath) => ipcRenderer.invoke('ensure-folder', folderPath),
     restartApp: () => ipcRenderer.send('restart-app'),
+    // 语言热切换：通知主进程重建托盘菜单 / 刷新窗口标题（无需重启）
+    applyLocale: (locale) => ipcRenderer.invoke('apply-locale', locale),
     getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     openReleasePage: (url) => ipcRenderer.invoke('open-release-page', url),

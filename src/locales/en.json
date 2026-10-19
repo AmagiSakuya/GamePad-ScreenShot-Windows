@@ -4,6 +4,9 @@
     "obsConnect": "OBS Connect",
     "gamepadTester": "Gamepad Tester",
     "systemSettings": "System Settings",
+    "navScreenshot": "Capture",
+    "navTester": "Tester",
+    "navSettings": "Settings",
     "screenshotSource": "Source",
     "thumbnailSize": "Image Size",
     "captureTarget": "Capture Target",
@@ -224,7 +227,7 @@
         "lockedHint": "Listening · settings locked",
         "testSound": "Preview",
         "notifyHintDesc": "Notification style is configured in System Settings",
-        "settingsHint": "Changes apply immediately · switching language restarts the app",
+        "settingsHint": "Changes apply immediately · no restart needed for language",
         "buttons": "buttons",
         "hats": "D-pad",
         "axes": "axes",
@@ -245,6 +248,7 @@
         "tipHat": "D-pad reports as hat and is appended after physical buttons, so it can be used in shortcuts",
         "tipBluetooth": "Button indices may change over Bluetooth — use USB while testing shortcuts",
         "tipAxis": "An axis counts as a trigger direction only beyond ±0.85",
-        "listening": "Listening"
+        "listening": "Listening",
+        "languageSwitched": "Language switched"
     }
 }

@@ -183,6 +183,17 @@ ipcMain.handle('window-is-maximized', () => (win ? win.isMaximized() : false));
 //#endregion
 
 // 创建系统托盘
+// 托盘菜单文案在构建时取值，语言切换后需要重建菜单才能生效，
+// 因此把重建函数提到模块作用域，供 apply-locale 复用。
+let rebuildTrayMenu = null;
+let trayListeningState = false;
+
+/** 托盘悬停提示：跟随当前语言 */
+function updateTrayTooltip() {
+  if (!tray || tray.isDestroyed()) return;
+  tray.setToolTip($t('gamepadScreenShotTool'));
+}
+
 function createTray() {
   // 图标路径，建议使用 16x16 或 32x32 的图片
 
@@ -190,9 +201,9 @@ function createTray() {
   const recordingIcon = getAssetPath('assets', 'recording.ico');
 
   tray = new Tray(normalIcon);
-  // win.webContents.send('open-folder-triggered')
-  let isListening = false; // 初始假设未监听
-  const updateMenu = () => {
+  trayListeningState = false; // 初始假设未监听
+  rebuildTrayMenu = () => {
+    if (!tray || tray.isDestroyed()) return;
     const contextMenu = Menu.buildFromTemplate([
       {
         label: $t('TrayMenu.openScreenshotFolder'),
@@ -200,14 +211,14 @@ function createTray() {
       },
       {
         label: $t('TrayMenu.startListen'),
-        visible: !isListening,
+        visible: !trayListeningState,
         click: () => {
           win.webContents.send('start-listen-from-tray');
         }
       },
       {
         label: $t('TrayMenu.stopListen'),
-        visible: isListening,
+        visible: trayListeningState,
         click: () => {
           win.webContents.send('stop-listen-from-tray');
         }
@@ -221,11 +232,10 @@ function createTray() {
       }
     ]);
     tray.setContextMenu(contextMenu);
+    updateTrayTooltip();
   };
 
-  updateMenu();
-
-  tray.setToolTip('GamePad Screenshot Tool');
+  rebuildTrayMenu();
 
   // 点击托盘图标重新打开界面
   tray.on('click', () => {
@@ -239,10 +249,30 @@ function createTray() {
 
   // 监听监听状态更新事件
   ipcMain.on('update-listening-state', (_, state) => {
-    isListening = state;
-    updateMenu();
+    trayListeningState = state;
+    if (typeof rebuildTrayMenu === 'function') rebuildTrayMenu();
   });
 }
+
+/**
+ * 语言热切换：重建托盘菜单 + 刷新窗口标题 / 托盘提示。
+ * 主进程里所有文案都是在使用时通过 $t 取值的，只有托盘菜单是构建时缓存的，
+ * 所以重建菜单即可完成全量热替换，无需重启应用。
+ */
+function applyLanguageToShell() {
+  if (win && !win.isDestroyed()) {
+    win.setTitle($t('gamepadScreenShotTool') + ` ver.${packageJson.version}`);
+  }
+  if (typeof rebuildTrayMenu === 'function') rebuildTrayMenu();
+  updateTrayTooltip();
+}
+
+ipcMain.handle('apply-locale', (_, locale) => {
+  if (typeof locale !== 'string' || !locale) return false;
+  configStore.set(localeKey, locale);
+  applyLanguageToShell();
+  return true;
+});
 
 app.on('will-quit', () => {
   //globalShortcut.unregisterAll()
@@ -320,14 +350,22 @@ let localeKey = 'locale';
 
 const messages = {
   zh: require('@/locales/zh.json'),
-  en: require('@/locales/en.json')
+  'zh-TW': require('@/locales/zh-TW.json'),
+  en: require('@/locales/en.json'),
+  ja: require('@/locales/ja.json'),
+  ko: require('@/locales/ko.json'),
+  de: require('@/locales/de.json'),
+  fr: require('@/locales/fr.json'),
+  es: require('@/locales/es.json'),
+  ru: require('@/locales/ru.json')
 };
 
 // 2. 模拟 $t 函数
 function $t(key) {
   let locale = configStore.get(localeKey, 'zh');
+  const dict = messages[locale] || messages.en;
   // 支持 "menu.file.save" 这种嵌套路径
-  return key.split('.').reduce((obj, i) => (obj ? obj[i] : null), messages[locale]) || key;
+  return key.split('.').reduce((obj, i) => (obj ? obj[i] : null), dict) || key;
 }
 //#endregion
 

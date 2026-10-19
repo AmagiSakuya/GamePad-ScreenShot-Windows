@@ -4,6 +4,9 @@
     "obsConnect": "OBS连接",
     "gamepadTester": "控制器调试",
     "systemSettings": "系统设置",
+    "navScreenshot": "截图",
+    "navTester": "调试",
+    "navSettings": "设置",
     "screenshotSource": "截图来源",
     "thumbnailSize": "保存尺寸",
     "captureTarget": "截图目标",
@@ -197,7 +200,7 @@
         "lockedHint": "监听中 · 配置已锁定",
         "testSound": "试听",
         "notifyHintDesc": "通知样式在「系统设置」中调整",
-        "settingsHint": "修改立即生效 · 切换语言会重启应用",
+        "settingsHint": "修改立即生效 · 切换语言无需重启",
         "buttons": "按键",
         "hats": "十字键",
         "axes": "轴",
@@ -245,6 +248,7 @@
         "tipHat": "十字键以 hat 形式上报，会作为虚拟按键追加在物理按键之后，可直接选作组合键",
         "tipBluetooth": "部分控制器在蓝牙模式下按键编号会变化，调试组合键建议使用 USB 有线连接",
         "tipAxis": "轴数值超过 ±0.85 才会被判定为方向触发",
-        "listening": "监听中"
+        "listening": "监听中",
+        "languageSwitched": "语言已切换"
     }
 }
