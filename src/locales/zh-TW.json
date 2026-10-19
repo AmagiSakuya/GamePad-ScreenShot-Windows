@@ -99,7 +99,7 @@
             "tray": "隱藏到系統匣"
         },
         "autoStart": "開機自動啟動",
-        "minimizeOnStartup": "最小化啟動",
+        "minimizeOnStartup": "靜默啟動",
         "filenameConflictResolution": "檔案名稱衝突策略",
         "filenameConflictResolutionEnum": {
             "overwrite": "覆寫",
@@ -114,9 +114,9 @@
             "cancelButton": "取消"
         },
         "autoListenResolution": "自動開始監聽",
-        "overlayNotify": "覆蓋通知",
-        "groupNotify": "通知設定",
-        "listenNotifyPolicy": "監聽時 Windows 通知策略",
+        "overlayNotify": "啟用覆層通知",
+        "groupOverlayNotify": "覆層通知",
+        "listenNotifyPolicy": "Windows 通知",
         "listenNotifyPolicyEnum": {
             "all": "全部",
             "start": "僅開始時",
@@ -146,8 +146,8 @@
             "medium": "中",
             "large": "大"
         },
-        "testOverlayNotify": "測試浮層通知",
-        "testOverlayNotifyTitle": "浮層通知預覽",
+        "testOverlayNotify": "測試覆層通知",
+        "testOverlayNotifyTitle": "覆層通知預覽",
         "testOverlayNotifyDesc": "目前大小預覽",
         "autoListenResolutionEnum": {
             "never": "從不",
@@ -164,7 +164,6 @@
         "updateNotAvailable": "目前已是最新版本",
         "updateCheckFailed": "檢查更新失敗，請稍後再試",
         "groupBasic": "基礎設定",
-        "groupPolicy": "策略設定",
         "groupUpdate": "更新設定",
         "languageChinese": "中文",
         "languageEnglish": "English",
@@ -200,7 +199,7 @@
         "lockedHint": "監聽中 · 設定已鎖定",
         "testSound": "試聽",
         "notifyHintDesc": "通知樣式請在「系統設定」中調整",
-        "settingsHint": "修改立即生效 · 切換語言無需重啟",
+        "settingsHint": "修改立即生效",
         "buttons": "按鍵",
         "hats": "十字鍵",
         "axes": "軸",

@@ -99,7 +99,7 @@
             "tray": "Close to tray"
         },
         "autoStart": "Auto Start on Boot",
-        "minimizeOnStartup": "Minimize on Startup",
+        "minimizeOnStartup": "Silent Startup",
         "filenameConflictResolution": "File name conflict resolution",
         "filenameConflictResolutionEnum": {
             "overwrite": "Overwrite",
@@ -114,9 +114,9 @@
             "cancelButton": "Cancel"
         },
         "autoListenResolution": "Auto Start Listening",
-        "overlayNotify": "Overlay Notification",
-        "groupNotify": "Notification Settings",
-        "listenNotifyPolicy": "Windows Notify Policy On Listening",
+        "overlayNotify": "Enable Overlay Notification",
+        "groupOverlayNotify": "Overlay Notifications",
+        "listenNotifyPolicy": "Windows Notifications",
         "listenNotifyPolicyEnum": {
             "all": "All",
             "start": "Start Only",
@@ -164,7 +164,6 @@
         "updateNotAvailable": "Already up to date",
         "updateCheckFailed": "Update check failed, please try again later",
         "groupBasic": "Basic Settings",
-        "groupPolicy": "Policy Settings",
         "groupUpdate": "Update Settings",
         "languageChinese": "中文",
         "languageEnglish": "English",
@@ -227,7 +226,7 @@
         "lockedHint": "Listening · settings locked",
         "testSound": "Preview",
         "notifyHintDesc": "Notification style is configured in System Settings",
-        "settingsHint": "Changes apply immediately · no restart needed for language",
+        "settingsHint": "Changes apply immediately",
         "buttons": "buttons",
         "hats": "D-pad",
         "axes": "axes",

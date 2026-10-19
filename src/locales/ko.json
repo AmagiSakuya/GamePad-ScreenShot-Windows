@@ -99,7 +99,7 @@
             "tray": "트레이로 숨기기"
         },
         "autoStart": "시작 시 자동 실행",
-        "minimizeOnStartup": "시작 시 최소화",
+        "minimizeOnStartup": "사일런트 시작",
         "filenameConflictResolution": "파일 이름 충돌 처리",
         "filenameConflictResolutionEnum": {
             "overwrite": "덮어쓰기",
@@ -114,9 +114,9 @@
             "cancelButton": "취소"
         },
         "autoListenResolution": "자동으로 대기 시작",
-        "overlayNotify": "오버레이 알림",
-        "groupNotify": "알림 설정",
-        "listenNotifyPolicy": "대기 중 Windows 알림 정책",
+        "overlayNotify": "오버레이 알림 사용",
+        "groupOverlayNotify": "오버레이 알림",
+        "listenNotifyPolicy": "Windows 알림",
         "listenNotifyPolicyEnum": {
             "all": "전체",
             "start": "시작할 때만",
@@ -164,7 +164,6 @@
         "updateNotAvailable": "최신 버전입니다",
         "updateCheckFailed": "업데이트 확인에 실패했습니다. 잠시 후 다시 시도하세요",
         "groupBasic": "기본 설정",
-        "groupPolicy": "정책 설정",
         "groupUpdate": "업데이트 설정",
         "languageChinese": "中文",
         "languageEnglish": "English",
@@ -200,7 +199,7 @@
         "lockedHint": "대기 중 · 설정이 잠겨 있습니다",
         "testSound": "미리 듣기",
         "notifyHintDesc": "알림 스타일은 '시스템 설정'에서 변경할 수 있습니다",
-        "settingsHint": "변경 사항은 즉시 적용 · 언어 전환에 재시작이 필요 없습니다",
+        "settingsHint": "변경 사항은 즉시 적용됩니다",
         "buttons": "버튼",
         "hats": "십자 키",
         "axes": "축",

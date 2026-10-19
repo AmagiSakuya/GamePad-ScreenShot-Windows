@@ -99,7 +99,7 @@
             "tray": "Réduire dans la zone de notification"
         },
         "autoStart": "Lancer au démarrage",
-        "minimizeOnStartup": "Démarrer réduit",
+        "minimizeOnStartup": "Démarrage silencieux",
         "filenameConflictResolution": "Gestion des conflits de noms",
         "filenameConflictResolutionEnum": {
             "overwrite": "Écraser",
@@ -114,9 +114,9 @@
             "cancelButton": "Annuler"
         },
         "autoListenResolution": "Démarrer l'écoute automatiquement",
-        "overlayNotify": "Notification en superposition",
-        "groupNotify": "Notifications",
-        "listenNotifyPolicy": "Notifications Windows pendant l'écoute",
+        "overlayNotify": "Activer la notification en superposition",
+        "groupOverlayNotify": "Notifications en superposition",
+        "listenNotifyPolicy": "Notifications Windows",
         "listenNotifyPolicyEnum": {
             "all": "Toutes",
             "start": "Au démarrage seulement",
@@ -164,7 +164,6 @@
         "updateNotAvailable": "Vous êtes à jour",
         "updateCheckFailed": "Échec de la recherche de mise à jour, réessayez plus tard",
         "groupBasic": "Réglages de base",
-        "groupPolicy": "Règles",
         "groupUpdate": "Mises à jour",
         "languageChinese": "中文",
         "languageEnglish": "English",
@@ -200,7 +199,7 @@
         "lockedHint": "Écoute · réglages verrouillés",
         "testSound": "Écouter",
         "notifyHintDesc": "Le style de notification se règle dans les réglages système",
-        "settingsHint": "Modifications immédiates · aucun redémarrage pour changer de langue",
+        "settingsHint": "Modifications appliquées immédiatement",
         "buttons": "boutons",
         "hats": "croix directionnelle",
         "axes": "axes",

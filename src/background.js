@@ -94,6 +94,11 @@ async function createWindow() {
   // 自绘标题栏：去掉 Windows 原生外框，最小化/最大化/关闭交给渲染进程的顶栏按钮
   const theme = configStore.get('theme', 'dark')
   const { width: winWidth, height: winHeight } = getDefaultWindowSize()
+  // 「静默启动」（存档键名沿用历史的 minimizeOnStartup）：窗口先不显示，
+  // 等首帧准备好再决定是亮出来还是只留托盘图标。这样开机自启时不会出现
+  // 「闪一下窗口又消失」的观感（旧实现是先显示再 hide）。
+  const minimizeOnStartup = configStore.get('minimizeOnStartup', false) === true
+    || configStore.get('minimizeOnStartup', false) === 'true'
   // Create the browser window.
   win = new BrowserWindow({
     title: $t('gamepadScreenShotTool') + ` ver.${packageJson.version}`,
@@ -103,6 +108,7 @@ async function createWindow() {
     minHeight: 640,
     center: true,
     frame: false,
+    show: false,
     autoHideMenuBar: true,
     backgroundColor: theme === 'light' ? '#F4F6F1' : '#08090C',
     icon: path.join(__dirname, '../src/gamepad.ico'),
@@ -118,6 +124,19 @@ async function createWindow() {
   })
 
   applyUiScaleToWindow();
+
+  // 首帧渲染完成后再显示：静默启动时保持隐藏（只留托盘图标），否则正常亮出窗口。
+  // 3 秒兜底，避免极端情况下 ready-to-show 不触发导致「应用启动后什么都没有」。
+  let startupRevealed = false
+  let revealTimer = null
+  const revealOnStartup = () => {
+    if (startupRevealed || !win || win.isDestroyed()) return
+    startupRevealed = true
+    if (revealTimer) clearTimeout(revealTimer)
+    if (!minimizeOnStartup) win.show()
+  }
+  revealTimer = setTimeout(revealOnStartup, 3000)
+  win.once('ready-to-show', revealOnStartup)
 
   // 最大化状态同步给渲染进程，用于切换「最大化 / 还原」按钮图标
   win.on('maximize', () => {
@@ -344,13 +363,7 @@ app.on('ready', async () => {
   const autoStart = configStore.get('autoStart', false);
   app.setLoginItemSettings({ openAtLogin: autoStart });
 
-  // 检查最小化启动
-  const minimizeOnStartup = configStore.get('minimizeOnStartup', false);
-  if (minimizeOnStartup) {
-    win.hide();
-  }
-
-  //开启底层钩子监听
+  // 开启底层钩子监听
   uIOhook.start()
   // 监听全局键盘按下事件
   uIOhook.on('keydown', (event) => {

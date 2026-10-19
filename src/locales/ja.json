@@ -99,7 +99,7 @@
             "tray": "トレイに格納"
         },
         "autoStart": "スタートアップに登録",
-        "minimizeOnStartup": "起動時に最小化",
+        "minimizeOnStartup": "サイレント起動",
         "filenameConflictResolution": "ファイル名の競合時の処理",
         "filenameConflictResolutionEnum": {
             "overwrite": "上書き",
@@ -114,9 +114,9 @@
             "cancelButton": "キャンセル"
         },
         "autoListenResolution": "自動で待機を開始",
-        "overlayNotify": "オーバーレイ通知",
-        "groupNotify": "通知設定",
-        "listenNotifyPolicy": "待機中の Windows 通知ポリシー",
+        "overlayNotify": "オーバーレイ通知を有効化",
+        "groupOverlayNotify": "オーバーレイ通知",
+        "listenNotifyPolicy": "Windows 通知",
         "listenNotifyPolicyEnum": {
             "all": "すべて",
             "start": "開始時のみ",
@@ -164,7 +164,6 @@
         "updateNotAvailable": "最新バージョンです",
         "updateCheckFailed": "更新の確認に失敗しました。しばらくしてから再試行してください",
         "groupBasic": "基本設定",
-        "groupPolicy": "ポリシー設定",
         "groupUpdate": "更新設定",
         "languageChinese": "中文",
         "languageEnglish": "English",
@@ -200,7 +199,7 @@
         "lockedHint": "待機中 · 設定はロックされています",
         "testSound": "試聴",
         "notifyHintDesc": "通知スタイルは「システム設定」で変更できます",
-        "settingsHint": "変更はすぐに反映 · 言語切り替えに再起動は不要",
+        "settingsHint": "変更はすぐに反映されます",
         "buttons": "ボタン",
         "hats": "十字キー",
         "axes": "軸",

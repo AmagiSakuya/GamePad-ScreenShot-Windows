@@ -8,92 +8,44 @@
 
     </div>
 
-    <div class="set-grid">
-      <div class="ui-card set-card" v-for="(group, index) in groups" :key="group.key">
-        <div class="ui-card-head set-head" @click="toggleGroup(index)">
-          <div class="ui-card-head-left">
-            <div class="ui-card-ico" :class="group.tone"><AppIcon :name="group.icon" :size="13" /></div>
-            <span class="ui-card-title">{{ $t('SystemSettingsPage.' + group.key) }}</span>
-          </div>
-          <AppIcon name="chevronDown" :size="14" class="chev"
-            :style="{ transform: group.collapsed ? 'rotate(-90deg)' : 'none' }" />
-        </div>
+    <div class="set-layout">
+      <!-- 左列：基础设置 + 数据 -->
+      <div class="set-col">
+        <SettingsCard v-for="group in groupsLeft" :key="group.key" :group="group" :config="config"
+          @change="applySetting" @action="runAction" @toggle="group.collapsed = !group.collapsed" />
 
-        <div class="set-rows" v-show="!group.collapsed">
-          <div class="set-row" v-for="setting in group.settings" :key="setting.key">
-            <div class="set-label">
-              <AppIcon :name="setting.icon" :size="13" />
-              <span>{{ $t('SystemSettingsPage.' + setting.key) }}</span>
+        <div class="ui-card data-card">
+          <div class="ui-card-head">
+            <div class="ui-card-head-left">
+              <div class="ui-card-ico warn"><AppIcon name="database" :size="13" /></div>
+              <span class="ui-card-title">{{ $t('ui.data') }}</span>
             </div>
-            <div class="set-ctl">
-              <!-- 布尔开关 -->
-              <div v-if="setting.type === 'seg'" class="ui-seg">
-                <button v-for="option in setting.options" :key="String(option.value)"
-                  :class="{ on: config[setting.configKey] === option.value }"
-                  @click="setValue(setting, option.value)">
-                  {{ $t(option.label) }}
+            <span class="ui-badge">v{{ version }}</span>
+          </div>
+          <div class="data-list">
+            <div class="data-item" v-for="action in dataActions" :key="action.key">
+              <div class="data-main">
+                <div class="data-title-row">
+                  <AppIcon :name="action.icon" :size="12" class="data-ico" />
+                  <span class="data-title">{{ $t('SystemSettingsPage.' + action.key) }}</span>
+                </div>
+                <span class="data-desc">{{ $t('SystemSettingsPage.' + action.key + 'Desc') }}</span>
+                <span v-if="pathHint(action.key)" class="data-path" :title="pathHint(action.key)">{{ pathHint(action.key) }}</span>
+              </div>
+              <div class="data-ctl">
+                <button class="ui-btn sm" :class="{ danger: action.danger }" @click="action.handler.call(this)">
+                  {{ $t(action.danger ? 'SystemSettingsPage.clearButton' : 'ui.open') }}
                 </button>
               </div>
-
-              <!-- 下拉 -->
-              <select v-else-if="setting.type === 'select'" class="ui-select" :value="config[setting.configKey]"
-                @change="onSelectChange(setting, $event)">
-                <option v-for="(option, optionIndex) in setting.options" :key="optionIndex" :value="option.value">
-                  {{ option.text || $t(option.label) }}
-                </option>
-              </select>
-
-              <!-- 输入框 -->
-              <input v-else-if="setting.type === 'input'" class="ui-input" type="text" :placeholder="setting.placeholder"
-                :value="config[setting.configKey]"
-                @input="e => { config[setting.configKey] = e.target.value; setting.handler.call(this, e); }">
-
-              <!-- 滑条 -->
-              <div v-else-if="setting.type === 'range'" class="range-wrap">
-                <span class="range-bound">{{ setting.min }}x</span>
-                <input class="ui-range" type="range" :min="setting.min" :max="setting.max" :step="setting.step"
-                  :value="config[setting.configKey]"
-                  @input="e => { config[setting.configKey] = parseFloat(e.target.value); setting.handler.call(this, e); }">
-                <span class="range-bound">{{ setting.max }}x</span>
-                <span class="range-badge">{{ formatScaleValue(config[setting.configKey]) }}</span>
-              </div>
-
-              <!-- 按钮 -->
-              <button v-else-if="setting.type === 'button'" class="ui-btn" @click="setting.handler.call(this)">
-                <AppIcon name="download" :size="13" v-if="setting.key === 'checkUpdate'" />
-                <AppIcon name="bell" :size="13" v-else-if="setting.key === 'testOverlayNotify'" />
-                {{ $t('SystemSettingsPage.' + setting.key) }}
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="ui-card set-card data-card">
-        <div class="ui-card-head">
-          <div class="ui-card-head-left">
-            <div class="ui-card-ico warn"><AppIcon name="database" :size="13" /></div>
-            <span class="ui-card-title">{{ $t('ui.data') }}</span>
-          </div>
-          <span class="ui-badge">v{{ version }}</span>
-        </div>
-        <div class="set-rows">
-          <div class="set-row with-desc" v-for="action in dataActions" :key="action.key">
-            <div class="set-label data-label">
-              <AppIcon :name="action.icon" :size="13" class="data-ico" />
-              <div class="data-label-text">
-                <span class="data-title">{{ $t('SystemSettingsPage.' + action.key) }}</span>
-                <span class="data-desc">{{ $t('SystemSettingsPage.' + action.key + 'Desc') }}</span>
-                <span v-if="pathHint(action.key)" class="data-path">{{ pathHint(action.key) }}</span>
-              </div>
-            </div>
-            <div class="set-ctl">
-              <button class="ui-btn" :class="{ danger: action.danger }" @click="action.handler.call(this)">
-                {{ $t(action.danger ? 'SystemSettingsPage.clearButton' : 'ui.open') }}
-              </button>
-            </div>
-          </div>
-        </div>
+      <!-- 右列：覆层通知 + 更新设置 -->
+      <div class="set-col">
+        <SettingsCard v-for="group in groupsRight" :key="group.key" :group="group" :config="config"
+          @change="applySetting" @action="runAction" @toggle="group.collapsed = !group.collapsed" />
       </div>
     </div>
   </div>
@@ -102,9 +54,10 @@
 <script>
 import pkg from '../../package.json';
 import AppIcon from '@/components/AppIcon.vue';
-import { LANGUAGES, normalizeLocale } from '@/locales/languages';
+import SettingsCard from '@/components/SettingsCard.vue';
 
-let localeKey = 'locale';
+const { OVERLAY_SCALE_MIN, OVERLAY_SCALE_MAX, OVERLAY_SCALE_STEP, normalizeOverlayScale } = require('@/lib/overlayScale');
+
 let closeTypeKey = 'closeType';
 let filenameConflictResolutionKey = 'filenameConflictResolution';
 let autoListenResolutionKey = 'autoListenResolution';
@@ -115,7 +68,7 @@ let minimizeOnStartupKey = 'minimizeOnStartup';
 
 export default {
   name: 'SystemSettingsPage',
-  components: { AppIcon },
+  components: { AppIcon, SettingsCard },
   emits: ['update-status'],
   props: {
     windowsNotify: {
@@ -127,7 +80,6 @@ export default {
     return {
       version: pkg.version,
       config: {
-        language: 'zh',
         closeType: 'exit',
         filenameConflictResolution: 'overwrite',
         autoListenResolution: 'never',
@@ -150,7 +102,7 @@ export default {
         { key: 'openLogFolder', icon: 'folder', handler: this.openLogFolder },
         { key: 'clearLogs', icon: 'trash', danger: true, handler: this.clearLogs }
       ],
-      groups: [
+      groupsLeft: [
         {
           key: 'groupBasic',
           icon: 'settings',
@@ -158,23 +110,16 @@ export default {
           collapsed: false,
           settings: [
             {
-              key: 'language',
-              icon: 'languages',
+              key: 'filenameConflictResolution',
+              icon: 'fileText',
               type: 'select',
-              configKey: 'language',
-              handler: this.onLanguageChanged,
-              // 语言名统一显示母语写法，切换后不会找不到自己熟悉的语言
-              options: LANGUAGES.map((lang) => ({ value: lang.code, text: lang.native }))
-            },
-            {
-              key: 'autoStart',
-              icon: 'power',
-              type: 'seg',
-              configKey: 'autoStart',
-              handler: this.onAutoStartChanged,
+              configKey: 'filenameConflictResolution',
+              handler: this.onFilenameConflictResolutionChanged,
               options: [
-                { value: true, label: 'SystemSettingsPage.enabled' },
-                { value: false, label: 'SystemSettingsPage.disabled' }
+                { value: 'overwrite', label: 'SystemSettingsPage.filenameConflictResolutionEnum.overwrite' },
+                { value: 'appendTimestamp', label: 'SystemSettingsPage.filenameConflictResolutionEnum.appendTimestamp' },
+                { value: 'notSave', label: 'SystemSettingsPage.filenameConflictResolutionEnum.notSave' },
+                { value: 'askEveryTime', label: 'SystemSettingsPage.filenameConflictResolutionEnum.askEveryTime' }
               ]
             },
             {
@@ -189,6 +134,42 @@ export default {
               ]
             },
             {
+              key: 'listenNotifyPolicy',
+              icon: 'bell',
+              type: 'select',
+              configKey: 'listenNotifyPolicy',
+              handler: async function () { await window.electronAPI.setStore('listenNotifyPolicy', this.config.listenNotifyPolicy) },
+              options: [
+                { value: 'all', label: 'SystemSettingsPage.listenNotifyPolicyEnum.all' },
+                { value: 'start', label: 'SystemSettingsPage.listenNotifyPolicyEnum.start' },
+                { value: 'stop', label: 'SystemSettingsPage.listenNotifyPolicyEnum.stop' },
+                { value: 'none', label: 'SystemSettingsPage.listenNotifyPolicyEnum.none' }
+              ]
+            },
+            {
+              key: 'autoStart',
+              icon: 'power',
+              type: 'seg',
+              configKey: 'autoStart',
+              handler: this.onAutoStartChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
+              ]
+            },
+            {
+              key: 'autoListenResolution',
+              icon: 'play',
+              type: 'select',
+              configKey: 'autoListenResolution',
+              handler: this.onAutoListenResolutionChanged,
+              options: [
+                { value: 'never', label: 'SystemSettingsPage.autoListenResolutionEnum.never' },
+                { value: 'whenDeviceAvailable', label: 'SystemSettingsPage.autoListenResolutionEnum.whenDeviceAvailable' },
+                { value: 'onAppStart', label: 'SystemSettingsPage.autoListenResolutionEnum.onAppStart' }
+              ]
+            },
+            {
               key: 'minimizeOnStartup',
               icon: 'appWindow',
               type: 'seg',
@@ -200,9 +181,11 @@ export default {
               ]
             }
           ]
-        },
+        }
+      ],
+      groupsRight: [
         {
-          key: 'groupNotify',
+          key: 'groupOverlayNotify',
           icon: 'bell',
           tone: 'warn',
           collapsed: false,
@@ -234,9 +217,9 @@ export default {
               icon: 'image',
               type: 'range',
               configKey: 'overlayNotifySize',
-              min: 0.8,
-              max: 2,
-              step: 0.05,
+              min: OVERLAY_SCALE_MIN,
+              max: OVERLAY_SCALE_MAX,
+              step: OVERLAY_SCALE_STEP,
               handler: async function () { await window.electronAPI.setStore('overlayNotifySize', this.config.overlayNotifySize) }
             },
             {
@@ -254,56 +237,11 @@ export default {
               ]
             },
             {
-              key: 'listenNotifyPolicy',
-              icon: 'list',
-              type: 'select',
-              configKey: 'listenNotifyPolicy',
-              handler: async function () { await window.electronAPI.setStore('listenNotifyPolicy', this.config.listenNotifyPolicy) },
-              options: [
-                { value: 'all', label: 'SystemSettingsPage.listenNotifyPolicyEnum.all' },
-                { value: 'start', label: 'SystemSettingsPage.listenNotifyPolicyEnum.start' },
-                { value: 'stop', label: 'SystemSettingsPage.listenNotifyPolicyEnum.stop' },
-                { value: 'none', label: 'SystemSettingsPage.listenNotifyPolicyEnum.none' }
-              ]
-            },
-            {
               key: 'testOverlayNotify',
               icon: 'bell',
               type: 'button',
+              buttonIcon: 'bell',
               handler: this.testOverlayNotify
-            }
-          ]
-        },
-        {
-          key: 'groupPolicy',
-          icon: 'shield',
-          tone: 'cyan',
-          collapsed: false,
-          settings: [
-            {
-              key: 'filenameConflictResolution',
-              icon: 'fileText',
-              type: 'select',
-              configKey: 'filenameConflictResolution',
-              handler: this.onFilenameConflictResolutionChanged,
-              options: [
-                { value: 'overwrite', label: 'SystemSettingsPage.filenameConflictResolutionEnum.overwrite' },
-                { value: 'appendTimestamp', label: 'SystemSettingsPage.filenameConflictResolutionEnum.appendTimestamp' },
-                { value: 'notSave', label: 'SystemSettingsPage.filenameConflictResolutionEnum.notSave' },
-                { value: 'askEveryTime', label: 'SystemSettingsPage.filenameConflictResolutionEnum.askEveryTime' }
-              ]
-            },
-            {
-              key: 'autoListenResolution',
-              icon: 'play',
-              type: 'select',
-              configKey: 'autoListenResolution',
-              handler: this.onAutoListenResolutionChanged,
-              options: [
-                { value: 'never', label: 'SystemSettingsPage.autoListenResolutionEnum.never' },
-                { value: 'whenDeviceAvailable', label: 'SystemSettingsPage.autoListenResolutionEnum.whenDeviceAvailable' },
-                { value: 'onAppStart', label: 'SystemSettingsPage.autoListenResolutionEnum.onAppStart' }
-              ]
             }
           ]
         },
@@ -336,6 +274,7 @@ export default {
               key: 'checkUpdate',
               icon: 'download',
               type: 'button',
+              buttonIcon: 'download',
               handler: this.checkForUpdates
             }
           ]
@@ -344,7 +283,6 @@ export default {
     }
   },
   async mounted() {
-    const locale = await window.electronAPI.getStore(localeKey, 'zh');
     const closeType = await window.electronAPI.getStore(closeTypeKey, 'exit');
     const filenameConflictResolution = await window.electronAPI.getStore(filenameConflictResolutionKey, 'overwrite');
     const AutoListenResolution = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
@@ -357,7 +295,6 @@ export default {
     const overlayNotifyPosition = await window.electronAPI.getStore('overlayNotifyPosition', 'left');
     const listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
 
-    this.config.language = normalizeLocale(locale);
     this.config.closeType = closeType;
     this.config.filenameConflictResolution = filenameConflictResolution;
     this.config.autoListenResolution = AutoListenResolution;
@@ -367,7 +304,7 @@ export default {
     const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
     this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
     this.config.overlayNotify = overlayNotify;
-    this.config.overlayNotifySize = this.normalizeScaleValue(overlayNotifySize);
+    this.config.overlayNotifySize = normalizeOverlayScale(overlayNotifySize);
     this.config.overlayNotifyDuration = Number(overlayNotifyDuration) || 2;
     this.config.overlayNotifyPosition = overlayNotifyPosition;
     this.config.listenNotifyPolicy = listenNotifyPolicy;
@@ -375,41 +312,17 @@ export default {
     await this.loadDataPaths();
   },
   methods: {
-    setValue(setting, value) {
+    /** 子卡片回传的改动：先写回本地配置，再执行该项的持久化 / 副作用 */
+    applySetting(setting, value) {
       this.config[setting.configKey] = value
       if (typeof setting.handler === 'function') {
         setting.handler.call(this)
       }
     },
-    onSelectChange(setting, event) {
-      const raw = event.target.value
-      const matched = setting.options.find(option => String(option.value) === raw)
-      this.config[setting.configKey] = matched ? matched.value : raw
+    /** 子卡片里的按钮类设置项 */
+    runAction(setting) {
       if (typeof setting.handler === 'function') {
-        setting.handler.call(this, event)
-      }
-    },
-    normalizeScaleValue(v) {
-      let n = Number.parseFloat(v);
-      if (!Number.isFinite(n)) {
-        const legacyScales = { small: 0.8, medium: 1, large: 1.25 };
-        n = legacyScales[String(v).toLowerCase()] || 1;
-      }
-      return Math.min(2, Math.max(0.8, n));
-    },
-    formatScaleValue(v) {
-      const n = Number.parseFloat(v);
-      if (!Number.isFinite(n)) return '-';
-      return (Math.round(n * 100) / 100).toString() + 'x';
-    },
-    async onLanguageChanged() {
-      // 语言热切换：界面立即更新，主进程同步重建托盘菜单，不重启应用
-      const code = normalizeLocale(this.config.language)
-      this.config.language = code
-      this.$i18n.locale = code
-      await window.electronAPI.setStore(localeKey, code)
-      if (window.electronAPI.applyLocale) {
-        await window.electronAPI.applyLocale(code)
+        setting.handler.call(this)
       }
     },
     async onCloseTypeChanged() {
@@ -467,9 +380,6 @@ export default {
         }
       }
     },
-    toggleGroup(index) {
-      this.groups[index].collapsed = !this.groups[index].collapsed;
-    },
     /** 读取日志文件夹路径，用于在界面和确认框里说明操作范围 */
     async loadDataPaths() {
       try {
@@ -514,44 +424,62 @@ export default {
 </script>
 
 <style scoped>
-.set-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+/* 两列瀑布流：用 flex 列容器而不是 grid 行，避免同一行卡片高度不同时留出空洞 */
+.set-layout {
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
-  align-items: start;
 }
 
-.set-card {
-  padding: 12px 16px 8px;
-}
-
-.about-card,
-.data-card {
-  grid-column: span 2;
-  align-self: start;
+.set-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* ---------- 「数据」卡片 ---------- */
-.set-row.with-desc {
-  align-items: flex-start;
-  padding: 12px 0;
-  min-height: 62px;
+.data-card {
+  padding: 11px 14px 4px;
 }
 
-.data-label {
-  align-items: flex-start;
-  gap: 9px;
-}
-
-.data-label .data-ico {
-  margin-top: 1px;
-}
-
-.data-label-text {
+.data-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+}
+
+.data-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  min-height: 44px;
+}
+
+.data-item:first-child {
+  border-top: 0;
+}
+
+.data-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
+}
+
+.data-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.data-title-row .data-ico {
+  color: var(--ink-3);
+  flex: 0 0 auto;
 }
 
 .data-title {
@@ -562,131 +490,31 @@ export default {
 .data-desc {
   font-size: 10.5px;
   color: var(--ink-3);
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .data-path {
   font-family: "Cascadia Mono", Consolas, monospace;
   font-size: 9.5px;
   color: var(--ink-3);
-  opacity: 0.75;
-  word-break: break-all;
+  opacity: 0.7;
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.set-row.with-desc .set-ctl {
-  padding-top: 2px;
-}
-
-.set-head {
-  cursor: pointer;
-  user-select: none;
-  margin-bottom: 4px;
-}
-
-.set-head .chev {
-  color: var(--ink-3);
-  transition: transform 0.18s ease;
-}
-
-.set-rows {
-  display: flex;
-  flex-direction: column;
-}
-
-.set-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 9px 0;
-  border-top: 1px solid var(--line);
-  min-height: 46px;
-}
-
-.set-row:first-child {
-  border-top: 0;
-}
-
-.set-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--ink-2);
-  min-width: 0;
-}
-
-.set-label .app-icon {
-  color: var(--ink-3);
-}
-
-.set-ctl {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.data-ctl {
   flex: 0 0 auto;
-}
-
-.set-ctl .ui-select {
-  min-width: 132px;
-}
-
-.set-ctl .ui-input {
-  width: 160px;
-  flex: 0 0 auto;
-}
-
-.range-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.range-bound {
-  font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 9.5px;
-  color: var(--ink-3);
-}
-
-.range-badge {
-  font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 10px;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-line);
-  border-radius: 5px;
-  padding: 2px 6px;
-  min-width: 42px;
-  text-align: center;
-}
-
-.ui-range {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 120px;
-  height: 4px;
-  border-radius: 99px;
-  background: var(--line-strong);
-  outline: none;
-  cursor: pointer;
-}
-
-.ui-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-  cursor: pointer;
 }
 
 @media (max-width: 1080px) {
-  .set-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .set-layout {
+    flex-direction: column;
+  }
+
+  .set-col {
+    width: 100%;
   }
 }
 </style>

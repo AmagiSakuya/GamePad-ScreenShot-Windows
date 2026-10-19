@@ -929,7 +929,16 @@ export default {
       if (this.loadedGamePads.length > 0) {
         let res = await window.electronAPI.getStore(autoListenResolutionKey, 'never');
         if ((from === 'appStart' && res === 'onAppStart') || (from === 'deviceChange' && res === 'whenDeviceAvailable')) {
-          await this.startListen();
+          try {
+            await this.startListen();
+          } catch (error) {
+            this.showError((error && error.message) ? error.message : String(error));
+          }
+          // 界面不可见时（隐藏到托盘等）页内红色提示看不到，改用系统通知兜底，
+          // 避免「自动开始监听失败」变成一个完全无声的问题
+          if (this.errorMessage && document.hidden && this.windowsNotify) {
+            this.windowsNotify(this.errorMessage);
+          }
         }
       }
     },

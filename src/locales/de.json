@@ -99,7 +99,7 @@
             "tray": "In den Infobereich ausblenden"
         },
         "autoStart": "Beim Systemstart starten",
-        "minimizeOnStartup": "Minimiert starten",
+        "minimizeOnStartup": "Stiller Start",
         "filenameConflictResolution": "Umgang mit Dateinamenskonflikten",
         "filenameConflictResolutionEnum": {
             "overwrite": "Überschreiben",
@@ -114,9 +114,9 @@
             "cancelButton": "Abbrechen"
         },
         "autoListenResolution": "Automatisch Bereitschaft starten",
-        "overlayNotify": "Overlay-Benachrichtigung",
-        "groupNotify": "Benachrichtigungen",
-        "listenNotifyPolicy": "Windows-Benachrichtigungen während der Bereitschaft",
+        "overlayNotify": "Overlay-Benachrichtigung aktivieren",
+        "groupOverlayNotify": "Overlay-Benachrichtigungen",
+        "listenNotifyPolicy": "Windows-Benachrichtigungen",
         "listenNotifyPolicyEnum": {
             "all": "Alle",
             "start": "Nur beim Start",
@@ -164,7 +164,6 @@
         "updateNotAvailable": "Bereits auf dem neuesten Stand",
         "updateCheckFailed": "Updateprüfung fehlgeschlagen, bitte später erneut versuchen",
         "groupBasic": "Grundeinstellungen",
-        "groupPolicy": "Richtlinien",
         "groupUpdate": "Update-Einstellungen",
         "languageChinese": "中文",
         "languageEnglish": "English",
@@ -200,7 +199,7 @@
         "lockedHint": "Aktiv · Einstellungen gesperrt",
         "testSound": "Anhören",
         "notifyHintDesc": "Der Benachrichtigungsstil wird in den Systemeinstellungen angepasst",
-        "settingsHint": "Änderungen gelten sofort · kein Neustart bei Sprachwechsel",
+        "settingsHint": "Änderungen gelten sofort",
         "buttons": "Tasten",
         "hats": "Steuerkreuz",
         "axes": "Achsen",

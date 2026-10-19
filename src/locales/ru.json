@@ -99,7 +99,7 @@
             "tray": "Свернуть в трей"
         },
         "autoStart": "Запуск при старте системы",
-        "minimizeOnStartup": "Запускать свёрнутым",
+        "minimizeOnStartup": "Тихий запуск",
         "filenameConflictResolution": "Обработка конфликтов имён",
         "filenameConflictResolutionEnum": {
             "overwrite": "Перезаписать",
@@ -114,9 +114,9 @@
             "cancelButton": "Отмена"
         },
         "autoListenResolution": "Автоматически начинать ожидание",
-        "overlayNotify": "Наложение-уведомление",
-        "groupNotify": "Уведомления",
-        "listenNotifyPolicy": "Уведомления Windows во время ожидания",
+        "overlayNotify": "Включить оверлейное уведомление",
+        "groupOverlayNotify": "Оверлейные уведомления",
+        "listenNotifyPolicy": "Уведомления Windows",
         "listenNotifyPolicyEnum": {
             "all": "Все",
             "start": "Только при запуске",
@@ -164,7 +164,6 @@
         "updateNotAvailable": "Установлена последняя версия",
         "updateCheckFailed": "Не удалось проверить обновления, повторите позже",
         "groupBasic": "Основные настройки",
-        "groupPolicy": "Правила",
         "groupUpdate": "Обновления",
         "languageChinese": "中文",
         "languageEnglish": "English",
@@ -200,7 +199,7 @@
         "lockedHint": "Ожидание · настройки заблокированы",
         "testSound": "Прослушать",
         "notifyHintDesc": "Стиль уведомлений настраивается в системных настройках",
-        "settingsHint": "Изменения применяются сразу · смена языка не требует перезапуска",
+        "settingsHint": "Изменения применяются сразу",
         "buttons": "кнопки",
         "hats": "крестовина",
         "axes": "оси",
