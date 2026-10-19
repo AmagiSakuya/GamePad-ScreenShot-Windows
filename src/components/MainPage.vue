@@ -28,7 +28,6 @@
             {{ listening ? $t('ui.listeningTag') : $t('ui.readyTag') }}
           </div>
           <h2 class="hero-title">{{ listening ? $t('listening') : $t('ui.ready') }}</h2>
-          <p class="hero-sub">{{ $t('ui.listeningHint') }}</p>
           <div class="hero-combo">
             <template v-for="(key, index) in config.comboKeys" :key="index">
               <span v-if="index > 0" class="hero-plus">+</span>
@@ -1131,8 +1130,8 @@ export default {
   border-radius: 16px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  padding: 14px 18px 8px;
-  margin-bottom: 10px;
+  padding: 12px 16px 7px;
+  margin-bottom: 9px;
   transition: border-color 0.25s ease, background 0.25s ease;
 }
 
@@ -1174,7 +1173,7 @@ html.theme-light .hero.live {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   position: relative;
   z-index: 1;
 }
@@ -1217,29 +1216,23 @@ html.theme-light .hero.live {
 }
 
 .hero-title {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   line-height: 1.25;
-}
-
-.hero-sub {
-  font-size: 11.5px;
-  color: var(--ink-2);
-  margin: 4px 0 0;
 }
 
 .hero-combo {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin-top: 10px;
+  margin-top: 8px;
   flex-wrap: wrap;
 }
 
 .hero-key {
-  height: 30px;
+  height: 28px;
   min-width: 38px;
   padding: 0 10px;
   border-radius: 8px;
@@ -1320,8 +1313,8 @@ html.theme-light .hero.live {
   display: flex;
   align-items: center;
   gap: 22px;
-  margin-top: 8px;
-  padding-top: 7px;
+  margin-top: 7px;
+  padding-top: 6px;
   border-top: 1px solid var(--line);
   font-size: 10.5px;
   color: var(--ink-3);
@@ -1349,8 +1342,10 @@ html.theme-light .hero.live {
   flex: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(148px, 1fr));
-  gap: 10px;
+  /* 行高按内容走：卡片不再被拉到满屏，行间距和卡片内部都不会出现大片空白 */
+  grid-template-rows: repeat(2, minmax(148px, auto));
+  align-content: start;
+  gap: 9px;
   transition: opacity 0.2s ease;
 }
 
@@ -1431,9 +1426,10 @@ html.theme-light .hero.live {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 9px;
-  padding-top: 10px;
+  /* 贴近上方「截图方式」行，避免内容被垂直居中后上下各留一大块空白 */
+  justify-content: flex-start;
+  gap: 8px;
+  padding-top: 9px;
   margin-top: 2px;
   border-top: 1px dashed var(--line-strong);
 }
@@ -1476,8 +1472,8 @@ html.theme-light .hero.live {
 .field-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-top: 10px;
+  gap: 7px;
+  padding-top: 9px;
   margin-top: 2px;
   border-top: 1px dashed var(--line-strong);
 }

@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell, clipboard, nativeImage, session } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, dialog, Menu, Tray, shell, clipboard, nativeImage, session, screen } from 'electron'
 const log = require('electron-log');
 const { uIOhook, UiohookKey } = require('uiohook-napi')
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
@@ -22,6 +22,7 @@ if (process.platform === 'win32') {
 
 //Scripts
 const { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
+const { snapUiScale, migrateLegacyUiScale, UI_SCALE_DEFAULT, UI_SCALE_MIN, UI_SCALE_MAX, UI_SCALE_VERSION } = require('@/lib/uiScale')
 const configStore = require('@/lib/configLoader')
 
 //Path Define
@@ -65,16 +66,42 @@ if (!gotTheLock) {
 const packagePath = path.join(app.getAppPath(), 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
 
+/**
+ * 启动窗口尺寸：按「设计稿 CSS 尺寸 × 当前界面缩放」换算。
+ * 高度贴合主界面真实内容（标题栏 46 + 内容约 800），留少量余量兼容不同语言/更多组合键，
+ * 保证启动时所有卡片完整可见、不出现滚动条；同时以显示器工作区为上限，避免超出屏幕。
+ */
+const DESIGN_VIEWPORT = { width: 1350, height: 890 }
+
+function getDefaultWindowSize() {
+  const scale = readUiScale()
+  let workArea = { width: 1600, height: 900 }
+  try {
+    workArea = screen.getPrimaryDisplay().workAreaSize
+  } catch (error) {
+    log.warn('[WINDOW] Failed to read display work area, fallback to default size:', error)
+  }
+
+  const maxWidth = Math.max(960, workArea.width - 60)
+  const maxHeight = Math.max(640, workArea.height - 60)
+  const width = Math.min(maxWidth, Math.round(DESIGN_VIEWPORT.width * scale))
+  const height = Math.min(maxHeight, Math.round(DESIGN_VIEWPORT.height * scale))
+
+  return { width, height }
+}
+
 async function createWindow() {
   // 自绘标题栏：去掉 Windows 原生外框，最小化/最大化/关闭交给渲染进程的顶栏按钮
   const theme = configStore.get('theme', 'dark')
+  const { width: winWidth, height: winHeight } = getDefaultWindowSize()
   // Create the browser window.
   win = new BrowserWindow({
     title: $t('gamepadScreenShotTool') + ` ver.${packageJson.version}`,
-    width: 1280,
-    height: 980,
-    minWidth: 1040,
-    minHeight: 760,
+    width: winWidth,
+    height: winHeight,
+    minWidth: 960,
+    minHeight: 640,
+    center: true,
     frame: false,
     autoHideMenuBar: true,
     backgroundColor: theme === 'light' ? '#F4F6F1' : '#08090C',
@@ -132,12 +159,18 @@ async function createWindow() {
 
 //#region 界面缩放（界面字体大小）
 const uiScaleKey = 'uiScale';
+const uiScaleVersionKey = 'uiScaleVersion';
 
-/** 读取并校正界面缩放比例（0.9x ~ 1.25x） */
+/** 读取界面缩放比例（1.0x ~ 1.3x，标准档为 1.1x）；旧版存档仅在首次读取时迁移 */
 function readUiScale() {
-  const raw = Number.parseFloat(configStore.get(uiScaleKey, 1));
-  if (!Number.isFinite(raw)) return 1;
-  return Math.min(1.25, Math.max(0.9, raw));
+  const stored = configStore.get(uiScaleKey, UI_SCALE_DEFAULT)
+  if (configStore.get(uiScaleVersionKey, 0) !== UI_SCALE_VERSION) {
+    const migrated = migrateLegacyUiScale(stored)
+    configStore.set(uiScaleKey, migrated)
+    configStore.set(uiScaleVersionKey, UI_SCALE_VERSION)
+    return migrated
+  }
+  return snapUiScale(stored)
 }
 
 /** 缩放整页渲染（等价于浏览器 Ctrl +/-），文字与控件同步放大，不会出现布局错位 */
@@ -152,8 +185,9 @@ function applyUiScaleToWindow() {
 }
 
 ipcMain.handle('set-ui-scale', (_, scale) => {
-  const value = Math.min(1.25, Math.max(0.9, Number.parseFloat(scale) || 1));
+  const value = Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, snapUiScale(scale)));
   configStore.set(uiScaleKey, value);
+  configStore.set(uiScaleVersionKey, UI_SCALE_VERSION);
   if (win && win.webContents) win.webContents.setZoomFactor(value);
   return value;
 });

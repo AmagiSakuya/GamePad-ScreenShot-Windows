@@ -287,7 +287,7 @@ export default {
 .obs-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
 }
 
@@ -313,7 +313,7 @@ export default {
   flex: 1 1 auto;
   width: auto;
   min-width: 0;
-  height: 36px;
+  height: 32px;
   font-size: 12px;
 }
 
@@ -332,7 +332,7 @@ export default {
 /* 连接 / 断开按钮不参与字段布局，单独占一行 */
 .obs-connect {
   min-width: 148px;
-  height: 34px;
+  height: 32px;
   padding: 0 18px;
 }
 

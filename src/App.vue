@@ -143,6 +143,11 @@ import AppIcon from '@/components/AppIcon.vue'
 import { LANGUAGES, getLanguage, normalizeLocale } from '@/locales/languages'
 import pkg from '../package.json'
 
+const {
+  UI_SCALE_SMALL, UI_SCALE_NORMAL, UI_SCALE_LARGE, UI_SCALE_XLARGE,
+  UI_SCALE_DEFAULT, snapUiScale
+} = require('@/lib/uiScale')
+
 const THEME_KEY = 'theme'
 const LOCALE_KEY = 'locale'
 const ACCENT_KEY = 'accentColor'
@@ -190,10 +195,10 @@ export default {
         { key: 'azure', dark: { accent: '#7CB8FF', hi: '#9DCAFF', ink: '#040C18' }, light: { accent: '#2F6FD0', hi: '#3D80E6', ink: '#FFFFFF' } }
       ],
       fontOptions: [
-        { value: 0.9, label: 'ui.fontSmall' },
-        { value: 1, label: 'ui.fontNormal' },
-        { value: 1.1, label: 'ui.fontLarge' },
-        { value: 1.25, label: 'ui.fontXLarge' }
+        { value: UI_SCALE_SMALL, label: 'ui.fontSmall' },
+        { value: UI_SCALE_NORMAL, label: 'ui.fontNormal' },
+        { value: UI_SCALE_LARGE, label: 'ui.fontLarge' },
+        { value: UI_SCALE_XLARGE, label: 'ui.fontXLarge' }
       ],
       traySyncTimer: null,
       currentTrayListening: false,
@@ -226,7 +231,7 @@ export default {
     this.applyTheme()
 
     this.accent = await window.electronAPI.getStore(ACCENT_KEY, 'lime')
-    this.uiScale = await window.electronAPI.getStore(UI_SCALE_KEY, 1)
+    this.uiScale = snapUiScale(await window.electronAPI.getStore(UI_SCALE_KEY, UI_SCALE_DEFAULT))
     this.applyAccent()
 
     // 语言已由 main.js 读取并初始化，这里只做未知值的兜底校正
@@ -1119,7 +1124,7 @@ html.theme-light .accent-swatch {
    通用控件
    ========================================================= */
 .page {
-  padding: 16px 20px 18px;
+  padding: 13px 18px 14px;
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -1130,7 +1135,7 @@ html.theme-light .accent-swatch {
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .page-title {
@@ -1161,7 +1166,7 @@ html.theme-light .accent-swatch {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 13px 16px;
+  padding: 12px 15px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1177,7 +1182,7 @@ html.theme-light .ui-card {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
   flex: 0 0 auto;
 }
 
@@ -1248,8 +1253,9 @@ html.theme-light .ui-card {
 .ui-rows {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
+  /* 行间距固定，不随卡片高度拉伸（space-between 会在行少时撑出很大空隙） */
+  justify-content: flex-start;
+  gap: 9px;
   flex: 1;
   min-height: 0;
 }
