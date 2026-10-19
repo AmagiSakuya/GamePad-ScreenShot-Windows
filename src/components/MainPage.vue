@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <div v-if="errorMessage" class="ui-alert">
+    <div v-if="errorMessage" ref="errorAlert" class="ui-alert" role="alert">
       <AppIcon name="alert" :size="14" />
       <span>{{ errorMessage }}</span>
     </div>
@@ -331,6 +331,7 @@ let lastButtonsValue;
 let lastAxesValue;
 let activeWinInfoResult;
 let autoListenResolutionKey = 'autoListenResolution';
+let errorFlashTimer;
 
 export default {
   name: 'MainPage',
@@ -726,26 +727,61 @@ export default {
       }
       this.initComboKeyOptions();
     },
+    // 设置错误提示并把内容区滚回顶部，避免用户停留在下方看不到报错
+    showError(message) {
+      this.errorMessage = message || '';
+      if (!this.errorMessage) return;
+      this.$nextTick(() => this.revealError());
+    },
+    // 找到最近的滚动容器（内容区 .stage）并滚到顶部，同时让提示闪一下
+    revealError() {
+      const el = this.$refs.errorAlert;
+      if (!el) return;
+      let scroller = el.parentElement;
+      while (scroller && scroller !== document.body) {
+        const style = window.getComputedStyle(scroller);
+        const scrollable = /(auto|scroll|overlay)/.test(style.overflowY) && scroller.scrollHeight > scroller.clientHeight;
+        if (scrollable) break;
+        scroller = scroller.parentElement;
+      }
+      if (scroller && scroller !== document.body) {
+        if (typeof scroller.scrollTo === 'function') {
+          scroller.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          scroller.scrollTop = 0;
+        }
+      } else {
+        el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+      // 重新触发一次高亮动画（连续点击同一错误时也能被注意到）
+      el.classList.remove('is-flash');
+      void el.offsetWidth;
+      el.classList.add('is-flash');
+      clearTimeout(errorFlashTimer);
+      errorFlashTimer = setTimeout(() => {
+        if (el.isConnected) el.classList.remove('is-flash');
+      }, 1000);
+    },
     async startListen() {
       this.errorMessage = '';
       var m_config = JSON.parse(JSON.stringify(this.config));
       if (m_config.path == "") {
-        this.errorMessage = this.$t('alertMsg.emptyPath')
+        this.showError(this.$t('alertMsg.emptyPath'))
         return;
       }
       if (m_config.comboKeys.length == 0) {
-        this.errorMessage = this.$t('alertMsg.noKeyCombo')
+        this.showError(this.$t('alertMsg.noKeyCombo'))
         return;
       }
       if (this.detectionIndex != -1) {
-        this.errorMessage = this.$t('alertMsg.detectionInProgress')
+        this.showError(this.$t('alertMsg.detectionInProgress'))
         return;
       }
 
       if (this.config.screenshotWay === ScreenShotWayEnum.DesktopCapturer && this.config.captureTargetType === CaptureTargetTypeEnum.Window) {
         await this.loadCaptureWindows();
         if (!this.config.windowSourceId) {
-          this.errorMessage = this.$t('alertMsg.captureWindowEmpty');
+          this.showError(this.$t('alertMsg.captureWindowEmpty'));
           return;
         }
       }
@@ -754,13 +790,13 @@ export default {
       if (this.config.screenshotWay == ScreenShotWayEnum.OBS) {
         const obsPage = this.$refs.obsConnectPageRef
         if (!obsPage) {
-          this.errorMessage = this.$t('OBSPage.obsNotConnected')
+          this.showError(this.$t('OBSPage.obsNotConnected'))
           return;
         }
         if (!obsPage.isConnected) {
           await obsPage.connectOBS();
           if (!obsPage.isConnected) {
-            this.errorMessage = this.$t('OBSPage.obsNotConnected')
+            this.showError(this.$t('OBSPage.obsNotConnected'))
             return;
           }
         }
@@ -770,7 +806,7 @@ export default {
       let m_device = rawDevices[this.currentGamePad._index]
       let success = await window.electronAPI.openSdl2Device(m_device)
       if (!success) {
-        this.errorMessage = this.$t('alertMsg.openGamepadFail')
+        this.showError(this.$t('alertMsg.openGamepadFail'))
         return;
       }
       await this.refreshDeviceCapabilities();
@@ -1059,6 +1095,29 @@ export default {
 </script>
 
 <style scoped>
+/* ---------- 报错提示：出现时闪一下，配合自动滚回顶部 ---------- */
+.ui-alert.is-flash {
+  animation: alertFlash 1s ease;
+}
+
+@keyframes alertFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 95, 118, 0.55);
+  }
+
+  45% {
+    box-shadow: 0 0 0 7px rgba(251, 95, 118, 0);
+  }
+
+  60% {
+    box-shadow: 0 0 0 0 rgba(251, 95, 118, 0.35);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 95, 118, 0);
+  }
+}
+
 .head-actions {
   display: flex;
   align-items: center;
