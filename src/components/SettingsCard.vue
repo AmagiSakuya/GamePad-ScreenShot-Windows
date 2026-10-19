@@ -16,7 +16,7 @@
           <span>{{ $t('SystemSettingsPage.' + setting.key) }}</span>
         </div>
         <div class="set-ctl">
-          <!-- 布尔开关 -->
+          <!-- 两态切换（和「关闭方式」同一套分段样式） -->
           <div v-if="setting.type === 'seg'" class="ui-seg">
             <button v-for="option in setting.options" :key="String(option.value)"
               :class="{ on: valueOf(setting) === option.value }" @click="emitValue(setting, option.value)">
@@ -43,6 +43,17 @@
               :value="valueOf(setting)" @input="emitValue(setting, parseFloat($event.target.value))">
             <span class="range-bound">{{ setting.max }}x</span>
             <span class="range-badge">{{ formatOverlayScale(valueOf(setting)) }}</span>
+          </div>
+
+          <!-- 进度条（离散档位，点击档位直接取值） -->
+          <div v-else-if="setting.type === 'progress'" class="progress-wrap">
+            <div class="ui-progress" role="slider" :aria-valuemin="progressBounds(setting).min"
+              :aria-valuemax="progressBounds(setting).max" :aria-valuenow="progressValue(setting)">
+              <button v-for="option in setting.options" :key="String(option.value)" type="button"
+                class="ui-progress-step" :class="{ on: Number(option.value) <= progressValue(setting) }"
+                @click="emitValue(setting, option.value)"></button>
+            </div>
+            <span class="range-badge">{{ progressText(setting) }}</span>
           </div>
 
           <!-- 按钮 -->
@@ -90,6 +101,25 @@ export default {
       const raw = event.target.value;
       const matched = setting.options.find(option => String(option.value) === raw);
       this.$emit('change', setting, matched ? matched.value : raw);
+    },
+    /** 进度条的取值区间（未显式声明时按档位首尾推导） */
+    progressBounds(setting) {
+      const values = (setting.options || []).map(option => Number(option.value));
+      const min = setting.min !== undefined ? setting.min : Math.min(...values);
+      const max = setting.max !== undefined ? setting.max : Math.max(...values);
+      return { min, max };
+    },
+    progressValue(setting) {
+      const { min, max } = this.progressBounds(setting);
+      const value = Number(this.valueOf(setting));
+      if (!Number.isFinite(value)) return min;
+      return Math.min(max, Math.max(min, value));
+    },
+    /** 进度条右侧徽标：当前档位对应的文案（找不到就退回数值） */
+    progressText(setting) {
+      const value = this.progressValue(setting);
+      const matched = (setting.options || []).find(option => Number(option.value) === value);
+      return matched ? this.$t(matched.label) : String(value);
     }
   }
 }
@@ -163,6 +193,45 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ---------- 进度条 ---------- */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-progress {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: 126px;
+  height: 10px;
+}
+
+.ui-progress-step {
+  flex: 1 1 0;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--line-strong);
+  cursor: pointer;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.ui-progress-step:hover {
+  background: var(--ink-3);
+  transform: scaleY(1.25);
+}
+
+.ui-progress-step.on {
+  background: var(--accent);
+}
+
+.ui-progress-step.on:hover {
+  background: var(--accent);
 }
 
 .range-bound {

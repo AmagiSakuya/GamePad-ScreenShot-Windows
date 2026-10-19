@@ -122,14 +122,13 @@ export default {
             {
               key: 'filenameConflictResolution',
               icon: 'fileText',
-              type: 'select',
+              type: 'seg',
               configKey: 'filenameConflictResolution',
               handler: this.onFilenameConflictResolutionChanged,
+              // 只保留两态：覆盖 / 追加时间戳（与「关闭方式」同一套切换样式）
               options: [
                 { value: 'overwrite', label: 'SystemSettingsPage.filenameConflictResolutionEnum.overwrite' },
-                { value: 'appendTimestamp', label: 'SystemSettingsPage.filenameConflictResolutionEnum.appendTimestamp' },
-                { value: 'notSave', label: 'SystemSettingsPage.filenameConflictResolutionEnum.notSave' },
-                { value: 'askEveryTime', label: 'SystemSettingsPage.filenameConflictResolutionEnum.askEveryTime' }
+                { value: 'appendTimestamp', label: 'SystemSettingsPage.filenameConflictResolutionEnum.appendTimestamp' }
               ]
             },
             {
@@ -146,14 +145,13 @@ export default {
             {
               key: 'listenNotifyPolicy',
               icon: 'bell',
-              type: 'select',
+              type: 'seg',
               configKey: 'listenNotifyPolicy',
               handler: async function () { await window.electronAPI.setStore('listenNotifyPolicy', this.config.listenNotifyPolicy) },
+              // 存档值沿用 all / none（主进程按 all 判断「开」），界面呈现为启用 / 禁用
               options: [
-                { value: 'all', label: 'SystemSettingsPage.listenNotifyPolicyEnum.all' },
-                { value: 'start', label: 'SystemSettingsPage.listenNotifyPolicyEnum.start' },
-                { value: 'stop', label: 'SystemSettingsPage.listenNotifyPolicyEnum.stop' },
-                { value: 'none', label: 'SystemSettingsPage.listenNotifyPolicyEnum.none' }
+                { value: 'all', label: 'SystemSettingsPage.enabled' },
+                { value: 'none', label: 'SystemSettingsPage.disabled' }
               ]
             },
             {
@@ -235,8 +233,10 @@ export default {
             {
               key: 'overlayNotifyDuration',
               icon: 'clock',
-              type: 'select',
+              type: 'progress',
               configKey: 'overlayNotifyDuration',
+              min: 1,
+              max: 5,
               handler: async function () { await window.electronAPI.setStore('overlayNotifyDuration', this.config.overlayNotifyDuration) },
               options: [
                 { value: 1, label: 'SystemSettingsPage.overlayNotifyDurationEnum.1' },
@@ -306,7 +306,12 @@ export default {
     const listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
 
     this.config.closeType = closeType;
-    this.config.filenameConflictResolution = filenameConflictResolution;
+    // 冲突策略只剩「覆盖 / 追加时间戳」两态，旧的 notSave / askEveryTime 一律折算成覆盖
+    const conflictValue = filenameConflictResolution === 'appendTimestamp' ? 'appendTimestamp' : 'overwrite';
+    this.config.filenameConflictResolution = conflictValue;
+    if (conflictValue !== filenameConflictResolution) {
+      await window.electronAPI.setStore(filenameConflictResolutionKey, conflictValue);
+    }
     this.config.autoListenResolution = normalizeAutoListen(autoListenResolution);
     this.config.checkUpdateOnStartup = checkUpdateOnStartup;
     this.config.proxy = proxy;
@@ -315,9 +320,14 @@ export default {
     this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
     this.config.overlayNotify = overlayNotify;
     this.config.overlayNotifySize = normalizeOverlayScale(overlayNotifySize);
-    this.config.overlayNotifyDuration = Number(overlayNotifyDuration) || 2;
+    this.config.overlayNotifyDuration = Math.min(5, Math.max(1, Number(overlayNotifyDuration) || 2));
     this.config.overlayNotifyPosition = overlayNotifyPosition;
-    this.config.listenNotifyPolicy = listenNotifyPolicy;
+    // Windows 通知只剩「启用 / 禁用」两态，旧的 start / stop 折算成启用
+    const notifyPolicy = listenNotifyPolicy === 'none' ? 'none' : 'all';
+    this.config.listenNotifyPolicy = notifyPolicy;
+    if (notifyPolicy !== listenNotifyPolicy) {
+      await window.electronAPI.setStore('listenNotifyPolicy', notifyPolicy);
+    }
 
     // 覆层通知预览要同时出声，得先知道当前设置的音效。
     // 主界面通常已经同步过；万一没有（启动后直接进系统设置），从存档读一次兜底。
