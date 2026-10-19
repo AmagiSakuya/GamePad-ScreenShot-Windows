@@ -161,7 +161,7 @@ async function createWindow() {
 const uiScaleKey = 'uiScale';
 const uiScaleVersionKey = 'uiScaleVersion';
 
-/** 读取界面缩放比例（1.0x ~ 1.3x，标准档为 1.1x）；旧版存档仅在首次读取时迁移 */
+/** 读取界面缩放比例（绝对 zoom，标准档 = 1.2x，对应面板 100%）；旧版存档仅在首次读取时吸附迁移 */
 function readUiScale() {
   const stored = configStore.get(uiScaleKey, UI_SCALE_DEFAULT)
   if (configStore.get(uiScaleVersionKey, 0) !== UI_SCALE_VERSION) {

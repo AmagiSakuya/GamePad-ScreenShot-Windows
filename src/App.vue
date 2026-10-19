@@ -58,7 +58,7 @@
               <button v-for="option in fontOptions" :key="option.value" class="font-opt"
                 :class="{ on: uiScale === option.value }" @click="setUiScale(option.value)">
                 <span>{{ $t(option.label) }}</span>
-                <span class="font-pct">{{ Math.round(option.value * 100) }}%</span>
+                <span class="font-pct">{{ option.percent }}%</span>
               </button>
             </div>
           </div>
@@ -144,8 +144,7 @@ import { LANGUAGES, getLanguage, normalizeLocale } from '@/locales/languages'
 import pkg from '../package.json'
 
 const {
-  UI_SCALE_SMALL, UI_SCALE_NORMAL, UI_SCALE_LARGE, UI_SCALE_XLARGE,
-  UI_SCALE_DEFAULT, snapUiScale
+  UI_SCALE_PRESETS, UI_SCALE_DEFAULT, snapUiScale
 } = require('@/lib/uiScale')
 
 const THEME_KEY = 'theme'
@@ -194,12 +193,10 @@ export default {
         { key: 'rose', dark: { accent: '#FF8CA0', hi: '#FFA7B7', ink: '#1C0609' }, light: { accent: '#D94A5E', hi: '#E85B6F', ink: '#FFFFFF' } },
         { key: 'azure', dark: { accent: '#7CB8FF', hi: '#9DCAFF', ink: '#040C18' }, light: { accent: '#2F6FD0', hi: '#3D80E6', ink: '#FFFFFF' } }
       ],
-      fontOptions: [
-        { value: UI_SCALE_SMALL, label: 'ui.fontSmall' },
-        { value: UI_SCALE_NORMAL, label: 'ui.fontNormal' },
-        { value: UI_SCALE_LARGE, label: 'ui.fontLarge' },
-        { value: UI_SCALE_XLARGE, label: 'ui.fontXLarge' }
-      ],
+      fontOptions: UI_SCALE_PRESETS.map((preset, index) => ({
+        ...preset,
+        label: ['ui.fontSmall', 'ui.fontNormal', 'ui.fontLarge', 'ui.fontXLarge'][index]
+      })),
       traySyncTimer: null,
       currentTrayListening: false,
       navItems: [
