@@ -320,23 +320,9 @@
 <script>
 const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum } = require('@/lib/enum')
 const { KeyCode } = require('@/lib/keycode')
-import { Howl } from 'howler'
-import sound1Src from '@/assets/sound-canon5d.wav'
-import sound2Src from '@/assets/sound-leica-m10.wav'
-import sound3Src from '@/assets/sound-shutter.wav'
-import sound4Src from '@/assets/sound-slr-clack.wav'
-import sound5Src from '@/assets/sound-soft-chime.wav'
+import { hasCaptureSound, setCaptureSound, playCaptureSound as playSound } from '@/lib/captureSound'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
-
-// 音效编号 → 音频文件。顺序即界面上「音效 1..5」的顺序
-const CAPTURE_SOUNDS = {
-  Sound1: sound1Src,   // 佳能 5D 快门
-  Sound2: sound2Src,   // 徕卡 M10 快门
-  Sound3: sound3Src,   // 单反快门
-  Sound4: sound4Src,   // 机械快门（合成）
-  Sound5: sound5Src    // 柔铃（合成）
-}
 
 let timer;
 let active_info_getter_timer;
@@ -403,6 +389,15 @@ export default {
       physicalButtonCount: 0,
       hatCount: 0,
       obsConnected: false
+    }
+  },
+  watch: {
+    // 音效/音量一改就同步到共享状态，系统设置页的通知预览要立刻用新值
+    'config.sound'(value) {
+      setCaptureSound(value, this.config.soundPower)
+    },
+    'config.soundPower'(value) {
+      setCaptureSound(this.config.sound, value)
     }
   },
   computed: {
@@ -541,15 +536,7 @@ export default {
       return config;
     },
     async playCaptureSound() {
-      if (this.config.sound == screenshotSoundEnum.None) return;
-      var soundSrc = CAPTURE_SOUNDS[this.config.sound];
-      if (!soundSrc) return;
-      const sound = new Howl({
-        src: [soundSrc], volume: this.config.soundPower, onend: function () {
-          this.unload();
-        }
-      });
-      sound.play();
+      playSound(this.config.sound, this.config.soundPower)
     },
     async showCaptureNotification({ img, title, desc, type }) {
       const overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
@@ -658,10 +645,12 @@ export default {
      * loadConfig（有手柄）与 loadGlobalConfig（无手柄）两条路径都要走一遍，否则下拉会显示空白。
      */
     normalizeLegacySound() {
-      if (this.config.sound === screenshotSoundEnum.None) return;
-      if (!Object.prototype.hasOwnProperty.call(CAPTURE_SOUNDS, this.config.sound)) {
+      // 「静音」是合法值，不能被当成失效值重置成音效 1
+      if (this.config.sound !== screenshotSoundEnum.None && !hasCaptureSound(this.config.sound)) {
         this.config.sound = screenshotSoundEnum.Sound1;
       }
+      // 同步给共享状态：系统设置页的「覆层通知预览」要用同一个音效发声
+      setCaptureSound(this.config.sound, this.config.soundPower);
     },
     async saveCurrentConfig() {
       const globalConfig = { ...this.config };

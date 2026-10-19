@@ -55,6 +55,7 @@
 import pkg from '../../package.json';
 import AppIcon from '@/components/AppIcon.vue';
 import SettingsCard from '@/components/SettingsCard.vue';
+import { captureSoundState, setCaptureSound, playCaptureSound } from '@/lib/captureSound';
 
 const { OVERLAY_SCALE_MIN, OVERLAY_SCALE_MAX, OVERLAY_SCALE_STEP, normalizeOverlayScale } = require('@/lib/overlayScale');
 
@@ -318,6 +319,20 @@ export default {
     this.config.overlayNotifyPosition = overlayNotifyPosition;
     this.config.listenNotifyPolicy = listenNotifyPolicy;
 
+    // 覆层通知预览要同时出声，得先知道当前设置的音效。
+    // 主界面通常已经同步过；万一没有（启动后直接进系统设置），从存档读一次兜底。
+    if (!captureSoundState.synced) {
+      const savedGlobal = await window.electronAPI.getStore('globalConfig', void 0);
+      if (savedGlobal) {
+        try {
+          const parsed = JSON.parse(savedGlobal);
+          setCaptureSound(parsed.sound, parsed.soundPower);
+        } catch (error) {
+          console.error('Parse global config failed:', error);
+        }
+      }
+    }
+
     await this.loadDataPaths();
   },
   methods: {
@@ -360,6 +375,9 @@ export default {
       await window.electronAPI.setStore(proxyKey, this.config.proxy);
     },
     async testOverlayNotify() {
+      // 和真实截图时的反馈保持一致：先出声，再弹通知。
+      // 音效设为「静音」时 playCaptureSound 内部直接返回，不会有声音。
+      playCaptureSound();
       await window.electronAPI.showScreenshotNotification({
         img: undefined,
         title: this.$t('SystemSettingsPage.testOverlayNotifyTitle'),
