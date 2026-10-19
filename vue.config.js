@@ -49,6 +49,12 @@ module.exports = defineConfig({
             from: "src/screenshot-notification.html",
             to: "./html/screenshot-notification.html" 
           },
+          // 热更新助手：必须以「真实文件」的形式落在 resources 下，
+          // 主进程会用它以 ELECTRON_RUN_AS_NODE 启动一个独立进程来替换 app.asar
+          {
+            from: "scripts/apply-update.js",
+            to: "./apply-update.js"
+          },
         ]
       }
     }

@@ -121,9 +121,14 @@
           @navigate="view = $event" />
         <ControllerSettingsPage v-if="view === 'tester'" />
         <SystemSettingsPage v-if="view === 'settings'" ref="systemPageRef" :windowsNotify="windowsNotify"
-          @update-status="applyUpdateResult" />
+          @open-update="openVersionInfo" />
       </main>
     </div>
+
+    <!-- 热更新弹窗：检查 / 下载进度 / 重启安装 -->
+    <UpdateDialog :open="updateOpen" :state="updateState" :notes="updateNotes" @close="updateOpen = false"
+      @check="runUpdateCheck" @download="startUpdateDownload" @cancel="cancelUpdateDownload"
+      @apply="installUpdate" @open-release="openUpdateRelease" />
 
     <!-- 语言切换提示（主界面文案与托盘菜单均已热更新，无需重启） -->
     <transition name="lang-toast">
@@ -139,6 +144,7 @@
 import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
 import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
+import UpdateDialog from '@/components/UpdateDialog.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { LANGUAGES, getLanguage, normalizeLocale } from '@/locales/languages'
 import pkg from '../package.json'
@@ -163,7 +169,7 @@ function hexToRgba(hex, alpha) {
 
 export default {
   name: 'App',
-  components: { MainPage, ControllerSettingsPage, SystemSettingsPage, AppIcon },
+  components: { MainPage, ControllerSettingsPage, SystemSettingsPage, UpdateDialog, AppIcon },
   data() {
     return {
       // 图标与主进程 BrowserWindow icon 使用同一份 gamepad.ico（放在 public 下由 webpack 直接拷贝）
@@ -172,6 +178,26 @@ export default {
       updateAvailable: false,
       latestVersion: '',
       releaseUrl: '',
+      // 热更新弹窗
+      updateOpen: false,
+      updateState: {
+        status: 'idle',
+        currentVersion: pkg.version,
+        latestVersion: '',
+        notes: {},
+        publishedAt: '',
+        releaseUrl: '',
+        mode: 'manual',
+        mandatory: false,
+        size: 0,
+        progress: 0,
+        received: 0,
+        total: 0,
+        speed: 0,
+        source: '',
+        error: '',
+        checkedAt: 0
+      },
       view: 'screenshot',
       listening: false,
       isDark: true,
@@ -220,6 +246,14 @@ export default {
     },
     currentAccentHex() {
       return this.isDark ? this.currentAccent.dark.accent : this.currentAccent.light.accent
+    },
+    /** 清单里的更新说明按语言取，缺省回落到英文 / 中文 */
+    updateNotes() {
+      const notes = this.updateState && this.updateState.notes
+      if (!notes) return ''
+      if (typeof notes === 'string') return notes
+      const locale = String(this.currentLocale || 'zh')
+      return notes[locale] || notes[locale.split('-')[0]] || notes.en || notes.zh || ''
     }
   },
   watch: {
@@ -259,6 +293,14 @@ export default {
     this.startTraySync()
     document.addEventListener('click', this.closePopovers)
 
+    // 主进程会把更新状态（检查中 / 有新版本 / 下载进度 / 待重启）实时推过来
+    if (window.electronAPI.onUpdaterState) {
+      window.electronAPI.onUpdaterState((state) => this.applyUpdateResult(state))
+    }
+    if (window.electronAPI.getUpdateState) {
+      window.electronAPI.getUpdateState().then((state) => this.applyUpdateResult(state)).catch(() => {})
+    }
+
     // 启动时静默检测更新：命中新版本就在标题上挂 NEW 标记
     const checkOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'enabled')
     if (checkOnStartup === 'enabled') {
@@ -274,6 +316,7 @@ export default {
       clearTimeout(this.langToastTimer)
       this.langToastTimer = null
     }
+    if (window.electronAPI.offUpdaterState) window.electronAPI.offUpdaterState()
     document.removeEventListener('click', this.closePopovers)
   },
   methods: {
@@ -355,27 +398,73 @@ export default {
     },
     async checkUpdateSilently() {
       try {
-        const result = await window.electronAPI.checkForUpdates()
-        this.applyUpdateResult(result, true)
+        // quiet：失败不弹错，只影响标题上的 NEW 标记
+        const result = await window.electronAPI.checkUpdate({ quiet: true })
+        this.applyUpdateResult(result)
+        if (this.updateAvailable) {
+          this.windowsNotify(`${this.$t('SystemSettingsPage.updateAvailable')}: ${this.latestVersion}`)
+        }
       } catch (error) {
         // 启动检测失败保持静默，不打扰用户
         console.warn('Startup update check failed:', error)
       }
     },
-    /** result 来自主进程：{ hasUpdate, latestVersion, currentVersion, releaseUrl } */
-    applyUpdateResult(result, notify = false) {
-      if (!result) return
-      this.updateAvailable = !!result.hasUpdate
-      this.latestVersion = result.latestVersion || ''
-      this.releaseUrl = result.releaseUrl || ''
-      if (this.updateAvailable && notify) {
-        this.windowsNotify(`${this.$t('SystemSettingsPage.updateAvailable')}: ${this.latestVersion}`)
+    /** state 来自主进程 updater：{ status, currentVersion, latestVersion, notes, ... } */
+    applyUpdateResult(state) {
+      if (!state) return
+      // 兼容旧接口返回的 { hasUpdate } 结构
+      if (typeof state.hasUpdate === 'boolean' && !state.status) {
+        this.updateAvailable = state.hasUpdate
+        this.latestVersion = state.latestVersion || ''
+        this.releaseUrl = state.releaseUrl || ''
+        return
+      }
+      this.updateState = state
+      this.updateAvailable = state.status === 'available' || state.status === 'manual'
+      this.latestVersion = state.latestVersion || ''
+      this.releaseUrl = state.releaseUrl || ''
+    },
+    /** 点版本号 / 设置页「检测更新」：打开弹窗，必要时先拉一次清单 */
+    openVersionInfo() {
+      this.updateOpen = true
+      const state = this.updateState
+      const busy = ['checking', 'downloading', 'applying'].includes(state.status)
+      // 已经有结果（含「已下载待安装」）时不要重新检测，否则会把下载好的包作废
+      const hasResult = ['available', 'manual', 'ready'].includes(state.status)
+      const fresh = state.checkedAt && Date.now() - state.checkedAt < 30 * 1000
+      if (!busy && !hasResult && !(state.status === 'uptodate' && fresh)) {
+        this.runUpdateCheck()
       }
     },
-    openVersionInfo() {
-      if (this.updateAvailable && this.releaseUrl) {
-        window.electronAPI.openReleasePage(this.releaseUrl)
+    async runUpdateCheck() {
+      if (!window.electronAPI.checkUpdate) return
+      try {
+        this.applyUpdateResult(await window.electronAPI.checkUpdate({ quiet: false }))
+      } catch (error) {
+        console.error('Check update failed:', error)
       }
+    },
+    async startUpdateDownload() {
+      if (!window.electronAPI.downloadUpdate) return
+      this.applyUpdateResult(await window.electronAPI.downloadUpdate())
+    },
+    async cancelUpdateDownload() {
+      if (!window.electronAPI.cancelUpdate) return
+      this.applyUpdateResult(await window.electronAPI.cancelUpdate())
+    },
+    async installUpdate() {
+      if (!window.electronAPI.applyUpdate) return
+      const result = await window.electronAPI.applyUpdate()
+      if (!result || !result.ok) {
+        this.windowsNotify(this.$t('Update.applyFailed'))
+      }
+      // 成功后主进程会在 700ms 内退出，助手替换文件并自动重启，这里不用做别的
+    },
+    openUpdateRelease() {
+      const url = this.releaseUrl
+      if (!url) return
+      if (window.electronAPI.openUpdateReleasePage) window.electronAPI.openUpdateReleasePage(url)
+      else window.electronAPI.openReleasePage(url)
     },
     async toggleMaximize() {
       if (!window.electronAPI.toggleMaximizeWindow) return

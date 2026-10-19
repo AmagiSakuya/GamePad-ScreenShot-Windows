@@ -13,7 +13,6 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
 const fs = require('fs')
 const path = require('path')
-const https = require('https')
 const vm = require('vm')
 
 if (process.platform === 'win32') {
@@ -24,6 +23,8 @@ if (process.platform === 'win32') {
 const { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
 const { snapUiScale, migrateLegacyUiScale, UI_SCALE_DEFAULT, UI_SCALE_MIN, UI_SCALE_MAX, UI_SCALE_VERSION } = require('@/lib/uiScale')
 const configStore = require('@/lib/configLoader')
+// 热更新（检查 → 下载 → 退出后替换 app.asar → 自动重启）
+const { createUpdater } = require('@/lib/updater')
 
 //Path Define
 const preloadPath = app.isPackaged ? path.join(process.resourcesPath, 'app.asar.unpacked/preload.js') : path.join(__dirname, '../src/preload.js')
@@ -65,6 +66,16 @@ if (!gotTheLock) {
 
 const packagePath = path.join(app.getAppPath(), 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+// 更新器要在窗口创建之后才知道往哪个窗口推状态，这里先用闭包引用
+const updater = createUpdater({
+  app,
+  configStore,
+  log,
+  packageJson,
+  isDevelopment,
+  getWindow: () => win
+})
 
 /**
  * 启动窗口尺寸：按「设计稿 CSS 尺寸 × 当前界面缩放」换算。
@@ -358,6 +369,9 @@ app.on('ready', async () => {
 
   createWindow()
   createTray()
+
+  // 清理上次热更新残留的 .old / .part 文件（删不掉的下次启动再试）
+  updater.init()
 
   // 设置开机自启动
   const autoStart = configStore.get('autoStart', false);
@@ -1042,103 +1056,50 @@ ipcMain.handle('get-store', (_, key, defaultValue) => {
 
 //#region 更新检测
 
-// 检查GitHub最新release
-function checkForUpdates() {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.github.com',
-      path: '/repos/AmagiSakuya/GamePad-ScreenShot-Windows/releases/latest',
-      method: 'GET',
-      headers: {
-        'User-Agent': 'GamePad-ScreenShot-App',
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    };
+/**
+ * 热更新：GitHub 为源，国内镜像加速。
+ * 检查 / 下载 / 落地替换的细节都在 @/lib/updater 里，这里只做 IPC 桥接。
+ */
 
-    // 设置代理
-    const proxy = configStore.get('proxy', '');
-    if (proxy) {
-      process.env.HTTPS_PROXY = `http://${proxy}`;
-      process.env.HTTP_PROXY = `http://${proxy}`;
-    } else {
-      // 清空代理变量
-      process.env.HTTPS_PROXY = ``;
-      process.env.HTTP_PROXY = ``;
-    }
-
-    const req = https.request(options, (res) => {
-      let data = '';
-
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-
-      res.on('end', () => {
-        try {
-          const release = JSON.parse(data);
-          // 使用标题而不是tag，标题格式为 vx.x.x
-          const latestVersion = release.tag_name.replace(/^v/, '');
-
-          // 获取当前版本
-          let currentVersion;
-          try {
-            currentVersion = packageJson.version;
-          } catch (error) {
-            console.warn('Failed to read package.json:', error);
-            currentVersion = '0.0.0'; // 默认版本
-          }
-
-          const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
-
-          // 打印版本信息
-          //console.log(`当前版本: ${currentVersion}`);
-          //console.log(`最新版本: ${latestVersion}`);
-          //console.log(`是否有更新: ${hasUpdate}`);
-
-          resolve({
-            hasUpdate,
-            latestVersion,
-            currentVersion,
-            releaseUrl: release.html_url
-          });
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
-
-    req.on('error', (error) => {
-      reject(error);
-    });
-
-    req.setTimeout(10000, () => {
-      req.destroy();
-      reject(new Error('Request timeout'));
-    });
-
-    req.end();
-  });
-}
-
-// 版本比较函数
-function compareVersions(version1, version2) {
-  const v1 = version1.split('.').map(Number);
-  const v2 = version2.split('.').map(Number);
-
-  for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
-    const num1 = v1[i] || 0;
-    const num2 = v2[i] || 0;
-
-    if (num1 > num2) return 1;
-    if (num1 < num2) return -1;
-  }
-
-  return 0;
-}
-
+// 兼容旧接口：返回 { hasUpdate, latestVersion, currentVersion, releaseUrl }
 ipcMain.handle('check-for-updates', async () => {
-  return await checkForUpdates();
-});
+  const state = await updater.check().catch(() => updater.getState())
+  const hasUpdate = state.status === updater.STATUS.AVAILABLE || state.status === updater.STATUS.MANUAL
+  return {
+    hasUpdate,
+    latestVersion: state.latestVersion,
+    currentVersion: state.currentVersion,
+    releaseUrl: state.releaseUrl,
+    mode: state.mode,
+    notes: state.notes,
+    status: state.status,
+    error: state.error
+  }
+})
+
+ipcMain.handle('updater:get-state', () => updater.getState())
+
+ipcMain.handle('updater:check', async (_, options) => {
+  return await updater.check({ quiet: !!(options && options.quiet) })
+})
+
+ipcMain.handle('updater:download', async () => {
+  try {
+    updater.assertSaneSize()
+  } catch (error) {
+    return { ...updater.getState(), status: updater.STATUS.ERROR, error: error.message }
+  }
+  return await updater.download()
+})
+
+ipcMain.handle('updater:cancel', () => updater.cancel())
+
+ipcMain.handle('updater:apply', () => updater.apply())
+
+ipcMain.handle('updater:open-release', async (_, url) => {
+  const target = url || updater.getState().releaseUrl
+  if (target) shell.openExternal(target)
+})
 
 ipcMain.handle('open-release-page', async (_, url) => {
   shell.openExternal(url);

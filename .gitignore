@@ -24,6 +24,9 @@ pnpm-debug.log*
 
 #Electron-builder output
 /dist_electron
+# 发布脚本产物（体积大，只用于手动上传到 GitHub Release）
+/release_upload
+/dist_check
 .workbuddy-ai
 package-lock.json
 

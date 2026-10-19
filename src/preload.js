@@ -79,6 +79,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getActiveWindowsInfo: () => ipcRenderer.invoke('get-active-win-info'),
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     openReleasePage: (url) => ipcRenderer.invoke('open-release-page', url),
+    // ===== 热更新（GitHub + 国内镜像）=====
+    getUpdateState: () => ipcRenderer.invoke('updater:get-state'),
+    /** options: { quiet: true } 静默检测（失败不弹错误） */
+    checkUpdate: (options) => ipcRenderer.invoke('updater:check', options),
+    downloadUpdate: () => ipcRenderer.invoke('updater:download'),
+    cancelUpdate: () => ipcRenderer.invoke('updater:cancel'),
+    applyUpdate: () => ipcRenderer.invoke('updater:apply'),
+    openUpdateReleasePage: (url) => ipcRenderer.invoke('updater:open-release', url),
+    onUpdaterState: (callback) => {
+        const listener = (_event, state) => callback(state)
+        ipcRenderer.removeAllListeners('updater:state')
+        ipcRenderer.on('updater:state', listener)
+    },
+    offUpdaterState: () => {
+        ipcRenderer.removeAllListeners('updater:state')
+    },
     setAutoStart: (enabled) => ipcRenderer.invoke('set-auto-start', enabled),
     startListenFromTray: () => ipcRenderer.invoke('start-listen-from-tray'),
     stopListenFromTray: () => ipcRenderer.invoke('stop-listen-from-tray'),

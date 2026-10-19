@@ -79,7 +79,7 @@ function normalizeAutoListen(value) {
 export default {
   name: 'SystemSettingsPage',
   components: { AppIcon, SettingsCard },
-  emits: ['update-status'],
+  emits: ['open-update'],
   props: {
     windowsNotify: {
       type: Function,
@@ -285,7 +285,7 @@ export default {
               icon: 'download',
               type: 'button',
               buttonIcon: 'download',
-              handler: this.checkForUpdates
+              handler: this.openUpdateDialog
             }
           ]
         }
@@ -386,27 +386,9 @@ export default {
         duration: 3000
       });
     },
-    async checkForUpdates() {
-      try {
-        const result = await window.electronAPI.checkForUpdates();
-        // 同步给标题栏版本号，命中新版本会显示 NEW 标记
-        this.$emit('update-status', result);
-        if (result && result.hasUpdate) {
-          await window.electronAPI.openReleasePage(result.releaseUrl);
-          if (this.windowsNotify) {
-            this.windowsNotify(`${this.$t('SystemSettingsPage.updateAvailable')}: ${result.latestVersion}`);
-          }
-        } else {
-          if (this.windowsNotify) {
-            this.windowsNotify(this.$t('SystemSettingsPage.updateNotAvailable'));
-          }
-        }
-      } catch (error) {
-        console.error('Check for updates failed:', error);
-        if (this.windowsNotify) {
-          this.windowsNotify(this.$t('SystemSettingsPage.updateCheckFailed'));
-        }
-      }
+    /** 更新交给 App 里的热更新弹窗统一处理（检查 / 下载进度 / 重启安装） */
+    openUpdateDialog() {
+      this.$emit('open-update');
     },
     /** 读取日志文件夹路径，用于在界面和确认框里说明操作范围 */
     async loadDataPaths() {
