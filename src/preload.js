@@ -1,6 +1,30 @@
 const { contextBridge, ipcRenderer, clipboard } = require('electron')
 const log = require('electron-log');
 
+// device-changed 是主进程广播的公共通道，多个页面都会订阅。
+// 这里按 key 分别登记回调，注销时只移除自己那一个，避免一个页面销毁时把其他页面的监听一起删掉。
+const deviceChangedHandlers = new Map()
+function bindDeviceChanged(key, callback) {
+    if (typeof callback !== 'function') return
+    const name = key || 'default'
+    const prev = deviceChangedHandlers.get(name)
+    if (prev) {
+        ipcRenderer.removeListener('device-changed', prev)
+        deviceChangedHandlers.delete(name)
+    }
+    const listener = (_event, ...args) => callback(...args)
+    deviceChangedHandlers.set(name, listener)
+    ipcRenderer.on('device-changed', listener)
+}
+function unbindDeviceChanged(key) {
+    const name = key || 'default'
+    const listener = deviceChangedHandlers.get(name)
+    if (listener) {
+        ipcRenderer.removeListener('device-changed', listener)
+        deviceChangedHandlers.delete(name)
+    }
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
     showScreenshotNotification: (data) => ipcRenderer.invoke('show-screenshot-notification', data),
     getScreenSources: () => ipcRenderer.invoke('get-screen-sources'),
@@ -12,11 +36,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     offOpenFolderTriggered: () => {
         ipcRenderer.removeAllListeners('open-folder-triggered')
     },
-    onDeviceChanged: (callback) => {
-        ipcRenderer.on('device-changed', callback)
+    onDeviceChanged: (callback, key) => {
+        bindDeviceChanged(key, callback)
     },
-    offDeviceChanged: () => {
-        ipcRenderer.removeAllListeners('device-changed')
+    offDeviceChanged: (key) => {
+        unbindDeviceChanged(key)
     },
     onScreenshotKeyboardTriggered: (callback) => {
         ipcRenderer.on('screen-shot-keyboard-triggered', callback)

@@ -222,6 +222,18 @@ export default {
       return this.isDark ? this.currentAccent.dark.accent : this.currentAccent.light.accent
     }
   },
+  watch: {
+    // 切回截图设置页时重新同步手柄连接状态（调试页会接管/释放同一个设备实例）
+    view(nextView) {
+      if (nextView !== 'screenshot') return
+      this.$nextTick(() => {
+        const mainPage = this.$refs.mainPageRef
+        if (mainPage && typeof mainPage.onPageShown === 'function') {
+          mainPage.onPageShown()
+        }
+      })
+    }
+  },
   async beforeMount() {
     const theme = await window.electronAPI.getStore(THEME_KEY, 'dark')
     this.isDark = theme !== 'light'
@@ -1157,6 +1169,12 @@ html.theme-light .accent-swatch {
   border-radius: 50%;
   background: var(--ok);
   box-shadow: 0 0 8px var(--ok);
+}
+
+/* 未连接：灰点，且不要残留绿色光晕 */
+.page-sub .dot.off {
+  background: var(--ink-3);
+  box-shadow: none;
 }
 
 .ui-card {

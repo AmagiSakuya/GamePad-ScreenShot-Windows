@@ -4,7 +4,7 @@
       <div>
         <h1 class="page-title">{{ $t('gamepadTester') }}</h1>
         <p class="page-sub">
-          <span class="dot" :style="{ background: currentGamePad && currentGamePad.name ? 'var(--ok)' : 'var(--ink-3)' }"></span>
+          <span class="dot" :class="{ off: !(currentGamePad && currentGamePad.name) }"></span>
           {{ currentGamePad && currentGamePad.name ? currentGamePad.name : $t('ui.noGamepad') }}
         </p>
       </div>
@@ -172,22 +172,31 @@ export default {
     }
   },
   async mounted() {
-    await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged)
+    await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged, 'tester')
     await this.loadGamePadList()
     timer = setInterval(this.getCurrentButtonsValue, 60);
   },
   async beforeUnmount() {
-    await window.electronAPI.offDeviceChanged()
+    await window.electronAPI.offDeviceChanged('tester')
     await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
     clearInterval(timer)
   },
   methods: {
     async loadGamePadList() {
-      rawDevices = await window.electronAPI.getAllGamePad()
+      rawDevices = (await window.electronAPI.getAllGamePad()) || []
       this.loadedGamePads = rawDevices;
       if (this.loadedGamePads.length > 0) {
         this.currentGamePad = this.loadedGamePads[0]
         this.initDevice(rawDevices[0])
+      } else {
+        // 手柄断开后要清空状态，否则页面会残留上一次的已连接显示
+        this.currentGamePad = {}
+        this.physicalButtonCount = 0
+        this.hatCount = 0
+        this.deviceInstanceAxisCount = 0
+        this.buttonsValuePreview = []
+        this.axesValuePreview = []
+        this.hatValuePreview = []
       }
     },
     async initDevice(hidDevice) {

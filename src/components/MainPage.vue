@@ -5,12 +5,15 @@
       <div>
         <h1 class="page-title">{{ $t('screenshotSettings') }}</h1>
         <p class="page-sub">
-          <span class="dot" :style="{ background: currentGamePad ? 'var(--ok)' : 'var(--ink-3)' }"></span>
+          <span class="dot" :class="{ off: !deviceConnected }"></span>
           {{ deviceLabel }}
         </p>
       </div>
       <div class="head-actions">
         <span v-if="listening" class="ui-hint">{{ $t('ui.lockedHint') }}</span>
+        <button class="ui-btn sm" :disabled="refreshingDevices" :title="$t('refresh')" @click="refreshDevices">
+          <AppIcon name="refresh" :size="12" />{{ $t('refresh') }}
+        </button>
       </div>
     </div>
 
@@ -323,7 +326,6 @@ import psSoundSrc from '@/assets/PS通知.mp3'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
 
-let rawDevices;
 let timer;
 let active_info_getter_timer;
 let lastButtonsValue;
@@ -371,6 +373,9 @@ export default {
       listening: false,
       loadedGamePads: [],
       currentGamePad: {},
+      // 设备列表刷新的序号：只有最后一次请求的结果会被采用，避免并发刷新时状态来回跳
+      gamePadListSeq: 0,
+      refreshingDevices: false,
       buttonsValuePreview: new Array(20).fill(false),
       axesValuePreview: [],
       screenShoting: false,
@@ -390,10 +395,15 @@ export default {
   },
   computed: {
     deviceLabel() {
-      if (this.currentGamePad && this.currentGamePad.name) {
+      if (this.deviceConnected) {
         return this.currentGamePad.name
       }
       return this.$t('ui.noGamepad')
+    },
+    /** 当前选中的手柄是否真的还插在电脑上（不能只看对象是否存在） */
+    deviceConnected() {
+      if (!this.currentGamePad || !this.currentGamePad.name) return false
+      return (this.loadedGamePads || []).some(device => this.isSameDevice(device, this.currentGamePad))
     },
     screenshotWayLabel() {
       return this.config.screenshotWay === ScreenShotWayEnum.OBS ? 'OBS' : this.$t('ui.desktopCapture')
@@ -417,7 +427,7 @@ export default {
     }
   },
   async mounted() {
-    await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged);
+    await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged, 'main');
     await window.electronAPI.onScreenshotKeyboardTriggered(this.onScreenshotKeyboardTriggeredCallback);
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
@@ -451,7 +461,7 @@ export default {
     if (this.listening) {
       this.stopListen();
     }
-    await window.electronAPI.offDeviceChanged()
+    await window.electronAPI.offDeviceChanged('main')
     await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
     clearInterval(timer)
     clearInterval(active_info_getter_timer)
@@ -714,17 +724,92 @@ export default {
         obsReplayBufferOnLongPress: false
       }
     },
-    async loadGamePadList() {
-      rawDevices = await window.electronAPI.getAllGamePad()
-      this.loadedGamePads = rawDevices;
-      if (this.loadedGamePads.length > 0) {
-        this.currentGamePad = this.loadedGamePads[0]
-        await this.loadConfig(this.currentGamePad.name)
-        await this.loadScreenSources()
-      } else {
-        await this.loadGlobalConfig();
+    /** 用名称 + VID/PID 判定是否同一支手柄（设备重连后 _index 会变，不能只靠它） */
+    deviceIdentity(device) {
+      if (!device) return ''
+      return [device.name, device.vendor, device.product, device.serial].join('|')
+    },
+    isSameDevice(a, b) {
+      if (!a || !b) return false
+      const identityA = this.deviceIdentity(a)
+      const identityB = this.deviceIdentity(b)
+      if (identityA && identityA === identityB) return true
+      return a._index !== undefined && b._index !== undefined && a._index === b._index
+    },
+    /** 找到当前选中设备在最新设备列表里的对应项（拔掉则返回 undefined） */
+    resolveCurrentDevice() {
+      const list = this.loadedGamePads || []
+      if (!list.length) return undefined
+      if (this.currentGamePad && this.currentGamePad.name) {
+        const matched = list.find(device => this.isSameDevice(device, this.currentGamePad))
+        if (matched) return matched
+        return undefined
       }
-      this.initComboKeyOptions();
+      return list[0]
+    },
+    async loadGamePadList() {
+      const seq = ++this.gamePadListSeq
+      const devices = (await window.electronAPI.getAllGamePad()) || []
+      // 期间又发起了新的刷新，丢弃这次的结果，避免状态被旧数据覆盖
+      if (seq !== this.gamePadListSeq) return
+
+      this.loadedGamePads = devices
+
+      if (!devices.length) {
+        // 手柄全部断开：必须把“已连接”状态清干净，否则页面会一直显示上一次的手柄名和绿灯
+        this.currentGamePad = {}
+        this.physicalButtonCount = 0
+        this.hatCount = 0
+        this.buttonsValuePreview = []
+        this.axesValuePreview = []
+        await this.loadGlobalConfig()
+        this.initComboKeyOptions()
+        return
+      }
+
+      // 保持用户已选中的手柄；只有它不在了才退回第一个
+      const previous = this.currentGamePad
+      const matched = previous && previous.name
+        ? devices.find(device => this.isSameDevice(device, previous))
+        : undefined
+      const next = matched || devices[0]
+      const selectionChanged = !previous || !previous.name || !this.isSameDevice(previous, next)
+      this.currentGamePad = next
+      // 只是插拔了别的手柄时不要重新读配置，避免冲掉界面上还没保存的修改
+      if (selectionChanged) {
+        await this.loadConfig(this.currentGamePad.name)
+      }
+      await this.loadScreenSources()
+      this.initComboKeyOptions()
+    },
+    async refreshDevices() {
+      if (this.refreshingDevices) return
+      this.refreshingDevices = true
+      try {
+        await this.loadGamePadList()
+      } finally {
+        this.refreshingDevices = false
+      }
+    },
+    /** 从其他页面切回截图设置页时调用：重新同步手柄状态，必要时重新绑定设备实例 */
+    async onPageShown() {
+      await this.loadGamePadList()
+      if (!this.listening) return
+      const device = this.resolveCurrentDevice()
+      if (!device) {
+        this.listening = false;
+        window.electronAPI.sendListenStatusChanged();
+        return
+      }
+      // 调试页会重新打开/释放设备实例，返回后需要重新绑定监听，否则监听中却收不到按键
+      const success = await window.electronAPI.openSdl2Device(device)
+      if (!success) {
+        this.listening = false;
+        this.showError(this.$t('alertMsg.openGamepadFail'))
+        window.electronAPI.sendListenStatusChanged();
+        return
+      }
+      await this.refreshDeviceCapabilities()
     },
     // 设置错误提示并把内容区滚回顶部，避免用户停留在下方看不到报错
     showError(message) {
@@ -802,7 +887,11 @@ export default {
       }
 
       //尝试启动
-      let m_device = rawDevices[this.currentGamePad._index]
+      let m_device = this.resolveCurrentDevice()
+      if (!m_device) {
+        this.showError(this.$t('ui.noGamepad'))
+        return
+      }
       let success = await window.electronAPI.openSdl2Device(m_device)
       if (!success) {
         this.showError(this.$t('alertMsg.openGamepadFail'))
@@ -979,12 +1068,33 @@ export default {
       }
     },
     async onUserSelectedDeviceChange() {
+      if (!this.currentGamePad || !this.currentGamePad.name) {
+        await this.loadGamePadList()
+        return
+      }
       await this.loadConfig(this.currentGamePad.name)
       await this.loadScreenSources()
+      // 监听/识别中切换手柄时，设备实例必须跟着切，否则还在读上一支手柄的按键
+      if (!this.listening && this.detectionIndex == -1) return
+      const device = this.resolveCurrentDevice()
+      if (!device) return
+      const success = await window.electronAPI.openSdl2Device(device)
+      if (!success) {
+        this.detectionIndex = -1
+        this.listening = false
+        this.showError(this.$t('alertMsg.openGamepadFail'))
+        window.electronAPI.sendListenStatusChanged()
+        return
+      }
+      await this.refreshDeviceCapabilities()
     },
     async automatedDetection(detectionIndex) {
       if (this.detectionIndex == -1) {
-        let m_device = rawDevices[this.currentGamePad._index]
+        let m_device = this.resolveCurrentDevice()
+        if (!m_device) {
+          this.showError(this.$t('ui.noGamepad'))
+          return
+        }
         let success = await window.electronAPI.openSdl2Device(m_device)
         if (!success) {
           alert(this.$t('alertMsg.openGamepadFail'))
