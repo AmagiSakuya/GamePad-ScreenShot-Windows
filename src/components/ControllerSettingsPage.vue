@@ -130,6 +130,7 @@
 
 <script>
 import AppIcon from '@/components/AppIcon.vue'
+import { toPlain } from '@/lib/ipcSafe'
 
 let rawDevices;
 let timer;
@@ -200,7 +201,8 @@ export default {
       }
     },
     async initDevice(hidDevice) {
-      let success = await window.electronAPI.openSdl2Device(hidDevice)
+      // 设备对象可能来自响应式数组，过 contextBridge 前必须拍平
+      let success = await window.electronAPI.openSdl2Device(toPlain(hidDevice))
       let btnNum = 0;
       let axisNum = 0;
       let physicalNum = 0;

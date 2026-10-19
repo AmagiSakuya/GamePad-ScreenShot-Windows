@@ -754,15 +754,36 @@ function resetDeviceState() {
   hatStates = new Array(hatCount).fill('centered');
 }
 
+// 只把纯数据交给渲染进程：SDL 的 device 对象带内部引用，
+// 一旦被 Vue 包成响应式 Proxy 再传回来就过不了结构化克隆（An object could not be cloned）
+function toPlainDevice(device) {
+  if (!device) return null;
+  return {
+    _index: device._index,
+    id: device.id,
+    name: device.name,
+    path: device.path,
+    guid: device.guid,
+    type: device.type,
+    vendor: device.vendor,
+    product: device.product,
+    version: device.version,
+    player: device.player
+  };
+}
+
 ipcMain.handle('get-all-gamepad', () => {
-  return sdl.joystick.devices
+  return (sdl.joystick.devices || []).map(toPlainDevice);
 })
 
 ipcMain.handle('open-sdl2-device', async (_, device) => {
-  if (!device || device._index === undefined) {
+  // 兼容两种入参：设备对象（可能被 Vue 包成 Proxy）或直接的索引数字
+  const rawIndex = (device !== null && typeof device === 'object') ? device._index : device;
+  const index = Number(rawIndex);
+  if (!Number.isInteger(index) || index < 0) {
     return false;
   }
-  const sdlDevice = sdl.joystick.devices[device._index];
+  const sdlDevice = sdl.joystick.devices[index];
   if (!sdlDevice) {
     return false;
   }

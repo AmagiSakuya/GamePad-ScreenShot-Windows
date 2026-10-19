@@ -321,6 +321,7 @@
 const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum } = require('@/lib/enum')
 const { KeyCode } = require('@/lib/keycode')
 import { hasCaptureSound, setCaptureSound, playCaptureSound as playSound } from '@/lib/captureSound'
+import { toPlain } from '@/lib/ipcSafe'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
 
@@ -763,6 +764,13 @@ export default {
       }
       return list[0]
     },
+    /**
+     * 打开设备实例。device 来自 this.loadedGamePads，是 Vue 的响应式 Proxy，
+     * 直接传过 contextBridge 会抛 "An object could not be cloned."，必须先拍平。
+     */
+    openDevice(device) {
+      return window.electronAPI.openSdl2Device(toPlain(device))
+    },
     async loadGamePadList() {
       const seq = ++this.gamePadListSeq
       const devices = (await window.electronAPI.getAllGamePad()) || []
@@ -818,7 +826,7 @@ export default {
         return
       }
       // 调试页会重新打开/释放设备实例，返回后需要重新绑定监听，否则监听中却收不到按键
-      const success = await window.electronAPI.openSdl2Device(device)
+      const success = await this.openDevice(device)
       if (!success) {
         this.listening = false;
         this.showError(this.$t('alertMsg.openGamepadFail'))
@@ -908,7 +916,7 @@ export default {
         this.showError(this.$t('ui.noGamepad'))
         return
       }
-      let success = await window.electronAPI.openSdl2Device(m_device)
+      let success = await this.openDevice(m_device)
       if (!success) {
         this.showError(this.$t('alertMsg.openGamepadFail'))
         return;
@@ -1106,7 +1114,7 @@ export default {
       if (!this.listening && this.detectionIndex == -1) return
       const device = this.resolveCurrentDevice()
       if (!device) return
-      const success = await window.electronAPI.openSdl2Device(device)
+      const success = await this.openDevice(device)
       if (!success) {
         this.detectionIndex = -1
         this.listening = false
@@ -1123,18 +1131,25 @@ export default {
           this.showError(this.$t('ui.noGamepad'))
           return
         }
-        let success = await window.electronAPI.openSdl2Device(m_device)
-        if (!success) {
-          alert(this.$t('alertMsg.openGamepadFail'))
-          return;
+        // 这里的 m_device 是 Vue 响应式对象，preload 会先拍平成纯数据再发给主进程；
+        // 整段包一层 try/catch，任何一步失败都只提示，不能让渲染进程异常把程序带崩
+        try {
+          let success = await this.openDevice(m_device)
+          if (!success) {
+            alert(this.$t('alertMsg.openGamepadFail'))
+            return;
+          }
+          // 打开设备后刷新按键/十字键数量，识别到的 hat 方向才能正确命名
+          await this.refreshDeviceCapabilities();
+          this.detectionIndex = detectionIndex;
+          this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue();
+          this.axesValuePreview = await window.electronAPI.getCurrentAxesValue();
+          lastButtonsValue = JSON.parse(JSON.stringify(this.buttonsValuePreview || []));
+          lastAxesValue = JSON.parse(JSON.stringify(this.axesValuePreview || []));
+        } catch (error) {
+          this.detectionIndex = -1;
+          this.showError((error && error.message) ? error.message : String(error));
         }
-        // 打开设备后刷新按键/十字键数量，识别到的 hat 方向才能正确命名
-        await this.refreshDeviceCapabilities();
-        this.detectionIndex = detectionIndex;
-        this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue();
-        this.axesValuePreview = await window.electronAPI.getCurrentAxesValue();
-        lastButtonsValue = JSON.parse(JSON.stringify(this.buttonsValuePreview || []));
-        lastAxesValue = JSON.parse(JSON.stringify(this.axesValuePreview || []));
         return;
       }
       if (this.detectionIndex == detectionIndex) {
