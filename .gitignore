@@ -27,7 +27,6 @@ pnpm-debug.log*
 # 发布脚本产物（体积大，只用于手动上传到 GitHub Release）
 /release_upload
 /dist_check
-.workbuddy-ai
 package-lock.json
 
 # 本地 Vue DevTools 扩展（由 npm run devtools:fetch 生成）
