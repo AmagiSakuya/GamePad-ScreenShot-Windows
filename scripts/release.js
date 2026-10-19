@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * 发布脚本：构建 → 生成热更新补丁 → 生成 latest.json → 整理出「直接上传」的目录
+ * 发布脚本：构建 → 打热更新包（一个 zip）→ 打完整包 → 生成 latest.json
  *
  * 用法（一般通过 build.bat 调用）：
  *   node scripts/release.js 2.1.0
@@ -9,10 +9,16 @@
  *   node scripts/release.js 2.1.0 --patch-from 2.1.0     # 本次改了 exe/dll，老版本必须走完整包
  *   node scripts/release.js 2.1.0 --no-build             # 复用已有 dist_electron（调试脚本用）
  *
- * 产物：
- *   release_upload/v<版本>/release-assets/   → 全部拖到 GitHub Release（tag = v<版本>）
- *   release_upload/v<版本>/update-branch/    → latest.json 提交到 update 分支
- *   release_upload/v<版本>/UPLOAD.md         → 上传步骤
+ * 产物（一共 3 个文件，全部传到同一个 GitHub Release）：
+ *   release_upload/v<版本>/release-assets/GamepadShot-<版本>-win-x64.zip   完整包
+ *   release_upload/v<版本>/release-assets/update-<版本>.zip                热更新包
+ *   release_upload/v<版本>/release-assets/latest.json                      版本清单
+ *   release_upload/v<版本>/UPLOAD.md                                       上传步骤
+ *
+ * 客户端读清单的地址是
+ *   https://github.com/<repo>/releases/latest/download/latest.json
+ * 它是 GitHub 的固定地址，永远指向「最新发布的正式 Release」的附件，
+ * 所以发完 Release 就不用再去 update 分支提交任何东西了。
  */
 
 const fs = require('fs')
@@ -31,8 +37,13 @@ const REPO = 'AmagiSakuya/GamePad-ScreenShot-Windows'
 const RELEASE_PAGE = `https://github.com/${REPO}/releases`
 const DOWNLOAD_BASE = `https://github.com/${REPO}/releases/download`
 
-// 热更新模块从 2.0.0 起才有，比它老的版本连清单都读不到
-const DEFAULT_PATCH_FROM = '2.0.0'
+/**
+ * 第一个支持「zip 补丁」的版本。
+ * 比它老的客户端（2.0.0）只会读 patch.files 逐文件下载，读不到就会自动退化成
+ * 「有新版本，请手动下载完整包」——正是跨代升级应该走的路径。
+ * 所以这里默认取这个值：2.0.0 的用户手动装一次，之后全走热更新。
+ */
+const ZIP_PATCH_SINCE = '2.1.0'
 
 const ASSET_MIRRORS = [
   'https://ghfast.top/',
@@ -41,6 +52,7 @@ const ASSET_MIRRORS = [
   ''
 ]
 
+// 打包前要清掉的运行期残留（上一次更新留下的备份、半截下载、暂存目录）
 const SKIP_DIRS = new Set(['.update-staging'])
 const SKIP_RE = /(\.old$|\.part$|^\.write-test-|\.log$)/i
 
@@ -73,7 +85,7 @@ const noBuild = !!args['no-build']
 const noPatch = !!args['no-patch']
 const channel = String(args.channel || 'stable')
 const mandatory = !!args.mandatory
-const patchFrom = String(args['patch-from'] || DEFAULT_PATCH_FROM)
+const patchFrom = String(args['patch-from'] || ZIP_PATCH_SINCE)
 const notesArg = typeof args.notes === 'string' ? args.notes : ''
 
 function fail(message) {
@@ -107,11 +119,6 @@ function sha256File(filePath) {
   })
 }
 
-async function describeFile(filePath) {
-  const stat = await fs.promises.stat(filePath)
-  return { size: stat.size, sha256: await sha256File(filePath) }
-}
-
 function walkFiles(dir, base = dir, out = []) {
   let entries = []
   try {
@@ -126,25 +133,10 @@ function walkFiles(dir, base = dir, out = []) {
     } else {
       if (SKIP_RE.test(entry.name)) continue
       const full = path.join(dir, entry.name)
-      out.push({
-        full,
-        relative: path.relative(base, full).replace(/\\/g, '/')
-      })
+      out.push({ full, relative: path.relative(base, full).replace(/\\/g, '/') })
     }
   }
   return out
-}
-
-/**
- * Release 资源名不能带斜杠，这里把路径压平成单层文件名；
- * 路径过长（Windows 260 字符限制）时截断并追加哈希，保证唯一。
- */
-function assetNameFor(relative, suffix = '') {
-  let name = `${relative.replace(/\//g, '__')}${suffix}`
-  if (name.length <= 120) return name
-  const hash = crypto.createHash('sha1').update(relative).digest('hex').slice(0, 8)
-  const ext = path.extname(name)
-  return `${name.slice(0, 100)}-${hash}${ext}`
 }
 
 function formatBytes(bytes) {
@@ -182,6 +174,36 @@ function assertNotLocked() {
   }
 }
 
+/** 清掉 resources 里的运行期残留，避免把它们打进补丁包 */
+function cleanResources() {
+  let removed = 0
+  const walk = (dirPath, depth) => {
+    if (depth > 8) return
+    let entries = []
+    try {
+      entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    } catch (error) {
+      return
+    }
+    for (const entry of entries) {
+      const full = path.join(dirPath, entry.name)
+      if (entry.isDirectory()) {
+        if (SKIP_DIRS.has(entry.name)) {
+          rmrf(full)
+          removed++
+          continue
+        }
+        walk(full, depth + 1)
+      } else if (SKIP_RE.test(entry.name)) {
+        rmrf(full)
+        removed++
+      }
+    }
+  }
+  walk(RESOURCES_DIR, 0)
+  if (removed) log(`  已清理 ${removed} 个运行期残留文件`)
+}
+
 // ---------------------------------------------------------------- 构建
 
 function runBuild() {
@@ -204,15 +226,57 @@ function runBuild() {
 
 // ---------------------------------------------------------------- 打 zip
 
+/**
+ * 把 srcDir 的内容打成 zip（条目路径相对 srcDir）。
+ * 用 `-C srcDir .` 而不是逐个列文件名，避免命令行过长。
+ */
+function isZipFile(filePath) {
+  try {
+    const fd = fs.openSync(filePath, 'r')
+    const head = Buffer.alloc(4)
+    fs.readSync(fd, head, 0, 4, 0)
+    fs.closeSync(fd)
+    // PK\x03\x04（有内容）或 PK\x05\x06（空包）
+    return head[0] === 0x50 && head[1] === 0x4b && (head[2] === 0x03 || head[2] === 0x05)
+  } catch (error) {
+    return false
+  }
+}
+
+/**
+ * zip 工具按「快 → 慢」排：
+ *   Windows 10 1803+ 自带的 System32\tar.exe 是 bsdtar，打 zip 最快；
+ *   注意不能直接写 'tar'——如果装了 Git for Windows，PATH 里命中的是 GNU tar，
+ *   它不支持 `-a`（按扩展名推断格式），会白白退回到很慢的 Compress-Archive。
+ */
+function zipToolCandidates() {
+  const list = []
+  if (process.platform === 'win32') {
+    const systemRoot = process.env.SystemRoot || 'C:\\Windows'
+    list.push(path.join(systemRoot, 'System32', 'tar.exe'))
+    list.push('bsdtar')
+  } else {
+    list.push('bsdtar', 'tar')
+  }
+  return list
+}
+
 function zipDirectory(srcDir, zipPath) {
   rmrf(zipPath)
 
-  // 优先用 bsdtar（Windows 10 1803+ 自带，比 Compress-Archive 快很多）
-  try {
-    execFileSync('tar', ['-a', '-c', '-f', zipPath, '-C', srcDir, '.'], { stdio: 'ignore' })
-    if (fs.existsSync(zipPath) && fs.statSync(zipPath).size > 0) return 'tar'
-  } catch (error) { /* 继续尝试 PowerShell */ }
+  for (const tool of zipToolCandidates()) {
+    try {
+      execFileSync(tool, ['-a', '-c', '-f', zipPath, '-C', srcDir, '.'], { stdio: 'ignore' })
+      if (fs.existsSync(zipPath) && fs.statSync(zipPath).size > 0 && isZipFile(zipPath)) {
+        return path.basename(tool)
+      }
+      rmrf(zipPath)
+    } catch (error) {
+      rmrf(zipPath)
+    }
+  }
 
+  // 兜底：PowerShell 的 Compress-Archive（慢，但任何 Windows 都有）
   const escapedSrc = srcDir.replace(/'/g, "''")
   const escapedZip = zipPath.replace(/'/g, "''")
   execFileSync('powershell', [
@@ -221,7 +285,9 @@ function zipDirectory(srcDir, zipPath) {
     '-Command',
     `Compress-Archive -Path '${escapedSrc}\\*' -DestinationPath '${escapedZip}' -CompressionLevel Optimal -Force`
   ], { stdio: 'inherit' })
-  return 'powershell'
+
+  if (!isZipFile(zipPath)) throw new Error('压缩失败：产物不是有效的 zip')
+  return 'Compress-Archive'
 }
 
 // ---------------------------------------------------------------- 说明文本
@@ -298,56 +364,44 @@ async function main() {
     fail(`找不到 app.asar: ${asarPath}`)
   }
 
-  // 3. 收集补丁文件（resources 下的全部文件，等于「代码 + 运行时资源」完整覆盖）
-  step('计算补丁文件')
+  // 3. 统计 resources 内容（补丁包就是它的完整快照）
+  step('统计补丁内容')
+  cleanResources()
   const collected = walkFiles(RESOURCES_DIR)
-  const files = []
-  let totalSize = 0
+  let patchRawSize = 0
   for (const item of collected) {
-    const info = await describeFile(item.full)
-    files.push({
-      relative: item.relative,
-      full: item.full,
-      size: info.size,
-      sha256: info.sha256
-    })
-    totalSize += info.size
+    try {
+      patchRawSize += fs.statSync(item.full).size
+    } catch (error) { /* 文件刚被删掉，忽略 */ }
   }
-  files.sort((a, b) => (a.relative === 'app.asar' ? -1 : b.relative === 'app.asar' ? 1 : a.relative.localeCompare(b.relative)))
-  log(`  ${files.length} 个文件，合计 ${formatBytes(totalSize)}`)
+  log(`  ${collected.length} 个文件，原始体积 ${formatBytes(patchRawSize)}`)
 
   // 4. 建输出目录
   const outDir = path.join(OUT_ROOT, `v${version}`)
   const assetsDir = path.join(outDir, 'release-assets')
-  const updateBranchDir = path.join(outDir, 'update-branch')
   rmrf(outDir)
   fs.mkdirSync(assetsDir, { recursive: true })
-  fs.mkdirSync(updateBranchDir, { recursive: true })
 
-  // 5. 复制补丁文件（压平命名）
-  step('整理补丁资源')
-  const patchEntries = []
+  // 5. 热更新包：一个 zip，内部路径相对 resources 根
+  let patchInfo = null
   if (!noPatch) {
-    const usedNames = new Set()
-    for (const file of files) {
-      let asset = assetNameFor(file.relative)
-      if (usedNames.has(asset.toLowerCase())) {
-        // 极少数情况下两条路径压平后会重名，追加短哈希区分
-        const hash = crypto.createHash('sha1').update(file.relative).digest('hex').slice(0, 8)
-        asset = `${path.basename(asset, path.extname(asset))}-${hash}${path.extname(asset)}`
+    step('打热更新包（update-<版本>.zip）')
+    const patchName = `update-${version}.zip`
+    const patchPath = path.join(assetsDir, patchName)
+    try {
+      const tool = zipDirectory(RESOURCES_DIR, patchPath)
+      patchInfo = {
+        asset: patchName,
+        size: fs.statSync(patchPath).size,
+        sha256: await sha256File(patchPath),
+        url: `${DOWNLOAD_BASE}/v${version}/${patchName}`
       }
-      usedNames.add(asset.toLowerCase())
-      fs.copyFileSync(file.full, path.join(assetsDir, asset))
-      patchEntries.push({
-        path: file.relative,
-        asset,
-        size: file.size,
-        sha256: file.sha256
-      })
+      log(`  ${patchName}（${formatBytes(patchInfo.size)}，使用 ${tool}）`)
+    } catch (error) {
+      log(`  ⚠ 热更新包打包失败：${error.message}（本次只发完整包）`)
     }
-    log(`  ${patchEntries.length} 个补丁文件已复制到 release-assets/`)
   } else {
-    log('  已跳过补丁（--no-patch），本次只发完整包')
+    log('\n  跳过热更新包（--no-patch）')
   }
 
   // 6. 完整包
@@ -366,7 +420,7 @@ async function main() {
       }
       log(`  ${zipName}（${formatBytes(fullInfo.size)}，使用 ${tool}）`)
     } catch (error) {
-      log(`  ⚠ 完整包打包失败：${error.message}（不影响补丁）`)
+      log(`  ⚠ 完整包打包失败：${error.message}（不影响热更新）`)
     }
   } else {
     log('\n  跳过完整包（--nozip）')
@@ -376,7 +430,7 @@ async function main() {
   step('生成 latest.json')
   const notes = buildNotes()
   const manifest = {
-    schema: 1,
+    schema: 2,
     channel,
     version,
     build: Date.now(),
@@ -390,43 +444,40 @@ async function main() {
       en: notes
     },
     mirrors: ASSET_MIRRORS,
-    patch: noPatch ? null : {
-      minVersion: patchFrom,
-      totalSize,
-      files: patchEntries.map((item) => ({
-        path: item.path,
-        asset: item.asset,
-        size: item.size,
-        sha256: item.sha256
-      })),
-      remove: []
-    },
+    patch: patchInfo
+      ? {
+        // format 2 = 单个 zip；1 = 老的逐文件方案（客户端已不再使用）
+        format: 2,
+        minVersion: patchFrom,
+        asset: patchInfo.asset,
+        size: patchInfo.size,
+        sha256: patchInfo.sha256,
+        url: patchInfo.url,
+        totalSize: patchInfo.size,
+        remove: []
+      }
+      : null,
     full: fullInfo
   }
 
   const manifestText = `${JSON.stringify(manifest, null, 2)}\n`
-  fs.writeFileSync(path.join(updateBranchDir, 'latest.json'), manifestText, 'utf8')
-  // Release 附件里也放一份：客户端主清单拉不到时，会用 GitHub API 找到它兜底
   fs.writeFileSync(path.join(assetsDir, 'latest.json'), manifestText, 'utf8')
-  log(`  补丁 ${patchEntries.length} 个文件 / ${formatBytes(totalSize)}`)
+  log(`  热更新包 ${patchInfo ? formatBytes(patchInfo.size) : '无'} / 完整包 ${fullInfo ? formatBytes(fullInfo.size) : '无'}`)
 
   // 8. 上传说明
-  writeUploadGuide(outDir, {
-    version,
-    patchCount: patchEntries.length,
-    totalSize,
-    fullInfo
-  })
+  writeUploadGuide(outDir, { version, patchInfo, fullInfo, patchFrom })
 
   // 9. 汇总
   log('\n============================================')
   log('  完成，待上传目录：')
-  log(`  ${path.relative(ROOT, outDir)}`)
+  log(`  ${path.relative(ROOT, outDir).replace(/\\/g, '/')}/release-assets`)
   log('')
-  log('  1) release-assets/  →  全部上传到 GitHub Release（tag: v' + version + '）')
-  log('  2) update-branch/latest.json  →  提交到 update 分支')
+  log('  把这 3 个文件拖进同一个 Release 的附件区即可：')
+  if (fullInfo) log(`    · ${fullInfo.asset}`)
+  if (patchInfo) log(`    · ${patchInfo.asset}`)
+  log('    · latest.json')
   log('')
-  log(`  补丁体积: ${formatBytes(totalSize)}`)
+  log(`  热更新包: ${patchInfo ? formatBytes(patchInfo.size) : '无'}`)
   if (fullInfo) log(`  完整包:   ${formatBytes(fullInfo.size)}`)
   log('============================================\n')
 }
@@ -435,38 +486,44 @@ function writeUploadGuide(outDir, info) {
   const lines = [
     `# v${info.version} 发布清单`,
     '',
-    '## 1. 上传到 GitHub Release',
+    '## 1. 建 Release 并上传附件',
     '',
     `1. 打开 ${RELEASE_PAGE}/new，Tag 填 \`v${info.version}\`，标题随意`,
-    `2. 把 \`release-assets/\` 里的**所有文件**拖进附件区`,
-    '3. 发布 Release',
+    '2. 把 `release-assets/` 里的这 3 个文件拖进附件区：',
     '',
-    `> 共 ${info.patchCount} 个补丁文件（${formatBytes(info.totalSize)}）` + (info.fullInfo
-      ? ` + 1 个完整包（${formatBytes(info.fullInfo.size)}）`
-      : ''),
+    info.fullInfo ? `   - \`${info.fullInfo.asset}\`（完整包，新用户 / 老版本跨代升级用）` : '',
+    info.patchInfo ? `   - \`${info.patchInfo.asset}\`（热更新包，客户端只下这一个）` : '',
+    '   - `latest.json`（版本清单）',
     '',
-    '## 2. 更新版本清单（客户端靠它判断有没有新版本）',
+    '3. 直接点 **Publish release**（不要存成 Draft，也不要勾 Pre-release，否则客户端读不到）',
     '',
-    '把 `update-branch/latest.json` 提交到仓库的 `update` 分支根目录：',
+    '## 2. 不用再做别的事',
     '',
-    '```bash',
-    `git fetch origin`,
-    `git checkout update   # 第一次：git checkout --orphan update && git rm -rf . `,
-    `cp release_upload/v${info.version}/update-branch/latest.json ./latest.json`,
-    `git add latest.json && git commit -m "release v${info.version}" && git push origin update`,
+    '客户端读清单的地址是：',
+    '',
     '```',
+    `https://github.com/${REPO}/releases/latest/download/latest.json`,
+    '```',
+    '',
+    '这是 GitHub 的固定地址，永远指向「最新发布的正式 Release」的附件。',
+    '所以**不需要**再开 update 分支，也不需要提交任何东西。',
     '',
     '## 3. 客户端会怎么做',
     '',
-    '1. 依次尝试 `ghfast.top` / `gh-proxy.com` / `gitmirror` / `raw.githubusercontent.com` / `jsDelivr` 读取 latest.json',
+    '1. 依次尝试 ghfast.top / gh-proxy.com / ghproxy.net / 直连，读取 latest.json',
     '2. 语义化版本比对（同版本再比 build 号）',
-    '3. 下载补丁，边下边校验 sha256，失败自动换下一个镜像',
-    '4. 校验通过后提示「重启并安装」→ 退出 → 独立进程替换 app.asar → 自动重启',
+    `3. 下载 \`${info.patchInfo ? info.patchInfo.asset : 'update-x.y.z.zip'}\` 这一个文件，校验 sha256，失败自动换下一个镜像`,
+    '4. 解包到 resources/.update-staging，还原出 app.asar / app.asar.unpacked/… 的目录结构',
+    '5. 提示「重启并安装」→ 退出 → 独立进程逐文件备份替换 → 自动重启',
     '',
-    '> 如果某次改动涉及 Electron 版本 / exe / dll，请用 `--patch-from <新版本>` 重新发布，',
-    '> 让老版本走完整包下载，避免只换 resources 导致版本错配。'
+    '> 如果某次改动涉及 Electron 版本 / exe / dll（resources 之外的东西），',
+    `> 请用 \`--patch-from ${info.version}\` 重新发布，让老版本走完整包下载。`,
+    '>',
+    `> 当前 \`patch.minVersion = ${info.patchFrom}\`：低于这个版本的客户端会提示手动下载完整包。`,
+    `> 第一个支持 zip 补丁的版本是 ${ZIP_PATCH_SINCE}，比它老的（2.0.0）必须手动装一次。`
   ]
-  fs.writeFileSync(path.join(outDir, 'UPLOAD.md'), `${lines.join('\n')}\n`, 'utf8')
+
+  fs.writeFileSync(path.join(outDir, 'UPLOAD.md'), `${lines.filter((line) => line !== '').join('\n')}\n`, 'utf8')
 }
 
 main().catch((error) => {

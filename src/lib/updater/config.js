@@ -4,28 +4,30 @@
  * 更新源配置
  *
  * 设计要点：
- * - 版本清单（latest.json）放在仓库的独立分支 update 上，不污染 master，也不用发 Release 就能改。
- * - 镜像前缀列表对「清单」和「release 资源」都生效：镜像站挂掉时按顺序自动换下一个。
+ * - 清单（latest.json）直接作为附件放在 Release 里，用 GitHub 的
+ *   `/releases/latest/download/<文件名>` 固定地址读，不需要再维护 update 分支，
+ *   也不用发完 Release 再单独提交一次清单。
+ * - 镜像前缀列表对「清单」和「补丁包」都生效：镜像站挂掉时按顺序自动换下一个。
  * - 清单里的 mirrors 字段可以覆盖这里的 ASSET_MIRRORS，所以以后换镜像不用重新发客户端。
  */
 
 const REPO = 'AmagiSakuya/GamePad-ScreenShot-Windows'
-const MANIFEST_BRANCH = 'update'
 const MANIFEST_FILE = 'latest.json'
 
-// GitHub 原始文件直链（国内经常不通，仅作为最后兜底）
-const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${MANIFEST_BRANCH}/${MANIFEST_FILE}`
+// GitHub 固定指向「最新一个正式 Release」的附件，地址本身不变，内容随 Release 更新
+const LATEST_RELEASE_BASE = `https://github.com/${REPO}/releases/latest/download`
+const LATEST_MANIFEST = `${LATEST_RELEASE_BASE}/${MANIFEST_FILE}`
 
 /**
  * 清单获取顺序：国内可用性从高到低。
- * ghfast.top / gh-proxy.com / raw.gitmirror.com 都是「前缀 + 完整 URL」形式的加速代理。
+ * ghfast.top / gh-proxy.com / ghproxy.net 都是「前缀 + 完整 URL」形式的加速代理，
+ * 它们会把 /releases/latest/download/xxx 的 302 一起跟完，所以能直接拿到最终内容。
  */
 const MANIFEST_SOURCES = [
-  `https://ghfast.top/${RAW_BASE}`,
-  `https://gh-proxy.com/${RAW_BASE}`,
-  `https://raw.gitmirror.com/${REPO}/${MANIFEST_BRANCH}/${MANIFEST_FILE}`,
-  RAW_BASE,
-  `https://cdn.jsdelivr.net/gh/${REPO}@${MANIFEST_BRANCH}/${MANIFEST_FILE}`
+  `https://ghfast.top/${LATEST_MANIFEST}`,
+  `https://gh-proxy.com/${LATEST_MANIFEST}`,
+  `https://ghproxy.net/${LATEST_MANIFEST}`,
+  LATEST_MANIFEST
 ]
 
 /**
@@ -51,10 +53,13 @@ const HELPER_NAME = 'apply-update.js'
 // 下载暂存目录（相对 resources）
 const STAGING_DIR = '.update-staging'
 
+// 补丁包格式：2 = 单个 update-x.y.z.zip（1 = 老方案，逐文件上传）
+const PATCH_FORMAT = 2
+
 module.exports = {
   REPO,
-  MANIFEST_BRANCH,
   MANIFEST_FILE,
+  LATEST_RELEASE_BASE,
   MANIFEST_SOURCES,
   ASSET_MIRRORS,
   GITHUB_API_RELEASE,
@@ -62,5 +67,6 @@ module.exports = {
   RELEASE_PAGE,
   PROJECT_HOME,
   HELPER_NAME,
-  STAGING_DIR
+  STAGING_DIR,
+  PATCH_FORMAT
 }

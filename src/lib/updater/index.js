@@ -4,10 +4,16 @@
  * 热更新模块（主进程侧）
  *
  * 整体流程：
- *   检查 → 拉版本清单 latest.json（多个镜像依次尝试）→ 语义化版本比对
- *        → 下载补丁文件到 resources/.update-staging（边下边校验 sha256，失败自动换镜像）
+ *   检查 → 拉版本清单 latest.json（多个镜像依次尝试，清单就在最新 Release 的附件里）
+ *        → 语义化版本比对
+ *        → 下载补丁包 update-x.y.z.zip 到 resources/.update-staging（校验 sha256，失败自动换镜像）
+ *        → 解包到暂存目录（路径相对 resources 根，还原成 app.asar / app.asar.unpacked/… 的目录结构）
  *        → 拉起独立助手 apply-update.js（以 ELECTRON_RUN_AS_NODE 启动的纯 Node 进程）
  *        → 本进程退出，助手等进程真的退出后替换 app.asar 等文件，再重新拉起应用
+ *
+ * 为什么补丁用「一个 zip」而不是「一堆散文件」：
+ *   Release 附件区不用再拖几十上百个文件，上传时也不容易漏；清单从几十 KB 缩到几百字节；
+ *   下载只需要一条连接，进度和断点逻辑都简单得多。
  *
  * 为什么不在进程内直接替换 app.asar：
  *   Electron 启动时就把 app.asar 打开并常驻，运行中覆盖会失败或产生半新半旧的运行态。
@@ -20,6 +26,7 @@ const { spawn } = require('child_process')
 
 const config = require('./config')
 const net = require('./net')
+const { extractZip } = require('./unzip')
 const { compareVersions, normalizeVersion } = require('./semver')
 
 const STATUS = {
@@ -75,7 +82,6 @@ function createUpdater(deps) {
   const appExePath = process.execPath
 
   let manifest = null
-  let patchFiles = []
   let cancelToken = null
   let checkPromise = null
   let lastEmitAt = 0
@@ -186,6 +192,39 @@ function createUpdater(deps) {
     return [...new Set(urls)]
   }
 
+  /**
+   * 解析补丁描述。
+   * 新方案只认「一个 zip」：patch.asset = update-x.y.z.zip。
+   * 老方案（逐文件 asset 列表）不再支持 —— 那时的客户端读不到新清单里的 files，
+   * 会自然退化成「手动下载完整包」，正好是跨代升级该走的路径。
+   */
+  function normalizePatch(patchRaw, downloadBase) {
+    if (!patchRaw || typeof patchRaw !== 'object') return null
+
+    const asset = typeof patchRaw.asset === 'string' ? patchRaw.asset.trim() : ''
+    if (!asset) return null
+    // 只接受单层文件名，避免清单里塞进路径拼出奇怪的 URL
+    if (asset.includes('/') || asset.includes('\\') || asset.includes('..')) return null
+
+    const format = Number(patchRaw.format) || 1
+    // 比当前客户端认识的格式更新，说明这份清单是给更晚的版本准备的
+    if (format > config.PATCH_FORMAT) return null
+
+    const size = Number(patchRaw.size) || 0
+    return {
+      format,
+      minVersion: normalizeVersion(patchRaw.minVersion || '0.0.0'),
+      asset,
+      url: typeof patchRaw.url === 'string' && patchRaw.url
+        ? patchRaw.url
+        : `${downloadBase}${encodeURIComponent(asset)}`,
+      size,
+      sha256: String(patchRaw.sha256 || '').toLowerCase(),
+      totalSize: size,
+      remove: Array.isArray(patchRaw.remove) ? patchRaw.remove.filter(isSafeRelativePath) : []
+    }
+  }
+
   function normalizeManifest(raw) {
     if (!raw || typeof raw !== 'object') throw new Error('版本清单格式无效')
 
@@ -196,21 +235,6 @@ function createUpdater(deps) {
       raw.downloadBase
       || `${config.RELEASE_DOWNLOAD_BASE}/v${version}/`
     ).replace(/\/?$/, '/')
-
-    const patchRaw = raw.patch && typeof raw.patch === 'object' ? raw.patch : null
-    const files = []
-    if (patchRaw && Array.isArray(patchRaw.files)) {
-      for (const item of patchRaw.files) {
-        if (!item || !isSafeRelativePath(item.path)) continue
-        const assetName = item.asset || item.path.replace(/\//g, '__')
-        files.push({
-          path: item.path.replace(/\\/g, '/'),
-          url: item.url || `${downloadBase}${encodeURIComponent(assetName).replace(/%2F/gi, '/')}`,
-          size: Number(item.size) || 0,
-          sha256: String(item.sha256 || '').toLowerCase()
-        })
-      }
-    }
 
     return {
       version,
@@ -223,14 +247,7 @@ function createUpdater(deps) {
       publishedAt: String(raw.publishedAt || ''),
       releaseUrl: String(raw.releaseUrl || `${config.RELEASE_PAGE}/tag/v${version}`),
       mirrors: Array.isArray(raw.mirrors) ? raw.mirrors : null,
-      patch: files.length
-        ? {
-          minVersion: normalizeVersion(raw.patch.minVersion || '0.0.0'),
-          totalSize: files.reduce((sum, file) => sum + (file.size || 0), 0),
-          remove: Array.isArray(raw.patch.remove) ? raw.patch.remove.filter(isSafeRelativePath) : [],
-          files
-        }
-        : null
+      patch: normalizePatch(raw.patch, downloadBase)
     }
   }
 
@@ -262,14 +279,22 @@ function createUpdater(deps) {
 
   /**
    * 拉取版本清单：按 MANIFEST_SOURCES 顺序尝试，任意一个成功即返回。
-   * 国内直连 raw.githubusercontent.com 基本不可用，所以把加速前缀放在前面。
+   *
+   * latest.json 的文件名是固定的（不随版本变化），加速镜像很可能把它缓存住，
+   * 所以每次都带一个时间戳参数。GitHub 解析附件时只看路径、忽略查询串
+   * （实测仍会正常 302 到 v<版本>/latest.json），但镜像站会把它当成新 URL，
+   * 这样发版后不会有人读到上一版的清单。
    */
+  function withCacheBust(url) {
+    return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`
+  }
+
   async function fetchManifest(proxy, token) {
     const errors = []
     for (const url of config.MANIFEST_SOURCES) {
       if (token) token.throwIfCancelled()
       try {
-        const raw = await net.fetchJson(url, { proxy, timeout: 8000, cancelToken: token })
+        const raw = await net.fetchJson(withCacheBust(url), { proxy, timeout: 8000, cancelToken: token })
         return normalizeManifest(raw)
       } catch (error) {
         errors.push(`${new URL(url).host}: ${error.message}`)
@@ -297,9 +322,9 @@ function createUpdater(deps) {
     if (!next.patch) return 'manual'
     if (compareVersions(currentVersion, next.patch.minVersion) < 0) return 'manual'
     if (!isResourcesWritable()) return 'manual'
-    // 助手可能来自两处：已安装的 resources/apply-update.js，或本次更新包里自带的那份
-    const patchHasHelper = next.patch.files.some((file) => file.path === config.HELPER_NAME)
-    if (!fs.existsSync(helperPath) && !patchHasHelper) return 'manual'
+    // 助手必须是「已经在 resources 里的真实文件」，补丁包里的那份要等下载解包后才拿得到，
+    // 而这时候还没下载，所以只能检查已安装的那份。
+    if (!fs.existsSync(helperPath)) return 'manual'
     return 'hot'
   }
 
@@ -334,7 +359,6 @@ function createUpdater(deps) {
         }
 
         const mode = resolveMode(next)
-        patchFiles = next.patch ? next.patch.files : []
         return setState({
           status: mode === 'hot' ? STATUS.AVAILABLE : STATUS.MANUAL,
           mode,
@@ -383,9 +407,14 @@ function createUpdater(deps) {
     emit(false)
   }
 
-  async function downloadOne(file, offset, token) {
-    const target = path.join(stageDir, file.path)
-    const urls = buildMirrorUrls(file.url, manifest ? manifest.mirrors : null)
+  /**
+   * 下载补丁 zip：整包一条连接，失败自动换镜像。
+   * 文件名直接用清单里的 asset（update-x.y.z.zip），落地后再解包。
+   */
+  async function downloadPatchArchive(token) {
+    const patch = manifest.patch
+    const target = path.join(stageDir, patch.asset)
+    const urls = buildMirrorUrls(patch.url, manifest.mirrors)
     let lastError = null
 
     for (const url of urls) {
@@ -402,13 +431,13 @@ function createUpdater(deps) {
         const result = await net.downloadFile(url, target, {
           proxy: net.normalizeProxy(configStore.get('proxy', '')),
           cancelToken: token,
-          expectedSize: file.size,
-          onProgress: (received) => reportProgress(offset + received, state.total)
+          expectedSize: patch.size,
+          onProgress: (received) => reportProgress(received, patch.size)
         })
-        if (file.sha256 && result.sha256 !== file.sha256) {
+        if (patch.sha256 && result.sha256 !== patch.sha256) {
           throw new Error('sha256 校验失败')
         }
-        return result
+        return target
       } catch (error) {
         lastError = error
         await rmrf(target)
@@ -442,16 +471,18 @@ function createUpdater(deps) {
       error: ''
     })
 
-    const staged = []
-    let offset = 0
-
     try {
-      for (const file of manifest.patch.files) {
-        await downloadOne(file, offset, cancelToken)
-        staged.push(file)
-        offset += file.size || 0
-        reportProgress(offset, manifest.patch.totalSize)
-      }
+      const zipPath = await downloadPatchArchive(cancelToken)
+
+      // 解包是同步的（几十 MB 大约几百毫秒），先让「下载完成」这一帧发出去，
+      // 否则界面会停在 99% 卡一下
+      lastEmitAt = 0
+      reportProgress(manifest.patch.size, manifest.patch.size)
+      await new Promise((resolve) => setImmediate(resolve))
+      cancelToken.throwIfCancelled()
+
+      const extracted = extractZip(zipPath, stageDir)
+      await fs.promises.rm(zipPath, { force: true })
 
       const plan = {
         version: manifest.version,
@@ -462,9 +493,9 @@ function createUpdater(deps) {
         stagingDir: stageDir,
         restart: appExePath,
         logFile: logFile(),
-        files: staged.map((file) => ({
+        files: extracted.map((file) => ({
           path: file.path,
-          staged: path.join(stageDir, file.path),
+          staged: path.join(stageDir, ...file.path.split('/')),
           sha256: file.sha256,
           size: file.size
         })),
