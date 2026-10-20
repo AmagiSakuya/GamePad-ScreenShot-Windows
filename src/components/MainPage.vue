@@ -1,5 +1,6 @@
 ﻿<template>
-  <div class="page">
+  <!-- data-gp-pause：录制组合键期间暂停手柄界面导航，按键全部交给录制逻辑 -->
+  <div class="page" :data-gp-pause="detectionIndex != -1 ? '' : null">
     <!-- ===== 页头 ===== -->
     <div class="page-head">
       <div>
@@ -42,11 +43,11 @@
           <AppIcon name="folder" :size="15" />
           {{ $t('openScreenshotFolder') }}
         </button>
-        <button v-if="!listening" class="hero-cta start" @click="startListen">
+        <button v-if="!listening" class="hero-cta start" data-gp-autofocus @click="startListen">
           <AppIcon name="play" :size="15" />
           {{ $t('start') }}
         </button>
-        <button v-else class="hero-cta stop" @click="stopListen">
+        <button v-else class="hero-cta stop" data-gp-autofocus @click="stopListen">
           <AppIcon name="stop" :size="15" />
           {{ $t('stop') }}
         </button>
@@ -318,6 +319,7 @@ const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTa
 const { KeyCode } = require('@/lib/keycode')
 import { hasCaptureSound, setCaptureSound, playCaptureSound as playSound } from '@/lib/captureSound'
 import { toPlain } from '@/lib/ipcSafe'
+import { isPadMode, pickFolder } from '@/lib/gamepadNav'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import PageHero from '@/components/PageHero.vue'
@@ -544,6 +546,12 @@ export default {
       }
     },
     async chooseFolder() {
+      // 手柄模式下系统「选择文件夹」对话框点不了，改用应用内的文件夹浏览器
+      if (isPadMode()) {
+        const picked = await pickFolder(this.config.path)
+        if (picked) this.config.path = picked
+        return
+      }
       const folder = await window.electronAPI.selectFolder()
       if (folder) {
         this.config.path = folder
@@ -1133,7 +1141,9 @@ export default {
         try {
           let success = await this.openDevice(m_device)
           if (!success) {
-            alert(this.$t('alertMsg.openGamepadFail'))
+            // 不用原生 alert：手柄模式下无法操作系统对话框
+            this.showError(this.$t('alertMsg.openGamepadFail'))
+            if (this.windowsNotify) this.windowsNotify(this.$t('alertMsg.openGamepadFail'))
             return;
           }
           // 打开设备后刷新按键/十字键数量，识别到的 hat 方向才能正确命名

@@ -904,6 +904,49 @@ ipcMain.handle('get-current-hats-value', async () => {
   return flattenHatStates();
 })
 
+//#region 手柄界面导航输入
+let lastNavEnsureAt = 0;
+
+/**
+ * 界面导航用的输入快照（按键 + 十字键 + 轴）。
+ * 没有页面打开过设备时自己拉起第一支手柄，让「用手柄操作界面」开机即可用；
+ * 失败时 2 秒才重试一次，避免每次轮询都去 openDevice。
+ */
+ipcMain.handle('get-nav-state', () => {
+  if (!device_instance) {
+    const now = Date.now();
+    if (now - lastNavEnsureAt > 2000) {
+      lastNavEnsureAt = now;
+      ensureNavDevice();
+    }
+    if (!device_instance) return null;
+  }
+  try {
+    syncHatStatesFromDevice();
+    return {
+      buttons: device_instance.buttons ? Array.from(device_instance.buttons) : [],
+      axes: device_instance.axes ? Array.from(device_instance.axes) : [],
+      hats: hatCount > 0 ? flattenHatStates() : []
+    };
+  } catch (error) {
+    return null;
+  }
+});
+
+/** 界面导航专用：没有已打开的设备时打开第一支手柄（与映射引擎的兜底逻辑一致） */
+function ensureNavDevice() {
+  if (device_instance) return true;
+  const devices = sdl.joystick.devices || [];
+  if (!devices.length) return false;
+  try {
+    return openDeviceInstance(0);
+  } catch (error) {
+    log.warn('[NAV] Failed to open gamepad for UI navigation:', error);
+    return false;
+  }
+}
+//#endregion
+
 sdl.joystick.on('deviceAdd', (device) => {
   win.webContents.send('device-changed')
 })
@@ -1010,6 +1053,113 @@ ipcMain.handle('select-folder', async () => {
   })
   return result.canceled ? null : result.filePaths[0]
 })
+
+//#region 应用内文件夹浏览（手柄无法操作系统对话框，改由渲染进程自绘）
+/** 目录列表里过滤掉的系统目录 */
+const NAV_HIDDEN_DIRS = new Set(['System Volume Information', '$RECYCLE.BIN', 'Config.Msi', 'Recovery'])
+const NAV_MAX_DIRS = 400
+
+function listChildDirectories(targetPath) {
+  const dirs = []
+  let entries = []
+  try {
+    entries = fs.readdirSync(targetPath, { withFileTypes: true })
+  } catch (error) {
+    throw error
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith('.') || entry.name.startsWith('$')) continue;
+    if (NAV_HIDDEN_DIRS.has(entry.name)) continue;
+    dirs.push({ name: entry.name, path: path.join(targetPath, entry.name) })
+    if (dirs.length >= NAV_MAX_DIRS) break;
+  }
+  dirs.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN', { numeric: true }))
+  return dirs
+}
+
+function listWindowsDrives() {
+  const drives = []
+  for (let i = 65; i <= 90; i++) {
+    const letter = String.fromCharCode(i)
+    const root = `${letter}:\\`
+    try {
+      if (fs.existsSync(root)) drives.push({ name: `${letter}:`, path: root })
+    } catch (error) {
+      // 光驱 / 无权限的盘符直接跳过
+    }
+  }
+  return drives
+}
+
+/** 把用户传进来的路径（可能是文件、可能已失效）折算成一个真实存在的目录 */
+function resolveExistingDirectory(input) {
+  const candidates = []
+  if (typeof input === 'string' && input.trim()) {
+    const raw = input.trim().replace(/^"+|"+$/g, '')
+    candidates.push(raw)
+    // 传的是文件路径时退到父目录
+    if (path.extname(raw)) candidates.push(path.dirname(raw))
+  }
+  candidates.push(getConfiguredScreenshotPath())
+  for (const key of ['pictures', 'desktop', 'home']) {
+    try {
+      candidates.push(app.getPath(key))
+    } catch (error) {
+      // 个别系统上取不到该目录，忽略
+    }
+  }
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const resolved = path.resolve(candidate)
+      if (fs.statSync(resolved).isDirectory()) return resolved;
+    } catch (error) {
+      // 不存在就试下一个
+    }
+  }
+  return '';
+}
+
+function getQuickPaths() {
+  const quick = []
+  for (const key of ['desktop', 'pictures', 'documents', 'downloads']) {
+    try {
+      const dir = app.getPath(key)
+      if (dir && fs.existsSync(dir)) quick.push({ key, path: dir })
+    } catch (error) {
+      // 该平台没有这个目录
+    }
+  }
+  return quick
+}
+
+ipcMain.handle('list-directories', (_, targetPath) => {
+  const current = resolveExistingDirectory(targetPath)
+  if (!current) {
+    return { path: '', parent: '', dirs: [], drives: listWindowsDrives(), quick: getQuickPaths(), error: 'empty' }
+  }
+  let dirs = []
+  let failed = false
+  try {
+    dirs = listChildDirectories(current)
+  } catch (error) {
+    failed = true
+    log.warn('[NAV] Failed to list directory:', current, error && error.message)
+  }
+  const parentPath = path.dirname(current)
+  return {
+    path: current,
+    parent: parentPath && parentPath !== current ? parentPath : '',
+    dirs,
+    drives: listWindowsDrives(),
+    quick: getQuickPaths(),
+    error: failed ? 'unreadable' : ''
+  }
+})
+
+ipcMain.handle('get-quick-paths', () => getQuickPaths())
+//#endregion
 
 ipcMain.handle('ensure-folder', async (_, folderPath) => {
   return ensureDirectoryExists(folderPath, 'ipc');

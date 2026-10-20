@@ -170,7 +170,10 @@
         "clearLogsConfirmDetail": "Alle Protokolldateien im folgenden Ordner werden gelöscht, einschließlich des aktuell geschriebenen Protokolls:\n{path}\n\nDies kann nicht rückgängig gemacht werden, gespeicherte Screenshots bleiben jedoch erhalten.",
         "clearLogsDone": "Protokolle gelöscht",
         "clearLogsFailed": "Einige Protokolldateien konnten nicht gelöscht werden (evtl. in Verwendung), bitte später erneut versuchen",
-        "mappingAutoStart": "Tastenzuordnung beim Start"
+        "mappingAutoStart": "Tastenzuordnung beim Start",
+        "gamepadUiNav": "Controller-Steuerung",
+        "experimental": "Experimentell",
+        "gamepadUiNavDesc": "Oberfläche mit Controller bedienen: Fokus bewegen, Bildschirmtastatur, Ordnerauswahl in der App"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Screenshot-Ordner öffnen",
@@ -299,5 +302,43 @@
         "logOff": "Protokoll ist aus",
         "paramHint": "Haltezeit gilt für „Halten“, Wiederholrate für „Wiederholen“",
         "masterSwitchHint": "Ob es beim Start automatisch aktiv ist, steuert Einstellungen → Tastenzuordnung beim Start"
+    },
+    "GpNav": {
+        "emptyList": "Keine Optionen",
+        "cancel": "Abbrechen",
+        "selectOption": "Option wählen",
+        "inputTitle": "Text eingeben",
+        "chooseFolder": "Speicherordner wählen",
+        "confirmTitle": "Bitte bestätigen",
+        "finish": "OK",
+        "parentFolder": "Übergeordneter Ordner",
+        "loading": "Wird geladen…",
+        "loadFailed": "Ordner kann nicht gelesen werden",
+        "emptyFolder": "Keine Unterordner",
+        "drives": "Laufwerke",
+        "currentFolder": "Aktueller Ordner",
+        "pickThisFolder": "Diesen Ordner wählen",
+        "uppercase": "GROSS",
+        "lowercase": "klein",
+        "backspace": "Löschen",
+        "clearAll": "Leeren",
+        "keyboardTip": "Steuerkreuz: Taste wählen · A: eingeben · dann OK",
+        "hintOk": "Bestätigen",
+        "hintCancel": "Zurück",
+        "hintPage": "Seite wechseln",
+        "hintHelp": "Tastenbelegung",
+        "help": "Controller-Steuerung",
+        "helpMove": "Steuerkreuz / linker Stick bewegt",
+        "helpOk": "Bestätigen / öffnen / eingeben",
+        "helpBack": "Zurück oder schließen",
+        "helpPage": "Vorherige / nächste Seite",
+        "helpHelp": "Diese Hilfe ein-/ausblenden",
+        "helpExit": "Fokus verlassen (Maus)",
+        "quick": {
+            "desktop": "Desktop",
+            "pictures": "Bilder",
+            "documents": "Dokumente",
+            "downloads": "Downloads"
+        }
     }
 }

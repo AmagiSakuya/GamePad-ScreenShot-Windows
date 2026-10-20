@@ -170,7 +170,10 @@
         "clearLogsConfirmDetail": "Tous les journaux du dossier suivant seront supprimés, y compris celui en cours d'écriture :\n{path}\n\nCette action est irréversible, mais les captures enregistrées ne sont pas affectées.",
         "clearLogsDone": "Journaux vidés",
         "clearLogsFailed": "Certains journaux n'ont pas pu être supprimés (peut-être utilisés), réessayez plus tard",
-        "mappingAutoStart": "Démarrer le mappage au lancement"
+        "mappingAutoStart": "Démarrer le mappage au lancement",
+        "gamepadUiNav": "Contrôle à la manette",
+        "experimental": "Expérimental",
+        "gamepadUiNavDesc": "Piloter l'interface à la manette : déplacer le focus, clavier virtuel, choix de dossier intégré"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Ouvrir le dossier de captures",
@@ -299,5 +302,43 @@
         "logOff": "Journal désactivé",
         "paramHint": "Le seuil de maintien sert à « Maintien », l’intervalle à « Répétition »",
         "masterSwitchHint": "L’activation automatique au lancement dépend de Paramètres → Démarrer le mappage au lancement"
+    },
+    "GpNav": {
+        "emptyList": "Aucune option",
+        "cancel": "Annuler",
+        "selectOption": "Choisir une option",
+        "inputTitle": "Saisir du texte",
+        "chooseFolder": "Choisir le dossier d'enregistrement",
+        "confirmTitle": "Merci de confirmer",
+        "finish": "OK",
+        "parentFolder": "Dossier parent",
+        "loading": "Chargement…",
+        "loadFailed": "Impossible de lire ce dossier",
+        "emptyFolder": "Aucun sous-dossier",
+        "drives": "Lecteurs",
+        "currentFolder": "Dossier actuel",
+        "pickThisFolder": "Choisir ce dossier",
+        "uppercase": "MAJ",
+        "lowercase": "min",
+        "backspace": "Retour arrière",
+        "clearAll": "Effacer",
+        "keyboardTip": "Croix pour choisir · A pour saisir · puis OK",
+        "hintOk": "Confirmer",
+        "hintCancel": "Retour",
+        "hintPage": "Changer de page",
+        "hintHelp": "Aide des boutons",
+        "help": "Commandes manette",
+        "helpMove": "Croix / stick gauche pour se déplacer",
+        "helpOk": "Confirmer / ouvrir / saisir",
+        "helpBack": "Retour ou fermer",
+        "helpPage": "Page précédente / suivante",
+        "helpHelp": "Afficher ou masquer cette aide",
+        "helpExit": "Quitter le focus (souris)",
+        "quick": {
+            "desktop": "Bureau",
+            "pictures": "Images",
+            "documents": "Documents",
+            "downloads": "Téléchargements"
+        }
     }
 }

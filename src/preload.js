@@ -115,6 +115,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onWindowMaximizedChanged: (callback) => ipcRenderer.on('window-maximized-changed', callback),
     // 界面字体大小（整页缩放）
     setUiScale: (scale) => ipcRenderer.invoke('set-ui-scale', scale),
+    // ===== 手柄界面导航（手柄操作界面：方向导航 / 软键盘 / 文件夹浏览）=====
+    /** 界面导航输入快照 { buttons, axes, hats }，没有设备时为 null */
+    getNavState: () => ipcRenderer.invoke('get-nav-state'),
+    /** 列出一个目录下的子目录（供应用内文件夹选择器使用） */
+    listDirectories: (dirPath) => ipcRenderer.invoke('list-directories', dirPath),
+    getQuickPaths: () => ipcRenderer.invoke('get-quick-paths'),
     // ===== 手柄按键映射（手柄 → 键盘）=====
     getMappingConfig: () => ipcRenderer.invoke('mapping:get-config'),
     saveMappingConfig: (config) => ipcRenderer.invoke('mapping:save-config', config),

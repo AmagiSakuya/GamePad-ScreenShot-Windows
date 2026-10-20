@@ -89,8 +89,8 @@
         </div>
       </div>
 
-      <!-- 窗口控制 -->
-      <div class="win-ctrls">
+      <!-- 窗口控制：不参与手柄导航（避免误按误关窗口） -->
+      <div class="win-ctrls" data-gp-skip>
         <button class="win-btn" :title="$t('ui.minimize')" @click="minimizeWindow">
           <AppIcon name="minus" :size="14" />
         </button>
@@ -137,6 +137,9 @@
       @check="runUpdateCheck" @download="startUpdateDownload" @cancel="cancelUpdateDownload"
       @apply="installUpdate" @open-release="openUpdateRelease" />
 
+    <!-- 手柄操作层：焦点环 + 按键提示 + 下拉/软键盘/选文件夹/确认框等覆盖层 -->
+    <GpNavLayer />
+
     <!-- 语言切换提示（主界面文案与托盘菜单均已热更新，无需重启） -->
     <transition name="lang-toast">
       <div v-if="langToast" class="lang-toast">
@@ -153,8 +156,10 @@ import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
 import MappingSettingsPage from '@/components/MappingSettingsPage.vue'
 import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
 import UpdateDialog from '@/components/UpdateDialog.vue'
+import GpNavLayer from '@/components/GpNavLayer.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { LANGUAGES, getLanguage, normalizeLocale } from '@/locales/languages'
+import { initGamepadNav, disposeGamepadNav, notifyViewChanged, setNavI18n } from '@/lib/gamepadNav'
 import pkg from '../package.json'
 
 const {
@@ -177,7 +182,7 @@ function hexToRgba(hex, alpha) {
 
 export default {
   name: 'App',
-  components: { MainPage, ControllerSettingsPage, MappingSettingsPage, SystemSettingsPage, UpdateDialog, AppIcon },
+  components: { MainPage, ControllerSettingsPage, MappingSettingsPage, SystemSettingsPage, UpdateDialog, GpNavLayer, AppIcon },
   data() {
     return {
       // 图标与主进程 BrowserWindow icon 使用同一份 gamepad.ico（放在 public 下由 webpack 直接拷贝）
@@ -270,6 +275,8 @@ export default {
   watch: {
     // 切回截图设置页时重新同步手柄连接状态（调试页会接管/释放同一个设备实例）
     view(nextView) {
+      // 手柄模式下切页：新页面是 v-if 挂载的，焦点需要重新锚定
+      notifyViewChanged()
       if (nextView !== 'screenshot') return
       this.$nextTick(() => {
         const mainPage = this.$refs.mainPageRef
@@ -303,6 +310,10 @@ export default {
   async mounted() {
     this.startTraySync()
     document.addEventListener('click', this.closePopovers)
+
+    // 手柄操作界面：焦点导航 + 覆盖层（下拉 / 软键盘 / 选文件夹 / 确认框）
+    setNavI18n((key) => this.$t(key))
+    initGamepadNav()
 
     // 主进程会把更新状态（检查中 / 有新版本 / 下载进度 / 待重启）实时推过来
     if (window.electronAPI.onUpdaterState) {
@@ -341,6 +352,7 @@ export default {
     }
     if (window.electronAPI.offUpdaterState) window.electronAPI.offUpdaterState()
     if (window.electronAPI.offMappingEnabledChanged) window.electronAPI.offMappingEnabledChanged()
+    disposeGamepadNav()
     document.removeEventListener('click', this.closePopovers)
   },
   methods: {
@@ -1742,5 +1754,580 @@ button,
 select,
 input {
   font-family: inherit;
+}
+
+/* =========================================================
+   手柄操作界面：焦点环 / 按键提示 / 覆盖层
+   （覆盖层是全局单例，样式集中在这里维护）
+   ========================================================= */
+/* 焦点环：描边用前景色（对亮色/暗色按钮都清晰），外圈加主题色光晕表明「手柄焦点」 */
+.gp-focus {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 5px var(--accent-soft), 0 0 26px -6px var(--accent);
+  position: relative;
+  z-index: 2;
+}
+
+.gp-root {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  pointer-events: none;
+}
+
+/* ---------- 按键提示条 ---------- */
+.gp-hintbar {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 14px;
+  border-radius: 99px;
+  background: var(--surface-flat);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.75);
+  font-size: 11px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  max-width: calc(100% - 120px);
+  overflow: hidden;
+}
+
+.gp-hint-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+
+.gp-hint-focus {
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+  color: var(--ink-3);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 通用手柄按键图示：只表达「位置」，不出现 A/B/X/Y（适配所有品牌） */
+.gp-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  font-style: normal;
+}
+
+.gp-glyph svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+  overflow: visible;
+}
+
+.gp-glyph svg circle {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.3;
+  transition: fill 0.12s ease, stroke 0.12s ease;
+}
+
+.gp-glyph svg circle.on {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.gp-glyph-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 5px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.gp-glyph-pill.menu {
+  font-size: 11.5px;
+  padding: 0 3px;
+}
+
+.gp-dpad {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 5px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  font-style: normal;
+  color: var(--ink);
+}
+
+/* ---------- 按键说明 ---------- */
+.gp-help {
+  position: absolute;
+  right: 18px;
+  bottom: 58px;
+  width: 236px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-flat);
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 24px 50px -30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.gp-help-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.gp-help-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gp-help-keys {
+  flex: 0 0 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ---------- 覆盖层通用 ---------- */
+.gp-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 5, 8, 0.66);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  animation: gpFade 0.16s ease;
+}
+
+html.theme-light .gp-mask {
+  background: rgba(22, 32, 22, 0.42);
+}
+
+.gp-sheet {
+  width: 420px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-flat);
+  box-shadow: 0 30px 80px -40px #000, 0 0 0 1px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: gpPop 0.18s ease;
+}
+
+.gp-sheet.wide {
+  width: 520px;
+}
+
+.gp-sheet-head {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gp-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.gp-sheet-sub {
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.gp-sheet-body {
+  padding: 10px 12px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 80px;
+}
+
+.gp-sheet-body::-webkit-scrollbar {
+  width: 9px;
+}
+
+.gp-sheet-body::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.gp-sheet-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.gp-sheet-foot.end {
+  justify-content: flex-end;
+}
+
+.gp-spacer {
+  flex: 1 1 auto;
+}
+
+.gp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gp-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.gp-item:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.gp-item.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.gp-item.primary {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.gp-item.danger {
+  color: var(--danger);
+}
+
+.gp-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.gp-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gp-item-hint {
+  flex: 0 0 auto;
+  max-width: 46%;
+  font-size: 10px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gp-empty {
+  padding: 14px 10px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: 9px;
+}
+
+.gp-empty.error {
+  color: var(--danger);
+  border-color: rgba(251, 95, 118, 0.3);
+}
+
+/* ---------- 软键盘 ---------- */
+.gp-keyboard {
+  width: 566px;
+}
+
+.gp-kb-preview {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--field);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+}
+
+.gp-kb-preview.empty {
+  color: var(--ink-3);
+}
+
+.gp-kb-text {
+  white-space: pre;
+}
+
+.gp-caret {
+  display: inline-block;
+  width: 2px;
+  height: 13px;
+  margin: 0 1px;
+  background: var(--accent);
+  vertical-align: -2px;
+  animation: gpBlink 1.05s steps(1) infinite;
+}
+
+.gp-kb-placeholder {
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.gp-kb-row {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+.gp-key {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.gp-key:hover {
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.gp-key.fn {
+  flex: 0 0 auto;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--ink-2);
+}
+
+.gp-key.fn.flip {
+  transform: rotate(180deg);
+}
+
+.gp-key.fn.wide {
+  padding: 0 16px;
+}
+
+.gp-kb-tip {
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+/* ---------- 文件夹选择 ---------- */
+.gp-picker {
+  width: 580px;
+}
+
+.gp-path-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--field);
+  color: var(--ink-2);
+  min-width: 0;
+}
+
+.gp-path {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.gp-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 9px;
+  margin-bottom: 6px;
+  border-bottom: 1px dashed var(--line-strong);
+}
+
+.gp-chip {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.14s ease;
+}
+
+.gp-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.gp-dir-list {
+  min-height: 120px;
+}
+
+.gp-up {
+  transform: rotate(-90deg);
+  color: var(--ink-3);
+}
+
+.gp-group-label {
+  margin: 8px 0 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+.gp-drive-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gp-picker-path {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+}
+
+/* ---------- 确认框 ---------- */
+.gp-confirm {
+  width: 430px;
+}
+
+.gp-confirm-msg {
+  margin: 4px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.gp-confirm-detail {
+  margin: 8px 2px 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  word-break: break-all;
+}
+
+.gp-danger-ico {
+  color: var(--danger);
+}
+
+/* ---------- 动效 ---------- */
+@keyframes gpFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gpPop {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes gpBlink {
+  0%, 45% { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+.gp-fade-enter-active,
+.gp-fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.gp-fade-enter-from,
+.gp-fade-leave-to {
+  opacity: 0;
 }
 </style>

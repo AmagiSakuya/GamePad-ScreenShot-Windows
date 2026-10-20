@@ -1,7 +1,8 @@
 <template>
   <transition name="upd-fade">
     <div v-if="open" class="upd-mask" @click.self="onMaskClick">
-      <div class="upd-card" role="dialog" aria-modal="true">
+      <!-- data-gp-scope：弹窗打开时手柄焦点被限制在弹窗内 -->
+      <div class="upd-card" role="dialog" aria-modal="true" data-gp-scope="dialog">
         <header class="upd-head">
           <div class="upd-ico" :class="toneClass">
             <AppIcon :name="iconName" :size="18" />

@@ -56,6 +56,7 @@ import pkg from '../../package.json';
 import AppIcon from '@/components/AppIcon.vue';
 import SettingsCard from '@/components/SettingsCard.vue';
 import { captureSoundState, setCaptureSound, playCaptureSound } from '@/lib/captureSound';
+import { isPadMode, askConfirm, setNavEnabled } from '@/lib/gamepadNav';
 
 const { OVERLAY_SCALE_MIN, OVERLAY_SCALE_MAX, OVERLAY_SCALE_STEP, normalizeOverlayScale } = require('@/lib/overlayScale');
 
@@ -68,6 +69,8 @@ let autoStartKey = 'autoStart';
 let minimizeOnStartupKey = 'minimizeOnStartup';
 // 启动时是否自动开启按键映射（不设这个开关，启动后映射一律为关闭状态）
 let mappingAutoStartKey = 'mappingAutoStart';
+// 是否允许用手柄操作界面（方向导航 / 软键盘 / 文件夹选择器）
+let gamepadUiNavKey = 'gamepadUiNavEnabled';
 
 /**
  * 「自动开始监听」现在只有开 / 关两态（开 = 启动和插拔设备都自动监听）。
@@ -100,6 +103,8 @@ export default {
         autoStart: false,
         minimizeOnStartup: false,
         mappingAutoStart: false,
+        // 手柄控制软件：实验性质，默认关闭
+        gamepadUiNav: false,
         overlayNotify: 'show',
         overlayNotifySize: 1,
         overlayNotifyDuration: 3,
@@ -196,6 +201,20 @@ export default {
               type: 'seg',
               configKey: 'minimizeOnStartup',
               handler: this.onMinimizeOnStartupChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
+              ]
+            },
+            {
+              // 手柄控制软件（实验性）：方向导航 + 软键盘 + 文件夹选择器
+              key: 'gamepadUiNav',
+              icon: 'gamepad',
+              type: 'seg',
+              configKey: 'gamepadUiNav',
+              badge: 'SystemSettingsPage.experimental',
+              desc: 'SystemSettingsPage.gamepadUiNavDesc',
+              handler: this.onGamepadUiNavChanged,
               options: [
                 { value: true, label: 'SystemSettingsPage.enabled' },
                 { value: false, label: 'SystemSettingsPage.disabled' }
@@ -334,6 +353,8 @@ export default {
     this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
     const mappingAutoStart = await window.electronAPI.getStore(mappingAutoStartKey, false);
     this.config.mappingAutoStart = mappingAutoStart === 'true' || mappingAutoStart === true;
+    const gamepadUiNav = await window.electronAPI.getStore(gamepadUiNavKey, 'disabled');
+    this.config.gamepadUiNav = gamepadUiNav === 'enabled';
     this.config.overlayNotify = overlayNotify;
     this.config.overlayNotifySize = normalizeOverlayScale(overlayNotifySize);
     this.config.overlayNotifyDuration = Math.min(5, Math.max(1, Number(overlayNotifyDuration) || 2));
@@ -391,6 +412,12 @@ export default {
       this.config.minimizeOnStartup = this.config.minimizeOnStartup === 'true' || this.config.minimizeOnStartup === true;
       await window.electronAPI.setStore(minimizeOnStartupKey, this.config.minimizeOnStartup);
     },
+    /** 手柄操作界面开关：立即生效，不需要重启 */
+    async onGamepadUiNavChanged() {
+      const enabled = this.config.gamepadUiNav === 'true' || this.config.gamepadUiNav === true;
+      await window.electronAPI.setStore(gamepadUiNavKey, enabled ? 'enabled' : 'disabled');
+      setNavEnabled(enabled);
+    },
     async onFilenameConflictResolutionChanged() {
       await window.electronAPI.setStore(filenameConflictResolutionKey, this.config.filenameConflictResolution);
     },
@@ -443,12 +470,22 @@ export default {
     },
     /** 清空日志：先确认，再删除日志文件夹内的所有日志文件 */
     async clearLogs() {
-      const confirmed = await window.electronAPI.showConfirmMessageBox(
-        this.$t('SystemSettingsPage.clearLogsConfirmTitle'),
-        this.$t('SystemSettingsPage.clearLogsConfirmMessage'),
-        this.$t('SystemSettingsPage.clearLogsConfirmDetail', { path: this.dataPaths.logFolder || '-' }),
-        [this.$t('SystemSettingsPage.confirmButton'), this.$t('SystemSettingsPage.cancelButton')]
-      );
+      // 手柄模式下系统消息框选不了，改用应用内确认框
+      const confirmed = isPadMode()
+        ? await askConfirm({
+          title: this.$t('SystemSettingsPage.clearLogsConfirmTitle'),
+          message: this.$t('SystemSettingsPage.clearLogsConfirmMessage'),
+          detail: this.$t('SystemSettingsPage.clearLogsConfirmDetail', { path: this.dataPaths.logFolder || '-' }),
+          okLabel: this.$t('SystemSettingsPage.confirmButton'),
+          cancelLabel: this.$t('SystemSettingsPage.cancelButton'),
+          danger: true
+        })
+        : await window.electronAPI.showConfirmMessageBox(
+          this.$t('SystemSettingsPage.clearLogsConfirmTitle'),
+          this.$t('SystemSettingsPage.clearLogsConfirmMessage'),
+          this.$t('SystemSettingsPage.clearLogsConfirmDetail', { path: this.dataPaths.logFolder || '-' }),
+          [this.$t('SystemSettingsPage.confirmButton'), this.$t('SystemSettingsPage.cancelButton')]
+        );
       if (!confirmed) return;
 
       const result = await window.electronAPI.clearLogFiles();

@@ -170,7 +170,10 @@
         "clearLogsConfirmDetail": "以下のフォルダー内のすべてのログファイル（書き込み中のログを含む）を削除します：\n{path}\n\nこの操作は元に戻せませんが、保存済みのスクリーンショットには影響しません。",
         "clearLogsDone": "ログを消去しました",
         "clearLogsFailed": "一部のログファイルを削除できませんでした（使用中の可能性があります）。しばらくしてから再試行してください",
-        "mappingAutoStart": "起動時にボタンマッピングを実行"
+        "mappingAutoStart": "起動時にボタンマッピングを実行",
+        "gamepadUiNav": "コントローラー操作",
+        "experimental": "実験的",
+        "gamepadUiNavDesc": "コントローラーで画面を操作：フォーカス移動・ソフトキーボード・アプリ内フォルダー選択"
     },
     "TrayMenu": {
         "openScreenshotFolder": "スクリーンショットフォルダーを開く",
@@ -299,5 +302,43 @@
         "logOff": "記録はオフです",
         "paramHint": "長押し時間は「長押し」、連射間隔は「連射」で使われます",
         "masterSwitchHint": "起動時に自動で有効にするかは「設定 → 起動時にボタンマッピングを実行」で決まります"
+    },
+    "GpNav": {
+        "emptyList": "選択肢がありません",
+        "cancel": "キャンセル",
+        "selectOption": "項目を選択",
+        "inputTitle": "入力",
+        "chooseFolder": "保存先フォルダーを選択",
+        "confirmTitle": "確認してください",
+        "finish": "OK",
+        "parentFolder": "上の階層",
+        "loading": "読み込み中…",
+        "loadFailed": "このフォルダーを読み込めません",
+        "emptyFolder": "サブフォルダーがありません",
+        "drives": "ドライブ",
+        "currentFolder": "現在のフォルダー",
+        "pickThisFolder": "このフォルダーを選択",
+        "uppercase": "大文字",
+        "lowercase": "小文字",
+        "backspace": "バックスペース",
+        "clearAll": "クリア",
+        "keyboardTip": "十字キーでキーを選択 · A で入力 · 最後に「OK」",
+        "hintOk": "決定",
+        "hintCancel": "戻る",
+        "hintPage": "ページ切替",
+        "hintHelp": "ボタン説明",
+        "help": "コントローラー操作",
+        "helpMove": "十字キー / 左スティックで移動",
+        "helpOk": "決定 / 開く / 入力",
+        "helpBack": "戻る・閉じる",
+        "helpPage": "前のページ / 次のページ",
+        "helpHelp": "この説明の表示切替",
+        "helpExit": "フォーカス解除（マウスへ）",
+        "quick": {
+            "desktop": "デスクトップ",
+            "pictures": "ピクチャ",
+            "documents": "ドキュメント",
+            "downloads": "ダウンロード"
+        }
     }
 }

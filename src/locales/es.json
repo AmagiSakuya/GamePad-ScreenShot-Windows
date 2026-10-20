@@ -170,7 +170,10 @@
         "clearLogsConfirmDetail": "Se eliminarán todos los registros de la siguiente carpeta, incluido el que se está escribiendo:\n{path}\n\nEsta acción no se puede deshacer, pero no afecta a las capturas guardadas.",
         "clearLogsDone": "Registros borrados",
         "clearLogsFailed": "Algunos registros no se pudieron eliminar (pueden estar en uso), inténtalo más tarde",
-        "mappingAutoStart": "Iniciar el mapeo al arrancar"
+        "mappingAutoStart": "Iniciar el mapeo al arrancar",
+        "gamepadUiNav": "Control con mando",
+        "experimental": "Experimental",
+        "gamepadUiNavDesc": "Controla la interfaz con el mando: mover el foco, teclado en pantalla, selector de carpetas integrado"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Abrir carpeta de capturas",
@@ -299,5 +302,43 @@
         "logOff": "Registro desactivado",
         "paramHint": "El umbral de pulsación se usa en «Mantener» y el intervalo en «Repetir»",
         "masterSwitchHint": "El inicio automático depende de Ajustes → Iniciar el mapeo al arrancar"
+    },
+    "GpNav": {
+        "emptyList": "Sin opciones",
+        "cancel": "Cancelar",
+        "selectOption": "Elegir opción",
+        "inputTitle": "Introducir texto",
+        "chooseFolder": "Elegir carpeta de guardado",
+        "confirmTitle": "Confirma por favor",
+        "finish": "Aceptar",
+        "parentFolder": "Carpeta superior",
+        "loading": "Cargando…",
+        "loadFailed": "No se puede leer esta carpeta",
+        "emptyFolder": "Sin subcarpetas",
+        "drives": "Unidades",
+        "currentFolder": "Carpeta actual",
+        "pickThisFolder": "Elegir esta carpeta",
+        "uppercase": "MAYÚS",
+        "lowercase": "minús",
+        "backspace": "Borrar",
+        "clearAll": "Limpiar",
+        "keyboardTip": "Cruceta para elegir · A para escribir · luego Aceptar",
+        "hintOk": "Confirmar",
+        "hintCancel": "Atrás",
+        "hintPage": "Cambiar de página",
+        "hintHelp": "Ayuda de botones",
+        "help": "Controles del mando",
+        "helpMove": "Cruceta / stick izquierdo para moverte",
+        "helpOk": "Confirmar / abrir / escribir",
+        "helpBack": "Atrás o cerrar",
+        "helpPage": "Página anterior / siguiente",
+        "helpHelp": "Mostrar u ocultar esta ayuda",
+        "helpExit": "Salir del foco (ratón)",
+        "quick": {
+            "desktop": "Escritorio",
+            "pictures": "Imágenes",
+            "documents": "Documentos",
+            "downloads": "Descargas"
+        }
     }
 }

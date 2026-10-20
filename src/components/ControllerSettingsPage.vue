@@ -208,7 +208,8 @@ export default {
       let physicalNum = 0;
       let hatNum = 0;
       if (!success) {
-        alert(this.$t('alertMsg.openGamepadFail'))
+        // 原生 alert 会挡住界面且手柄无法操作，改用系统通知提示
+        if (window.Notification) new Notification('', { body: this.$t('alertMsg.openGamepadFail') })
       } else {
         btnNum = await window.electronAPI.getDeviceInstanceButtonNumber();
         axisNum = await window.electronAPI.getDeviceInstanceAxisNumber();

@@ -170,7 +170,10 @@
         "clearLogsConfirmDetail": "All log files in the folder below will be deleted, including the log currently being written:\n{path}\n\nThis cannot be undone, but saved screenshots are not affected.",
         "clearLogsDone": "Logs cleared",
         "clearLogsFailed": "Some log files could not be deleted (they may be in use), please try again later",
-        "mappingAutoStart": "Start button mapping on launch"
+        "mappingAutoStart": "Start button mapping on launch",
+        "gamepadUiNav": "Controller control",
+        "experimental": "Experimental",
+        "gamepadUiNavDesc": "Operate the UI with a controller: move focus, on-screen keyboard, in-app folder picker"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Open Screenshot Folder",
@@ -333,5 +336,43 @@
         "logOff": "Logging is off",
         "paramHint": "Hold threshold applies to Hold; repeat interval applies to Repeat",
         "masterSwitchHint": "Whether it starts automatically is controlled by Settings → Start button mapping on launch"
+    },
+    "GpNav": {
+        "emptyList": "No options",
+        "cancel": "Cancel",
+        "selectOption": "Select option",
+        "inputTitle": "Enter text",
+        "chooseFolder": "Choose save folder",
+        "confirmTitle": "Please confirm",
+        "finish": "OK",
+        "parentFolder": "Parent folder",
+        "loading": "Loading…",
+        "loadFailed": "Unable to read this folder",
+        "emptyFolder": "No subfolders",
+        "drives": "Drives",
+        "currentFolder": "Current folder",
+        "pickThisFolder": "Use this folder",
+        "uppercase": "ABC",
+        "lowercase": "abc",
+        "backspace": "Delete",
+        "clearAll": "Clear",
+        "keyboardTip": "D-pad to pick a key · A to type · then OK",
+        "hintOk": "Confirm",
+        "hintCancel": "Back",
+        "hintPage": "Switch page",
+        "hintHelp": "Controls",
+        "help": "Controller controls",
+        "helpMove": "D-pad / left stick to move",
+        "helpOk": "Confirm / open / type",
+        "helpBack": "Back or close",
+        "helpPage": "Previous / next page",
+        "helpHelp": "Show or hide this help",
+        "helpExit": "Exit focus (back to mouse)",
+        "quick": {
+            "desktop": "Desktop",
+            "pictures": "Pictures",
+            "documents": "Documents",
+            "downloads": "Downloads"
+        }
     }
 }

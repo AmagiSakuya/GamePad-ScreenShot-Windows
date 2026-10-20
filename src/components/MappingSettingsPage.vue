@@ -24,12 +24,12 @@
       :title="config.enabled ? $t('MappingPage.onTitle') : $t('MappingPage.offTitle')"
       :sub="config.enabled ? $t('MappingPage.onDesc') : $t('MappingPage.offDesc')">
       <template #actions>
-        <button v-if="!config.enabled" class="hero-cta start"
+        <button v-if="!config.enabled" class="hero-cta start" data-gp-autofocus
           :title="$t('MappingPage.masterSwitchHint')" @click="toggleEnabled">
           <AppIcon name="play" :size="15" />
           {{ $t('start') }}
         </button>
-        <button v-else class="hero-cta stop"
+        <button v-else class="hero-cta stop" data-gp-autofocus
           :title="$t('MappingPage.masterSwitchHint')" @click="toggleEnabled">
           <AppIcon name="stop" :size="15" />
           {{ $t('stop') }}
@@ -50,7 +50,9 @@
     </PageHero>
 
     <!-- ===== 映射规则 ===== -->
-    <div class="ui-card map-rules" :class="{ 'is-disabled': !config.enabled }">
+    <!-- 映射未启动时整块不可用：手柄导航也直接跳过（只留横幅上的启动按钮可点） -->
+    <div class="ui-card map-rules" :class="{ 'is-disabled': !config.enabled }"
+      :data-gp-skip="!config.enabled ? '' : null">
       <div class="ui-card-head">
         <div class="ui-card-head-left">
           <div class="ui-card-ico"><AppIcon name="keyboard" :size="13" /></div>
@@ -79,13 +81,14 @@
 
       <div v-if="config.rules.length" class="rule-list">
         <div v-for="(rule, index) in config.rules" :key="rule.id" class="rule"
-          :class="{ 'is-rec': detect.ruleId === rule.id, 'is-off': !rule.enabled }">
+          :class="{ 'is-rec': detect.ruleId === rule.id, 'is-off': !rule.enabled }"
+          :data-gp-pause="isListeningPad(rule) ? '' : null">
           <span class="rule-no">{{ String(index + 1).padStart(2, '0') }}</span>
 
           <!-- 手柄输入 -->
           <div class="side pad">
             <span class="side-ico"><AppIcon name="gamepad" :size="13" /></span>
-            <div v-if="isListeningPad(rule)" class="rec-box" @click="cancelDetect">
+            <div v-if="isListeningPad(rule)" class="rec-box" data-gp @click="cancelDetect">
               <span>{{ $t('MappingPage.pressPad') }}</span><span class="caret"></span>
             </div>
             <div v-else class="keys">
@@ -109,7 +112,7 @@
           <div class="side keys">
             <span class="side-ico kb"><AppIcon name="keyboard" :size="13" /></span>
             <div class="keys">
-              <span v-for="code in rule.keys" :key="code" class="key kb removable"
+              <span v-for="code in rule.keys" :key="code" class="key kb removable" data-gp
                 :title="$t('MappingPage.removeKey')" @click="removeKey(rule, code)">
                 {{ keyLabelOf(code) }}
                 <span class="chip-x"><AppIcon name="close" :size="8" :stroke-width="2.6" /></span>
@@ -157,7 +160,8 @@
     </div>
 
     <!-- ===== 下半区 ===== -->
-    <div class="map-bottom" :class="{ 'is-disabled': !config.enabled }">
+    <div class="map-bottom" :class="{ 'is-disabled': !config.enabled }"
+      :data-gp-skip="!config.enabled ? '' : null">
       <div class="ui-card">
         <div class="ui-card-head">
           <div class="ui-card-head-left">

@@ -170,7 +170,10 @@
         "clearLogsConfirmDetail": "将删除以下文件夹中的全部日志文件（包括当前正在写入的日志）：\n{path}\n\n该操作不可撤销，但不会影响已保存的截图文件。",
         "clearLogsDone": "日志已清空",
         "clearLogsFailed": "部分日志文件无法删除（可能正被占用），请稍后重试",
-        "mappingAutoStart": "启动时运行键盘映射"
+        "mappingAutoStart": "启动时运行键盘映射",
+        "gamepadUiNav": "手柄控制软件",
+        "experimental": "实验性",
+        "gamepadUiNavDesc": "用手柄操作界面：方向键移动焦点、软键盘输入、应用内选择文件夹"
     },
     "TrayMenu": {
         "openScreenshotFolder": "打开截图文件夹",
@@ -333,5 +336,43 @@
         "logOff": "记录已关闭",
         "paramHint": "长按阈值用于「长按」触发，连发间隔用于「连发」触发",
         "masterSwitchHint": "启动时是否自动开启，由「系统设置 → 启动时运行键盘映射」决定"
+    },
+    "GpNav": {
+        "emptyList": "没有可选项",
+        "cancel": "取消",
+        "selectOption": "选择选项",
+        "inputTitle": "输入内容",
+        "chooseFolder": "选择保存文件夹",
+        "confirmTitle": "请确认",
+        "finish": "确定",
+        "parentFolder": "上一级",
+        "loading": "读取中…",
+        "loadFailed": "无法读取该文件夹",
+        "emptyFolder": "没有子文件夹",
+        "drives": "驱动器",
+        "currentFolder": "当前文件夹",
+        "pickThisFolder": "选择此文件夹",
+        "uppercase": "大写",
+        "lowercase": "小写",
+        "backspace": "退格",
+        "clearAll": "清空",
+        "keyboardTip": "十字键选按键 · A 输入 · 完成后按「确定」",
+        "hintOk": "确定",
+        "hintCancel": "返回",
+        "hintPage": "切换页面",
+        "hintHelp": "按键说明",
+        "help": "手柄操作",
+        "helpMove": "十字键 / 左摇杆 移动焦点",
+        "helpOk": "确认 / 打开 / 输入",
+        "helpBack": "返回上一层或关闭",
+        "helpPage": "上一页 / 下一页",
+        "helpHelp": "显示 / 隐藏本说明",
+        "helpExit": "退出焦点（回到鼠标）",
+        "quick": {
+            "desktop": "桌面",
+            "pictures": "图片",
+            "documents": "文档",
+            "downloads": "下载"
+        }
     }
 }

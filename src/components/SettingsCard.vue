@@ -1,6 +1,7 @@
 <template>
   <div class="ui-card set-card">
-    <div class="ui-card-head set-head" @click="$emit('toggle')">
+    <!-- data-gp：让手柄导航也能聚焦并折叠这张卡片 -->
+    <div class="ui-card-head set-head" data-gp @click="$emit('toggle')">
       <div class="ui-card-head-left">
         <div class="ui-card-ico" :class="group.tone"><AppIcon :name="group.icon" :size="13" /></div>
         <span class="ui-card-title">{{ $t('SystemSettingsPage.' + group.key) }}</span>
@@ -13,7 +14,15 @@
       <div class="set-row" v-for="setting in group.settings" :key="setting.key">
         <div class="set-label">
           <AppIcon :name="setting.icon" :size="13" />
-          <span>{{ $t('SystemSettingsPage.' + setting.key) }}</span>
+          <span class="set-label-body">
+            <span class="set-label-row">
+              <span>{{ $t('SystemSettingsPage.' + setting.key) }}</span>
+              <!-- 实验性等标记 -->
+              <span v-if="setting.badge" class="set-badge">{{ $t(setting.badge) }}</span>
+            </span>
+            <!-- 可选的补充说明 -->
+            <span v-if="setting.desc" class="set-label-desc">{{ $t(setting.desc) }}</span>
+          </span>
         </div>
         <div class="set-ctl">
           <!-- 两态切换（和「关闭方式」同一套分段样式） -->
@@ -162,15 +171,54 @@ export default {
 
 .set-label {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   font-size: 12px;
   color: var(--ink-2);
   min-width: 0;
 }
 
+.set-label > .app-icon {
+  margin-top: 1px;
+  flex: 0 0 auto;
+}
+
+.set-label-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.set-label-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.set-label-desc {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
 .set-label .app-icon {
   color: var(--ink-3);
+}
+
+/* 「实验性」这类标记 */
+.set-badge {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(243, 186, 74, 0.34);
+  background: rgba(243, 186, 74, 0.12);
+  color: var(--warn);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
 .set-ctl {

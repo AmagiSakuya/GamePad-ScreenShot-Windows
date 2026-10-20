@@ -170,7 +170,10 @@
         "clearLogsConfirmDetail": "將刪除以下資料夾中的全部日誌檔案（包含目前正在寫入的日誌）：\n{path}\n\n此操作無法復原，但不會影響已儲存的截圖檔案。",
         "clearLogsDone": "日誌已清空",
         "clearLogsFailed": "部分日誌檔案無法刪除（可能正被占用），請稍後再試",
-        "mappingAutoStart": "啟動時執行按鍵映射"
+        "mappingAutoStart": "啟動時執行按鍵映射",
+        "gamepadUiNav": "手把控制軟體",
+        "experimental": "實驗性",
+        "gamepadUiNavDesc": "用手把操作介面：方向鍵移動焦點、軟鍵盤輸入、應用程式內選擇資料夾"
     },
     "TrayMenu": {
         "openScreenshotFolder": "開啟截圖資料夾",
@@ -299,5 +302,43 @@
         "logOff": "記錄已關閉",
         "paramHint": "長按閾值用於「長按」觸發，連發間隔用於「連發」觸發",
         "masterSwitchHint": "啟動時是否自動開啟，由「系統設定 → 啟動時執行按鍵映射」決定"
+    },
+    "GpNav": {
+        "emptyList": "沒有可選項",
+        "cancel": "取消",
+        "selectOption": "選擇選項",
+        "inputTitle": "輸入內容",
+        "chooseFolder": "選擇儲存資料夾",
+        "confirmTitle": "請確認",
+        "finish": "確定",
+        "parentFolder": "上一層",
+        "loading": "讀取中…",
+        "loadFailed": "無法讀取此資料夾",
+        "emptyFolder": "沒有子資料夾",
+        "drives": "磁碟機",
+        "currentFolder": "目前資料夾",
+        "pickThisFolder": "選擇此資料夾",
+        "uppercase": "大寫",
+        "lowercase": "小寫",
+        "backspace": "退格",
+        "clearAll": "清空",
+        "keyboardTip": "十字鍵選按鍵 · A 輸入 · 完成後按「確定」",
+        "hintOk": "確定",
+        "hintCancel": "返回",
+        "hintPage": "切換頁面",
+        "hintHelp": "按鍵說明",
+        "help": "手把操作",
+        "helpMove": "十字鍵 / 左搖桿 移動焦點",
+        "helpOk": "確認 / 開啟 / 輸入",
+        "helpBack": "返回上一層或關閉",
+        "helpPage": "上一頁 / 下一頁",
+        "helpHelp": "顯示 / 隱藏本說明",
+        "helpExit": "退出焦點（回到滑鼠）",
+        "quick": {
+            "desktop": "桌面",
+            "pictures": "圖片",
+            "documents": "文件",
+            "downloads": "下載"
+        }
     }
 }
