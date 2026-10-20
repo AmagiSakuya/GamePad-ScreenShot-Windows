@@ -115,4 +115,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onWindowMaximizedChanged: (callback) => ipcRenderer.on('window-maximized-changed', callback),
     // 界面字体大小（整页缩放）
     setUiScale: (scale) => ipcRenderer.invoke('set-ui-scale', scale),
+    // ===== 手柄按键映射（手柄 → 键盘）=====
+    getMappingConfig: () => ipcRenderer.invoke('mapping:get-config'),
+    saveMappingConfig: (config) => ipcRenderer.invoke('mapping:save-config', config),
+    setMappingEnabled: (enabled) => ipcRenderer.invoke('mapping:set-enabled', enabled),
+    getMappingStatus: () => ipcRenderer.invoke('mapping:get-status'),
+    getMappingLogs: () => ipcRenderer.invoke('mapping:get-logs'),
+    clearMappingLogs: () => ipcRenderer.invoke('mapping:clear-logs'),
+    testMappingOutput: (codes) => ipcRenderer.invoke('mapping:test-output', codes),
+    onMappingEnabledChanged: (callback) => {
+      const listener = (_event, enabled) => callback(enabled)
+      ipcRenderer.removeAllListeners('mapping:enabled-changed')
+      ipcRenderer.on('mapping:enabled-changed', listener)
+    },
+    offMappingEnabledChanged: () => {
+      ipcRenderer.removeAllListeners('mapping:enabled-changed')
+    },
+    onMappingLog: (callback) => {
+      const listener = (_event, entry) => callback(entry)
+      ipcRenderer.removeAllListeners('mapping:log')
+      ipcRenderer.on('mapping:log', listener)
+    },
+    offMappingLog: () => {
+      ipcRenderer.removeAllListeners('mapping:log')
+    },
 })

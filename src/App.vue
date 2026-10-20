@@ -18,8 +18,14 @@
       </div>
 
       <div class="bar-mid">
-        <span class="state-pill" :class="listening ? 'on' : 'off'">
-          <i></i>{{ listening ? $t('ui.listening') : $t('ui.idle') }}
+        <!-- 截图监听（相机图标）与按键映射（键盘图标）分开显示，避免混淆 -->
+        <span class="state-pill" :class="listening ? 'on' : 'off'" :title="$t('ui.captureMonitor')">
+          <AppIcon name="camera" :size="11" />
+          <i></i>{{ listening ? $t('ui.captureRunning') : $t('ui.captureIdle') }}
+        </span>
+        <span class="state-pill mapping" :class="mappingEnabled ? 'on' : 'off'" :title="$t('ui.mappingMonitor')">
+          <AppIcon name="keyboard" :size="11" />
+          <i></i>{{ mappingEnabled ? $t('ui.mappingRunning') : $t('ui.mappingIdle') }}
         </span>
       </div>
 
@@ -119,6 +125,7 @@
       <main class="stage">
         <MainPage v-show="view === 'screenshot'" ref="mainPageRef" :windowsNotify="windowsNotify"
           @navigate="view = $event" />
+        <MappingSettingsPage v-if="view === 'mapping'" />
         <ControllerSettingsPage v-if="view === 'tester'" />
         <SystemSettingsPage v-if="view === 'settings'" ref="systemPageRef" :windowsNotify="windowsNotify"
           @open-update="openVersionInfo" />
@@ -143,6 +150,7 @@
 <script>
 import MainPage from '@/components/MainPage.vue'
 import ControllerSettingsPage from '@/components/ControllerSettingsPage.vue'
+import MappingSettingsPage from '@/components/MappingSettingsPage.vue'
 import SystemSettingsPage from '@/components/SystemSettingsPage.vue'
 import UpdateDialog from '@/components/UpdateDialog.vue'
 import AppIcon from '@/components/AppIcon.vue'
@@ -169,7 +177,7 @@ function hexToRgba(hex, alpha) {
 
 export default {
   name: 'App',
-  components: { MainPage, ControllerSettingsPage, SystemSettingsPage, UpdateDialog, AppIcon },
+  components: { MainPage, ControllerSettingsPage, MappingSettingsPage, SystemSettingsPage, UpdateDialog, AppIcon },
   data() {
     return {
       // 图标与主进程 BrowserWindow icon 使用同一份 gamepad.ico（放在 public 下由 webpack 直接拷贝）
@@ -200,6 +208,8 @@ export default {
       },
       view: 'screenshot',
       listening: false,
+      // 按键映射引擎是否启用（顶栏第二个状态胶囊）
+      mappingEnabled: false,
       isDark: true,
       accent: 'lime',
       uiScale: 1,
@@ -228,6 +238,7 @@ export default {
       navItems: [
         // label 用导航栏专用的短文案（导航宽度有限，长语言放不下），title 是完整页面名，悬停可见
         { key: 'screenshot', icon: 'camera', label: 'navScreenshot', title: 'screenshotSettings' },
+        { key: 'mapping', icon: 'keyboard', label: 'navMapping', title: 'mappingSettings' },
         { key: 'tester', icon: 'gamepad', label: 'navTester', title: 'gamepadTester' },
         { key: 'settings', icon: 'settings', label: 'navSettings', title: 'systemSettings' }
       ]
@@ -301,6 +312,18 @@ export default {
       window.electronAPI.getUpdateState().then((state) => this.applyUpdateResult(state)).catch(() => {})
     }
 
+    // 映射开关状态：主进程在启用/关闭时推送，切页面不用轮询
+    if (window.electronAPI.onMappingEnabledChanged) {
+      window.electronAPI.onMappingEnabledChanged((enabled) => {
+        this.mappingEnabled = !!enabled
+      })
+    }
+    if (window.electronAPI.getMappingStatus) {
+      window.electronAPI.getMappingStatus().then((status) => {
+        this.mappingEnabled = !!(status && status.enabled)
+      }).catch(() => {})
+    }
+
     // 启动时静默检测更新：命中新版本就在标题上挂 NEW 标记
     const checkOnStartup = await window.electronAPI.getStore('checkUpdateOnStartup', 'enabled')
     if (checkOnStartup === 'enabled') {
@@ -317,6 +340,7 @@ export default {
       this.langToastTimer = null
     }
     if (window.electronAPI.offUpdaterState) window.electronAPI.offUpdaterState()
+    if (window.electronAPI.offMappingEnabledChanged) window.electronAPI.offMappingEnabledChanged()
     document.removeEventListener('click', this.closePopovers)
   },
   methods: {
@@ -763,6 +787,10 @@ body {
   pointer-events: none;
 }
 
+.bar-mid {
+  gap: 8px;
+}
+
 .state-pill {
   height: 26px;
   display: inline-flex;
@@ -796,6 +824,22 @@ body {
   background: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
   animation: pulse 1.8s ease-in-out infinite;
+}
+
+.state-pill .app-icon {
+  opacity: 0.85;
+}
+
+/* 映射监听：用紫色与截图监听的绿色区分开 */
+.state-pill.mapping.on {
+  border-color: rgba(150, 130, 255, 0.34);
+  color: var(--violet);
+  background: var(--violet-soft);
+}
+
+.state-pill.mapping.on i {
+  background: var(--violet);
+  box-shadow: 0 0 0 4px var(--violet-soft);
 }
 
 @keyframes pulse {
@@ -1488,6 +1532,43 @@ html.theme-light .ui-card {
   background: var(--accent-soft);
   color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+/* ---------- 页面横幅主操作按钮（截图页 / 映射页共用） ---------- */
+.hero-cta {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+  font-family: inherit;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.hero-cta.start {
+  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+  color: var(--accent-ink);
+  box-shadow: 0 12px 26px -14px var(--accent);
+}
+
+.hero-cta.start:hover {
+  filter: brightness(1.06);
+}
+
+.hero-cta.stop {
+  background: rgba(251, 95, 118, 0.14);
+  border-color: rgba(251, 95, 118, 0.4);
+  color: var(--danger);
+}
+
+.hero-cta.stop:hover {
+  background: rgba(251, 95, 118, 0.2);
 }
 
 .ui-switch {

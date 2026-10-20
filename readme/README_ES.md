@@ -22,7 +22,7 @@
 
 ## 📖 Introducción
 
-Una utilidad para Windows que permite hacer capturas con **combinaciones de botones** o **valores de eje** del mando en lugar del teclado — perfecta para juegos que capturan el ratón o se ejecutan a pantalla completa. Las capturas se guardan en disco o en el portapapeles, y además puede conectarse a **OBS** por WebSocket para capturar cualquier escena.
+Una utilidad para Windows que permite hacer capturas con **combinaciones de botones** o **valores de eje** del mando en lugar del teclado — perfecta para juegos que capturan el ratón o se ejecutan a pantalla completa. Las capturas se guardan en disco o en el portapapeles, y además puede conectarse a **OBS** por WebSocket para capturar cualquier escena. También permite **mapear los botones del mando a teclas o combinaciones del teclado**, como un panel de atajos.
 
 - ✅ Disparo por combinación de botones o valor de eje (cruceta, L2 / R2…)
 - ✅ Disparador de teclado adicional
@@ -36,7 +36,10 @@ Una utilidad para Windows que permite hacer capturas con **combinaciones de boto
 - ✅ Pulsación larga para guardar el **búfer de repetición de OBS** como clip
 - ✅ Prueba de mando integrada — botones, ejes y cruceta se iluminan en vivo
 - ✅ 9 idiomas de interfaz, temas oscuro / claro y 6 colores de acento
-- ✅ Inicio automático, inicio silencioso, ocultar en la bandeja, escucha automática
+- ✅ **Botones del mando → teclas del teclado** — un botón o una combinación envía cualquier tecla / combinación, incluidas Win y teclas multimedia
+- ✅ Tres disparadores: Pulsar / Mantener / Repetir, con umbral e intervalo ajustables y cada regla activable por separado
+- ✅ Las teclas se añaden una a una, así que configurar no dispara atajos del sistema
+- ✅ Inicio automático, inicio silencioso, ocultar en la bandeja, escucha de capturas / mapeo al arrancar
 - ✅ Actualizaciones desde la propia aplicación
 
 ---
@@ -47,6 +50,12 @@ Una utilidad para Windows que permite hacer capturas con **combinaciones de boto
 
 <p align="center">
   <img src="images/shot-main.png" alt="Ventana principal" width="720" />
+</p>
+
+### Mapeo de botones
+
+<p align="center">
+  <img src="images/shot-mapping.png" alt="Mapeo de botones" width="720" />
 </p>
 
 ### Tema claro
@@ -86,6 +95,20 @@ Una utilidad para Windows que permite hacer capturas con **combinaciones de boto
 </p>
 
 > **Consejo:** algunos mandos cambian los números de botón por Bluetooth — configura los atajos preferiblemente por **USB**.
+
+---
+
+## ⌨️ Mapear los botones del mando al teclado
+
+Ideal para acciones que solo existen en el teclado — cambiar de canción, pulsar para hablar, barra de accesos — ahora desde el mando.
+
+1. Abre la página **Mapeo** y pulsa **Iniciar** arriba a la derecha (para que arranque solo: **Ajustes → Iniciar el mapeo al arrancar**).
+2. Pulsa **Nuevo mapeo**, luego **Detectar** en el lado del mando y aprieta un botón — varios a la vez forman una combinación.
+3. En el lado del teclado pulsa **Añadir tecla** y presiona las teclas una a una (primero los modificadores: Ctrl / Shift / Alt / Win). La × de una tecla la elimina.
+4. Elige el disparador de cada fila: **Pulsar** / **Mantener** (umbral en «Umbral de pulsación») / **Repetir** (intervalo en «Intervalo de repetición»).
+5. Activa **Registro** en *Últimos disparos* para ver los aciertos en tiempo real.
+
+> **Nota:** el mapeo solo envía teclas; no bloquea la entrada original del mando, el juego la sigue recibiendo. Para bloquearla hace falta un driver de mando virtual (ViGEm / HidHide, por ejemplo).
 
 ---
 

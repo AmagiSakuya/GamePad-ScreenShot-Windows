@@ -22,7 +22,7 @@
 
 ## 📖 Einführung
 
-Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** oder **Achsenwerte** auslösen statt über die Tastatur — ideal für Spiele, die die Maus einfangen oder im Vollbild laufen. Screenshots lassen sich auf der Festplatte oder in der Zwischenablage speichern; über WebSocket kann zusätzlich **OBS** verbunden werden, um beliebige Szenen aufzunehmen.
+Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** oder **Achsenwerte** auslösen statt über die Tastatur — ideal für Spiele, die die Maus einfangen oder im Vollbild laufen. Screenshots lassen sich auf der Festplatte oder in der Zwischenablage speichern; über WebSocket kann zusätzlich **OBS** verbunden werden, um beliebige Szenen aufzunehmen. Außerdem lassen sich **Gamepad-Tasten auf Tastaturtasten oder -kombinationen abbilden** — der Controller wird zur Shortcut-Leiste.
 
 - ✅ Auslösen per Tastenkombination oder Achsenwert (Steuerkreuz, L2 / R2 …)
 - ✅ Zusätzlicher Tastatur-Auslöser
@@ -36,7 +36,10 @@ Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** 
 - ✅ Langes Drücken speichert den **OBS-Replay-Puffer** als Clip
 - ✅ Integrierter Controller-Test — Tasten, Achsen und Steuerkreuz leuchten live auf
 - ✅ 9 Oberflächensprachen, dunkles / helles Design, 6 Akzentfarben
-- ✅ Autostart, stiller Start, in den Infobereich ausblenden, automatischer Bereitschaftsstart
+- ✅ **Gamepad-Tasten → Tastaturtasten** — eine Taste oder Kombi löst beliebige Tasten / Kombinationen aus, inkl. Win- und Medientasten
+- ✅ Drei Auslöser: Druck / Halten / Wiederholen – Schwellwert und Intervall einstellbar, jede Regel einzeln schaltbar
+- ✅ Tasten werden einzeln aufgenommen, damit beim Einrichten keine System-Shortcuts ausgelöst werden
+- ✅ Autostart, stiller Start, in den Infobereich ausblenden, Screenshot-Listener / Tastenzuordnung beim Start starten
 - ✅ Updates direkt in der App
 
 ---
@@ -47,6 +50,12 @@ Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** 
 
 <p align="center">
   <img src="images/shot-main.png" alt="Hauptfenster" width="720" />
+</p>
+
+### Tastenzuordnung
+
+<p align="center">
+  <img src="images/shot-mapping.png" alt="Tastenzuordnung" width="720" />
 </p>
 
 ### Helles Design
@@ -86,6 +95,20 @@ Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** 
 </p>
 
 > **Tipp:** Bei manchen Controllern ändern sich die Tastennummern im Bluetooth-Betrieb — konfigurieren Sie Kombinationen bevorzugt per **USB**.
+
+---
+
+## ⌨️ Gamepad-Tasten auf die Tastatur legen
+
+Praktisch für Aktionen, die es nur auf der Tastatur gibt – Titel wechseln, Push-to-Talk, Hotbar-Plätze – jetzt vom Controller aus.
+
+1. Öffne die Seite **Zuordnung** und klicke oben rechts auf **Starten** (für Autostart: **Optionen → Tastenzuordnung beim Start** aktivieren).
+2. Klicke **Neue Zuordnung**, dann **Erkennen** auf der Gamepad-Seite und drücke eine Taste – mehrere gleichzeitig ergeben eine Kombi.
+3. Auf der Tastaturseite **Taste hinzufügen** klicken und die Tasten einzeln drücken (Modifikatoren wie Ctrl / Shift / Alt / Win zuerst). Das × auf einer Taste entfernt sie.
+4. Rechts pro Zeile den Auslöser wählen: **Druck** / **Halten** (Schwelle unter „Haltezeit“) / **Wiederholen** (Intervall unter „Wiederholrate“).
+5. Aktiviere **Protokoll** bei *Letzte Auslösungen*, um Treffer live zu sehen.
+
+> **Hinweis:** Die Zuordnung sendet nur Tasten und blockiert die Originaleingabe des Gamepads nicht – das Spiel erhält sie weiterhin. Zum Blockieren braucht es einen virtuellen Gamepad-Treiber (z. B. ViGEm / HidHide).
 
 ---
 

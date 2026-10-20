@@ -22,47 +22,43 @@
       <span>{{ errorMessage }}</span>
     </div>
 
-    <!-- ===== 状态 hero ===== -->
-    <section class="hero" :class="{ live: listening }">
-      <div class="hero-main">
-        <div class="hero-left">
-          <div class="hero-tag">
-            <span class="hero-dot"></span>
-            {{ listening ? $t('ui.listeningTag') : $t('ui.readyTag') }}
-          </div>
-          <h2 class="hero-title">{{ listening ? $t('listening') : $t('ui.ready') }}</h2>
-          <div class="hero-combo">
-            <template v-for="(key, index) in config.comboKeys" :key="index">
-              <span v-if="index > 0" class="hero-plus">+</span>
-              <span class="hero-key">{{ comboKeyLabel(key) }}</span>
-            </template>
-            <span v-if="!config.comboKeys.length" class="hero-key empty">{{ $t('ui.noCombo') }}</span>
-          </div>
+    <!-- ===== 状态 hero（与映射页共用同一个横幅组件） ===== -->
+    <PageHero
+      :live="listening"
+      :tag="listening ? $t('ui.listeningTag') : $t('ui.readyTag')"
+      :title="listening ? $t('listening') : $t('ui.ready')">
+      <template #body>
+        <div class="hero-combo">
+          <template v-for="(key, index) in config.comboKeys" :key="index">
+            <span v-if="index > 0" class="hero-plus">+</span>
+            <span class="hero-key">{{ comboKeyLabel(key) }}</span>
+          </template>
+          <span v-if="!config.comboKeys.length" class="hero-key empty">{{ $t('ui.noCombo') }}</span>
         </div>
+      </template>
 
-        <div class="hero-actions">
-          <button class="ui-btn ghost" :disabled="!config.path" @click="openScreenShotFolder">
-            <AppIcon name="folder" :size="15" />
-            {{ $t('openScreenshotFolder') }}
-          </button>
-          <button v-if="!listening" class="hero-cta start" @click="startListen">
-            <AppIcon name="play" :size="15" />
-            {{ $t('start') }}
-          </button>
-          <button v-else class="hero-cta stop" @click="stopListen">
-            <AppIcon name="stop" :size="15" />
-            {{ $t('stop') }}
-          </button>
-        </div>
-      </div>
+      <template #actions>
+        <button class="ui-btn ghost" :disabled="!config.path" @click="openScreenShotFolder">
+          <AppIcon name="folder" :size="15" />
+          {{ $t('openScreenshotFolder') }}
+        </button>
+        <button v-if="!listening" class="hero-cta start" @click="startListen">
+          <AppIcon name="play" :size="15" />
+          {{ $t('start') }}
+        </button>
+        <button v-else class="hero-cta stop" @click="stopListen">
+          <AppIcon name="stop" :size="15" />
+          {{ $t('stop') }}
+        </button>
+      </template>
 
-      <div class="hero-meta">
+      <template #meta>
         <span>{{ $t('captureTarget') }}<b>{{ targetSummary }}</b></span>
-        <span>{{ $t('savePath') }}<b class="ellipsis">{{ config.path || $t('ui.notSet') }}</b></span>
+        <span>{{ $t('savePath') }}<b>{{ config.path || $t('ui.notSet') }}</b></span>
         <span>{{ $t('savingMode') }}<b>{{ $t('saveWay.' + config.screenShotSaveWay) }}</b></span>
         <span>{{ $t('imageFormat') }}<b>{{ (config.imageFormat || 'jpg').toUpperCase() }}</b></span>
-      </div>
-    </section>
+      </template>
+    </PageHero>
 
     <!-- ===== 配置卡片 ===== -->
     <div class="cards" :class="{ 'is-locked': listening }">
@@ -324,6 +320,7 @@ import { hasCaptureSound, setCaptureSound, playCaptureSound as playSound } from 
 import { toPlain } from '@/lib/ipcSafe'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
 import AppIcon from '@/components/AppIcon.vue'
+import PageHero from '@/components/PageHero.vue'
 
 let timer;
 let active_info_getter_timer;
@@ -335,7 +332,7 @@ let errorFlashTimer;
 
 export default {
   name: 'MainPage',
-  components: { OBSConnectPage, AppIcon },
+  components: { OBSConnectPage, AppIcon, PageHero },
   props: {
     windowsNotify: {
       type: Function,
@@ -1276,111 +1273,11 @@ export default {
   gap: 10px;
 }
 
-/* ---------- hero ---------- */
-.hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  padding: 12px 16px 7px;
-  margin-bottom: 9px;
-  transition: border-color 0.25s ease, background 0.25s ease;
-}
-
-.hero.live {
-  border-color: var(--accent-line);
-  background:
-    radial-gradient(520px 200px at 92% 30%, var(--accent-soft), transparent 70%),
-    linear-gradient(112deg, var(--violet-soft), rgba(20, 24, 33, 0.0) 48%),
-    var(--surface);
-}
-
-html.theme-light .hero.live {
-  background:
-    radial-gradient(520px 200px at 92% 30%, var(--accent-soft), transparent 70%),
-    linear-gradient(112deg, var(--violet-soft), rgba(255, 255, 255, 0) 48%),
-    var(--surface);
-}
-
-.hero::after {
-  content: "";
-  position: absolute;
-  right: -70px;
-  top: -80px;
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  background: conic-gradient(from 210deg, var(--accent-soft), var(--cyan-soft), transparent 62%);
-  filter: blur(30px);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.hero.live::after {
-  opacity: 1;
-}
-
-.hero-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  position: relative;
-  z-index: 1;
-}
-
-.hero-left {
-  min-width: 0;
-}
-
-.hero-tag {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: var(--ink-3);
-}
-
-.hero.live .hero-tag {
-  color: var(--accent);
-}
-
-.hero-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ink-3);
-}
-
-.hero.live .hero-dot {
-  background: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
-  animation: heroPulse 1.8s ease-in-out infinite;
-}
-
-@keyframes heroPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.45; transform: scale(0.85); }
-}
-
-.hero-title {
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin: 5px 0 0;
-  line-height: 1.25;
-}
-
+/* ---------- hero 内容（容器样式在 PageHero.vue 里统一维护） ---------- */
 .hero-combo {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin-top: 8px;
   flex-wrap: wrap;
 }
 
@@ -1418,70 +1315,6 @@ html.theme-light .hero.live {
 .hero-plus {
   color: var(--ink-3);
   font-size: 11px;
-}
-
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 0 0 auto;
-}
-
-.hero-cta {
-  height: 40px;
-  padding: 0 18px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 650;
-  font-family: inherit;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.16s ease;
-}
-
-.hero-cta.start {
-  background: linear-gradient(180deg, var(--accent-hi), var(--accent));
-  color: var(--accent-ink);
-  box-shadow: 0 12px 26px -14px var(--accent);
-}
-
-.hero-cta.start:hover {
-  filter: brightness(1.06);
-}
-
-.hero-cta.stop {
-  background: rgba(251, 95, 118, 0.14);
-  border-color: rgba(251, 95, 118, 0.4);
-  color: var(--danger);
-}
-
-.hero-cta.stop:hover {
-  background: rgba(251, 95, 118, 0.2);
-}
-
-.hero-meta {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  margin-top: 7px;
-  padding-top: 6px;
-  border-top: 1px solid var(--line);
-  font-size: 10.5px;
-  color: var(--ink-3);
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-}
-
-.hero-meta b {
-  color: var(--ink-2);
-  font-weight: 600;
-  margin-left: 6px;
-  font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 10.5px;
 }
 
 .ellipsis {

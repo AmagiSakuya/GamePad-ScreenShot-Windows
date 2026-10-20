@@ -66,6 +66,8 @@ let checkUpdateOnStartupKey = 'checkUpdateOnStartup';
 let proxyKey = 'proxy';
 let autoStartKey = 'autoStart';
 let minimizeOnStartupKey = 'minimizeOnStartup';
+// 启动时是否自动开启按键映射（不设这个开关，启动后映射一律为关闭状态）
+let mappingAutoStartKey = 'mappingAutoStart';
 
 /**
  * 「自动开始监听」现在只有开 / 关两态（开 = 启动和插拔设备都自动监听）。
@@ -97,6 +99,7 @@ export default {
         proxy: '',
         autoStart: false,
         minimizeOnStartup: false,
+        mappingAutoStart: false,
         overlayNotify: 'show',
         overlayNotifySize: 1,
         overlayNotifyDuration: 3,
@@ -171,6 +174,17 @@ export default {
               type: 'seg',
               configKey: 'autoListenResolution',
               handler: this.onAutoListenResolutionChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
+              ]
+            },
+            {
+              key: 'mappingAutoStart',
+              icon: 'keyboard',
+              type: 'seg',
+              configKey: 'mappingAutoStart',
+              handler: this.onMappingAutoStartChanged,
               options: [
                 { value: true, label: 'SystemSettingsPage.enabled' },
                 { value: false, label: 'SystemSettingsPage.disabled' }
@@ -318,6 +332,8 @@ export default {
     this.config.autoStart = autoStart === 'true' || autoStart === true;
     const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
     this.config.minimizeOnStartup = minimizeOnStartup === 'true' || minimizeOnStartup === true;
+    const mappingAutoStart = await window.electronAPI.getStore(mappingAutoStartKey, false);
+    this.config.mappingAutoStart = mappingAutoStart === 'true' || mappingAutoStart === true;
     this.config.overlayNotify = overlayNotify;
     this.config.overlayNotifySize = normalizeOverlayScale(overlayNotifySize);
     this.config.overlayNotifyDuration = Math.min(5, Math.max(1, Number(overlayNotifyDuration) || 2));
@@ -366,6 +382,10 @@ export default {
       this.config.autoStart = this.config.autoStart === 'true' || this.config.autoStart === true;
       await window.electronAPI.setStore(autoStartKey, this.config.autoStart);
       await window.electronAPI.setAutoStart(this.config.autoStart);
+    },
+    async onMappingAutoStartChanged() {
+      this.config.mappingAutoStart = this.config.mappingAutoStart === 'true' || this.config.mappingAutoStart === true;
+      await window.electronAPI.setStore(mappingAutoStartKey, this.config.mappingAutoStart);
     },
     async onMinimizeOnStartupChanged() {
       this.config.minimizeOnStartup = this.config.minimizeOnStartup === 'true' || this.config.minimizeOnStartup === true;

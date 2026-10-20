@@ -23,6 +23,9 @@ if (process.platform === 'win32') {
 const { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
 const { snapUiScale, migrateLegacyUiScale, UI_SCALE_DEFAULT, UI_SCALE_MIN, UI_SCALE_MAX, UI_SCALE_VERSION } = require('@/lib/uiScale')
 const configStore = require('@/lib/configLoader')
+// 手柄按键映射（手柄 → 键盘）：引擎读 SDL 设备状态，键盘通过常驻 PowerShell 调用 keybd_event 发送
+const { createKeySender } = require('@/lib/keySender')
+const { createMappingEngine } = require('@/lib/gamepadMapping')
 // 热更新（检查 → 下载 → 退出后替换 app.asar → 自动重启）
 const { createUpdater } = require('@/lib/updater')
 
@@ -341,6 +344,9 @@ ipcMain.handle('apply-locale', (_, locale) => {
 app.on('will-quit', () => {
   //globalShortcut.unregisterAll()
   uIOhook.stop()
+  // 释放映射引擎与常驻的键盘发送进程
+  if (mappingEngine) mappingEngine.dispose()
+  if (mappingKeySender) mappingKeySender.dispose()
 })
 
 // Quit when all windows are closed.
@@ -369,6 +375,9 @@ app.on('ready', async () => {
 
   createWindow()
   createTray()
+
+  // 按键映射引擎：配置里已启用的话，启动即生效（不依赖任何页面是否打开过）
+  initMappingEngine()
 
   // 清理上次热更新残留的 .old / .part 文件（删不掉的下次启动再试）
   updater.init()
@@ -779,7 +788,14 @@ ipcMain.handle('get-all-gamepad', () => {
 ipcMain.handle('open-sdl2-device', async (_, device) => {
   // 兼容两种入参：设备对象（可能被 Vue 包成 Proxy）或直接的索引数字
   const rawIndex = (device !== null && typeof device === 'object') ? device._index : device;
-  const index = Number(rawIndex);
+  return openDeviceInstance(Number(rawIndex));
+})
+
+/**
+ * 打开指定索引的手柄实例（截图页 / 调试页 / 映射引擎共用）。
+ * 同一时刻只维护一个实例，重复打开会先释放旧的。
+ */
+function openDeviceInstance(index) {
   if (!Number.isInteger(index) || index < 0) {
     return false;
   }
@@ -828,7 +844,7 @@ ipcMain.handle('open-sdl2-device', async (_, device) => {
   })
 
   return true
-})
+}
 
 ipcMain.handle('remove-sdl2-device-instance-all-listeners', async () => {
   if (device_instance) {
@@ -922,6 +938,69 @@ ipcMain.handle('get-device-instance-axis-number', async () => {
   return 0;
 })
 
+//#endregion
+
+//#region 手柄按键映射（手柄 → 键盘）
+let mappingEngine = null
+let mappingKeySender = null
+
+/**
+ * 给映射引擎的手柄快照：物理按键 + 十字键虚拟按键 + 轴值。
+ * 和 get-current-buttons-value 保持同一套索引规则，界面里录到的 ButtonN 才能对得上。
+ */
+function getMappingSnapshot() {
+  if (!device_instance) return null
+  try {
+    const physical = device_instance.buttons ? Array.from(device_instance.buttons) : []
+    syncHatStatesFromDevice()
+    const hatButtons = hatCount > 0 ? flattenHatStates() : []
+    const axisValues = device_instance.axes ? Array.from(device_instance.axes) : []
+    return { buttons: physical.concat(hatButtons), axes: axisValues }
+  } catch (error) {
+    return null
+  }
+}
+
+/** 没有任何页面打开过设备时，引擎自己拉起第一支手柄，保证映射随时可用 */
+function ensureMappingDevice() {
+  if (device_instance) return
+  const devices = sdl.joystick.devices || []
+  if (!devices.length) return
+  openDeviceInstance(0)
+}
+
+function initMappingEngine() {
+  if (mappingEngine) return mappingEngine
+  mappingKeySender = createKeySender({ app, log })
+  mappingEngine = createMappingEngine({
+    configStore,
+    log,
+    getSnapshot: getMappingSnapshot,
+    ensureDevice: ensureMappingDevice,
+    keySender: mappingKeySender,
+    notify: (entry) => {
+      if (win && !win.isDestroyed() && win.webContents) {
+        win.webContents.send('mapping:log', entry)
+      }
+    },
+    // 顶栏的「映射监听」胶囊跟着总开关走
+    onStateChange: (enabled) => {
+      if (win && !win.isDestroyed() && win.webContents) {
+        win.webContents.send('mapping:enabled-changed', !!enabled)
+      }
+    }
+  })
+  mappingEngine.init()
+  return mappingEngine
+}
+
+ipcMain.handle('mapping:get-config', () => initMappingEngine().getConfig())
+ipcMain.handle('mapping:save-config', (_, config) => initMappingEngine().save(config))
+ipcMain.handle('mapping:set-enabled', (_, enabled) => initMappingEngine().setEnabled(enabled))
+ipcMain.handle('mapping:get-status', () => initMappingEngine().getStatus())
+ipcMain.handle('mapping:get-logs', () => initMappingEngine().getLogs())
+ipcMain.handle('mapping:clear-logs', () => initMappingEngine().clearLogs())
+ipcMain.handle('mapping:test-output', (_, codes) => initMappingEngine().testOutput(codes))
 //#endregion
 
 //#region  Win32

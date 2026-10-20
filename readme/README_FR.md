@@ -22,7 +22,7 @@
 
 ## 📖 Présentation
 
-Un utilitaire Windows qui permet de déclencher des captures d'écran avec des **combinaisons de boutons** ou des **valeurs d'axe** de votre manette, plutôt qu'au clavier — idéal pour les jeux qui capturent la souris ou tournent en plein écran. Les captures s'enregistrent sur le disque ou dans le presse-papiers, et une connexion à **OBS** via WebSocket permet de capturer n'importe quelle scène.
+Un utilitaire Windows qui permet de déclencher des captures d'écran avec des **combinaisons de boutons** ou des **valeurs d'axe** de votre manette, plutôt qu'au clavier — idéal pour les jeux qui capturent la souris ou tournent en plein écran. Les captures s'enregistrent sur le disque ou dans le presse-papiers, et une connexion à **OBS** via WebSocket permet de capturer n'importe quelle scène. Il permet aussi de **mapper les boutons de la manette sur des touches ou combinaisons du clavier**, comme un pavé de raccourcis.
 
 - ✅ Déclenchement par combinaison de boutons ou valeur d'axe (croix directionnelle, L2 / R2…)
 - ✅ Déclencheur clavier supplémentaire
@@ -36,7 +36,10 @@ Un utilitaire Windows qui permet de déclencher des captures d'écran avec des *
 - ✅ Appui long pour enregistrer le **tampon de rejeu OBS** en clip
 - ✅ Testeur de manette intégré — boutons, axes et croix directionnelle s'allument en direct
 - ✅ 9 langues d'interface, thèmes sombre / clair, 6 couleurs d'accent
-- ✅ Lancement au démarrage, démarrage silencieux, réduction dans la zone de notification, écoute automatique
+- ✅ **Boutons de manette → touches du clavier** — un bouton ou une combi envoie n’importe quelle touche / combinaison, y compris Win et les touches multimédia
+- ✅ Trois déclencheurs : Appui / Maintien / Répétition, seuil et intervalle réglables, chaque règle activable séparément
+- ✅ Les touches s’ajoutent une par une : aucun raccourci système déclenché pendant la configuration
+- ✅ Lancement au démarrage, démarrage silencieux, réduction dans la zone de notification, écoute des captures / mappage au lancement
 - ✅ Mises à jour intégrées à l'application
 
 ---
@@ -47,6 +50,12 @@ Un utilitaire Windows qui permet de déclencher des captures d'écran avec des *
 
 <p align="center">
   <img src="images/shot-main.png" alt="Fenêtre principale" width="720" />
+</p>
+
+### Mappage des boutons
+
+<p align="center">
+  <img src="images/shot-mapping.png" alt="Mappage des boutons" width="720" />
 </p>
 
 ### Thème clair
@@ -86,6 +95,20 @@ Un utilitaire Windows qui permet de déclencher des captures d'écran avec des *
 </p>
 
 > **Astuce :** certaines manettes changent de numéros de boutons en Bluetooth — configurez vos raccourcis de préférence en **USB**.
+
+---
+
+## ⌨️ Mapper les boutons de la manette au clavier
+
+Idéal pour les actions réservées au clavier — changer de piste, push-to-talk, barre de raccourcis — désormais déclenchables depuis la manette.
+
+1. Ouvrez la page **Mappage** et cliquez sur **Démarrer** en haut à droite (pour un lancement automatique : **Réglages → Démarrer le mappage au lancement**).
+2. Cliquez sur **Nouveau mappage**, puis **Détecter** côté manette et appuyez sur un bouton — plusieurs en même temps forment une combinaison.
+3. Côté clavier, cliquez sur **Ajouter une touche** et appuyez sur les touches une par une (les modificateurs d’abord : Ctrl / Shift / Alt / Win). Le × sur une touche la supprime.
+4. Choisissez le déclencheur de chaque ligne : **Appui** / **Maintien** (seuil sous « Seuil de maintien ») / **Répétition** (intervalle sous « Intervalle de répétition »).
+5. Activez **Journal** dans *Déclenchements récents* pour voir les hits en direct.
+
+> **Remarque :** le mappage envoie seulement des touches ; il ne bloque pas l’entrée d’origine de la manette, le jeu la reçoit toujours. Pour la bloquer, il faut un pilote de manette virtuelle (ViGEm / HidHide par ex.).
 
 ---
 
