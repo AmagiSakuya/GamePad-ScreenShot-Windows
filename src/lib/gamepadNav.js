@@ -639,7 +639,9 @@ async function openOverlay(kind, props) {
   const promise = new Promise((resolve) => overlayResolvers.set(id, resolve))
   gpNav.overlay = { kind, id, props: props || {} }
   await nextTick()
-  // 覆盖层里可以用 data-gp-autofocus 指定默认焦点（例如文件夹选择器的「选择此文件夹」）
+  // 覆盖层里可以用 data-gp-autofocus 指定默认焦点（例如文件夹选择器的「选择此文件夹」）。
+  // 只在手柄模式下落焦点：鼠标用户没必要看到那个发光焦点环，键盘用户自己 Tab 就行。
+  if (!gpNav.padMode) return promise
   setTimeout(() => {
     if (!gpNav.overlay) return
     const list = collect()
@@ -736,7 +738,8 @@ export async function askConfirm(options) {
     detail: opts.detail || '',
     okLabel: opts.okLabel || gpT('GpNav.finish'),
     cancelLabel: opts.cancelLabel || gpT('GpNav.cancel'),
-    danger: !!opts.danger
+    danger: !!opts.danger,
+    icon: opts.icon || ''
   })
   return result === 'ok'
 }

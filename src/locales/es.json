@@ -329,6 +329,12 @@
         }
     },
     "Recording": {
+        "audio": "Audio del sistema",
+        "audioDevice": "Dispositivo de salida",
+        "audioDeviceDefault": "Predeterminado del sistema",
+        "audioDeviceCurrent": "predeterminado actual",
+        "audioDeviceHint": "Captura el sonido que reproduce este dispositivo, no el micrófono.",
+        "audioFailed": "No se capturó el audio del sistema: {reason}",
         "longPress": "Pulsación larga (bucle)",
         "longPressHint": "Mantén pulsado el atajo de captura (combinación del mando) para guardar los últimos segundos",
         "settings": "Ajustes de codificación",

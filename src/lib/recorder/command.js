@@ -24,6 +24,8 @@ const { buildVideoArgs, isZeroCopy } = require('./encoders')
  *   bitrate     — 码率模式下的目标码率（bps）
  *   cursor      — 是否录鼠标
  *   backend     — 强制采集后端（调试用）
+ *   audio       — 系统声音：{ pipePath, sampleRate, channels, sampleFormat, bitrate }
+ *                 由 audioCapture 先起好采集进程、拿到管道路径后传进来
  *   output      — { type:'file', path } 或 { type:'pipe' }
  *
  * @returns {{ args: string[], meta: object }}
@@ -47,6 +49,7 @@ function buildRecordCommand(options = {}) {
         gopSeconds = 1,
         cursor = true,
         backend,
+        audio = null,
         output = { type: 'pipe' }
     } = options
 
@@ -85,7 +88,14 @@ function buildRecordCommand(options = {}) {
         '-progress', 'pipe:2'
     ]
 
+    const audioInput = buildAudioInput(audio)
+    const audioArgs = audioInput ? buildAudioArgs(audio) : []
+
     const filterArgs = filters.length > 0 ? ['-vf', filters.join(',')] : []
+
+    // 两路输入时必须显式 map：默认策略会「每种类型挑一路最好的」，
+    // 一旦将来加了麦克风或第二屏就会挑错。
+    const mapArgs = audioInput ? ['-map', '0:v:0', '-map', '1:a:0'] : []
 
     // 帧率节奏：默认交给采集源自己管（ddagrab/gfxcapture 都有 framerate 参数）。
     //
@@ -109,18 +119,24 @@ function buildRecordCommand(options = {}) {
     const parts = {
         global: globalArgs,
         input: capture.args,
+        audioInput: audioInput ? audioInput.args : [],
+        map: mapArgs,
         filters: filterArgs,
         pacing: pacingArgs,
         video: videoArgs,
+        audio: audioArgs,
         output: outputArgs
     }
 
     const args = [
         ...parts.global,
         ...parts.input,
+        ...parts.audioInput,
+        ...parts.map,
         ...parts.filters,
         ...parts.pacing,
         ...parts.video,
+        ...parts.audio,
         ...parts.output
     ]
 
@@ -132,9 +148,58 @@ function buildRecordCommand(options = {}) {
             zeroCopy,
             filters,
             hardwareFrames: capture.hardwareFrames,
-            gopFrames: Math.max(1, Math.round(fps))
+            gopFrames: Math.max(1, Math.round(fps)),
+            audio: audioInput
+                ? {
+                    sampleRate: Number(audio.sampleRate) || 48000,
+                    channels: Number(audio.channels) || 2,
+                    sampleFormat: audioInput.sampleFormat
+                }
+                : null
         }
     }
+}
+
+/**
+ * 系统声音的输入段。
+ *
+ * 采集端给的是裸 PCM（没有容器、没有时间戳），所以必须把采样率/声道/样本格式
+ * 写全，否则 ffmpeg 会按 44100/mono 去解释，出来就是「快放 + 变调」。
+ */
+const RAW_SAMPLE_FORMATS = new Set(['u8', 's16le', 's24le', 's32le', 'f32le', 'f64le'])
+
+function buildAudioInput(audio) {
+    if (!audio || !audio.pipePath) return null
+    const sampleFormat = RAW_SAMPLE_FORMATS.has(String(audio.sampleFormat))
+        ? String(audio.sampleFormat)
+        : 's16le'
+    const sampleRate = Math.max(8000, Math.min(192000, Math.round(Number(audio.sampleRate) || 48000)))
+    const channels = Math.max(1, Math.min(8, Math.round(Number(audio.channels) || 2)))
+    return {
+        sampleFormat,
+        args: [
+            '-f', sampleFormat,
+            '-ar', String(sampleRate),
+            '-ac', String(channels),
+            // 命名管道：Windows 上 ffmpeg 直接按普通文件打开
+            '-i', audio.pipePath
+        ]
+    }
+}
+
+/**
+ * 音频编码段。统一出 AAC-LC 48k 立体声 —— MP4 里兼容性最好，
+ * 而且和视频同一个 moof 切片，回放缓存的「按关键帧淘汰」天然对齐。
+ */
+function buildAudioArgs(audio) {
+    const bitrate = Math.max(64000, Math.min(512000, Math.round(Number(audio.bitrate) || 192000)))
+    return [
+        '-c:a', 'aac',
+        '-b:a', String(bitrate),
+        '-ar', '48000',
+        // 设备是 5.1 时让 ffmpeg 按标准矩阵下混到立体声
+        '-ac', '2'
+    ]
 }
 
 module.exports = { buildRecordCommand }

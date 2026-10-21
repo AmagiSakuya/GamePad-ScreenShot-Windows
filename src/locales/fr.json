@@ -329,6 +329,12 @@
         }
     },
     "Recording": {
+        "audio": "Audio système",
+        "audioDevice": "Périphérique de sortie",
+        "audioDeviceDefault": "Valeur par défaut",
+        "audioDeviceCurrent": "par défaut actuel",
+        "audioDeviceHint": "Capture le son lu par ce périphérique, pas le microphone.",
+        "audioFailed": "L'audio système n'a pas été capturé : {reason}",
         "longPress": "Appui long (boucle)",
         "longPressHint": "Maintenez le raccourci de capture (combinaison de manette) pour sauvegarder les dernières secondes",
         "settings": "Réglages d'encodage",

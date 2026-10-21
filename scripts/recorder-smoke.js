@@ -99,6 +99,8 @@ async function main() {
             fps: 60,
             mode: 'quality',
             quality: 23,
+            // 系统声音必录：带上 audio 段走和生产一致的链路（无设备时自动降级为无声）
+            audio: {},
             output: { type: 'file', path: outFile }
         },
         {

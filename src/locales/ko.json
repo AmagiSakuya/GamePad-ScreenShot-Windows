@@ -329,6 +329,12 @@
         }
     },
     "Recording": {
+        "audio": "시스템 오디오",
+        "audioDevice": "출력 장치",
+        "audioDeviceDefault": "시스템 기본값 따르기",
+        "audioDeviceCurrent": "현재 기본",
+        "audioDeviceHint": "이 장치에서 재생 중인 소리를 녹음합니다. 마이크가 아닙니다.",
+        "audioFailed": "시스템 오디오가 녹음되지 않았습니다: {reason}",
         "longPress": "루프 녹화 길게 누르기",
         "longPressHint": "스크린샷 단축키(게임패드 조합)를 길게 누르면 최근 녹화를 저장합니다",
         "settings": "인코딩 설정",

@@ -63,45 +63,98 @@ function readMdhdTimescale(buf, box) {
     return buf.readUInt32BE(offset)
 }
 
-/** 从 moov 里取第一个 trak 的 timescale（本项目只录视频轨） */
-function parseMoovTimescale(moovBuf, moovBox) {
-    let timescale = 0
-    forEachBox(moovBuf, moovBox.start + moovBox.headerSize, moovBox.start + moovBox.size, (child) => {
-        if (timescale || child.type !== 'trak') return
-        forEachBox(moovBuf, child.start + child.headerSize, child.start + child.size, (mdia) => {
-            if (timescale || mdia.type !== 'mdia') return
-            forEachBox(moovBuf, mdia.start + mdia.headerSize, mdia.start + mdia.size, (mdhd) => {
-                if (mdhd.type === 'mdhd') timescale = readMdhdTimescale(moovBuf, mdhd)
-            })
-        })
-    })
-    return timescale
+/** tkhd 里的 track_ID */
+function readTkhdTrackId(buf, box) {
+    const p = box.start + box.headerSize
+    const version = buf[p]
+    const offset = version === 1 ? p + 4 + 8 + 8 : p + 4 + 4 + 4
+    if (offset + 4 > buf.length) return 0
+    return buf.readUInt32BE(offset)
+}
+
+/** hdlr 里的 handler_type（'vide' / 'soun'），用来认出哪条是视频轨 */
+function readHdlrType(buf, box) {
+    const offset = box.start + box.headerSize + 8
+    if (offset + 4 > buf.length) return ''
+    return buf.toString('latin1', offset, offset + 4)
 }
 
 /**
- * 定位 moof 里的 tfdt。
+ * 解析 moov 里的所有轨道：trackId / timescale / handler。
  *
- * 除了值本身，还要返回「值在 buffer 里的字节位置」——
- * 保存时要把时间轴归零，直接原地改写这几个字节，比重封装一次快得多。
+ * 加了系统声音之后一个 MP4 有两条轨道，时间刻度不一样
+ * （视频常见 15360 或 90000，音频 48000），
+ * 所以「把时间轴归零」必须按轨道分别减各自的基准，不能共用一个 timescale。
+ *
+ * @returns {{trackId:number, timescale:number, handler:string}[]}
  */
-function locateTfdt(moofBuf, moofBox) {
-    let result = null
-    forEachBox(moofBuf, moofBox.start + moofBox.headerSize, moofBox.start + moofBox.size, (traf) => {
-        if (result || traf.type !== 'traf') return
-        forEachBox(moofBuf, traf.start + traf.headerSize, traf.start + traf.size, (child) => {
-            if (result || child.type !== 'tfdt') return
-            const p = child.start + child.headerSize
-            const version = moofBuf[p]
-            let value = null
-            if (version === 1) {
-                if (p + 4 + 8 <= moofBuf.length) value = Number(moofBuf.readBigUInt64BE(p + 4))
-            } else {
-                if (p + 4 + 4 <= moofBuf.length) value = moofBuf.readUInt32BE(p + 4)
+function parseMoovTracks(moovBuf, moovBox) {
+    const tracks = []
+    forEachBox(moovBuf, moovBox.start + moovBox.headerSize, moovBox.start + moovBox.size, (trak) => {
+        if (trak.type !== 'trak') return
+        const track = { trackId: 0, timescale: 0, handler: '' }
+        forEachBox(moovBuf, trak.start + trak.headerSize, trak.start + trak.size, (child) => {
+            if (child.type === 'tkhd') {
+                track.trackId = readTkhdTrackId(moovBuf, child)
+            } else if (child.type === 'mdia') {
+                forEachBox(moovBuf, child.start + child.headerSize, child.start + child.size, (inner) => {
+                    if (inner.type === 'mdhd') track.timescale = readMdhdTimescale(moovBuf, inner)
+                    else if (inner.type === 'hdlr') track.handler = readHdlrType(moovBuf, inner)
+                })
             }
-            if (value !== null) result = { value, offset: p + 4, version }
         })
+        if (track.timescale > 0) tracks.push(track)
     })
-    return result
+    return tracks
+}
+
+/** 兼容旧调用：只要第一条轨道的时间刻度 */
+function parseMoovTimescale(moovBuf, moovBox) {
+    const tracks = parseMoovTracks(moovBuf, moovBox)
+    return tracks.length > 0 ? tracks[0].timescale : 0
+}
+
+/**
+ * 定位 moof 里每条轨道的 tfdt。
+ *
+ * 一个 moof 里有几个 traf 就有几份 tfdt（视频一份、音频一份）。
+ * 返回的每一项都带「值在 buffer 里的字节位置」——
+ * 保存时要把时间轴归零，直接原地改写这几个字节，比重封装一次快得多。
+ *
+ * @returns {{trackId:number, value:number, offset:number, version:number}[]}
+ */
+function locateTfdts(moofBuf, moofBox) {
+    const list = []
+    forEachBox(moofBuf, moofBox.start + moofBox.headerSize, moofBox.start + moofBox.size, (traf) => {
+        if (traf.type !== 'traf') return
+        let trackId = 0
+        let tfdt = null
+        forEachBox(moofBuf, traf.start + traf.headerSize, traf.start + traf.size, (child) => {
+            if (child.type === 'tfhd') {
+                // tfhd: version/flags(4) + track_ID(4)
+                const pos = child.start + child.headerSize + 4
+                if (pos + 4 <= moofBuf.length) trackId = moofBuf.readUInt32BE(pos)
+            } else if (child.type === 'tfdt' && !tfdt) {
+                const p = child.start + child.headerSize
+                const version = moofBuf[p]
+                let value = null
+                if (version === 1) {
+                    if (p + 4 + 8 <= moofBuf.length) value = Number(moofBuf.readBigUInt64BE(p + 4))
+                } else {
+                    if (p + 4 + 4 <= moofBuf.length) value = moofBuf.readUInt32BE(p + 4)
+                }
+                if (value !== null) tfdt = { value, offset: p + 4, version }
+            }
+        })
+        if (tfdt) list.push({ trackId, value: tfdt.value, offset: tfdt.offset, version: tfdt.version })
+    })
+    return list
+}
+
+/** 兼容旧调用：第一条 traf 的 tfdt（视频轨） */
+function locateTfdt(moofBuf, moofBox) {
+    const list = locateTfdts(moofBuf, moofBox)
+    return list.length > 0 ? list[0] : null
 }
 
 /** 原地改写 tfdt 的 baseMediaDecodeTime */
@@ -134,8 +187,12 @@ class Fmp4RingBuffer {
 
         // ftyp + moov，保存时必须放在最前面
         this.initSegment = null
+        // 主轨（视频）的时间刻度，用来算片段起点/时长
         this.timescale = 0
-        // { data: Buffer(moof+mdat), startTime: 秒, duration: 秒 }
+        this.mainTrackId = 0
+        // 所有轨道的时间刻度：trackId → timescale（音轨和视频轨不一样）
+        this.timescales = {}
+        // { data: Buffer(moof+mdat), startTime: 秒, duration: 秒, tfdts: [...] }
         this.fragments = []
         this.totalBytes = 0
 
@@ -180,22 +237,34 @@ class Fmp4RingBuffer {
     _appendInit(data, box) {
         this.initSegment = this.initSegment ? Buffer.concat([this.initSegment, data]) : data
         if (box.type === 'moov') {
-            const ts = parseMoovTimescale(data, { ...box, start: 0 })
-            if (ts > 0) this.timescale = ts
+            const tracks = parseMoovTracks(data, { ...box, start: 0 })
+            if (tracks.length === 0) return
+            for (const track of tracks) {
+                this.timescales[track.trackId] = track.timescale
+            }
+            // 主轨优先取视频（音轨的 tfdt 也在，但时长要以画面为准）
+            const video = tracks.find((t) => t.handler === 'vide')
+            const main = video || tracks[0]
+            this.mainTrackId = main.trackId
+            this.timescale = main.timescale
         }
     }
 
     _pushFragment(data) {
         let startTime = this._fallbackStartTime
-        let tfdt = null
+        let tfdts = []
 
         if (this.timescale > 0) {
             // 从片段自己的 moof 里读 tfdt —— 用 ffmpeg 给的绝对时间轴，
             // 比自己累加帧间隔可靠（VFR 下帧间隔不固定）
             const moof = readBox(data, 0)
             if (moof && moof.type === 'moof') {
-                tfdt = locateTfdt(data.subarray(0, moof.size), { ...moof, start: 0 })
-                if (tfdt) startTime = tfdt.value / this.timescale
+                tfdts = locateTfdts(data.subarray(0, moof.size), { ...moof, start: 0 })
+                const main = tfdts.find((t) => t.trackId === this.mainTrackId) || tfdts[0]
+                if (main) {
+                    const scale = this.timescales[main.trackId] || this.timescale
+                    if (scale > 0) startTime = main.value / scale
+                }
             }
         }
 
@@ -210,10 +279,8 @@ class Fmp4RingBuffer {
             data,
             startTime,
             duration: this.estimatedFragmentSeconds,
-            // 保存时把整段的时间轴整体平移到 0，这三项是改写 tfdt 需要的全部信息
-            tfdtOffset: tfdt ? tfdt.offset : -1,
-            tfdtVersion: tfdt ? tfdt.version : 0,
-            tfdtTicks: tfdt ? tfdt.value : null
+            // 保存时把整段的时间轴整体平移到 0，每条轨道各自需要的信息都在这里
+            tfdts
         })
         this.totalBytes += data.length
         this._fallbackStartTime = startTime + this.estimatedFragmentSeconds
@@ -263,16 +330,30 @@ class Fmp4RingBuffer {
      * 关键一步是把时间轴归零：保留的片段带着原始录制时间轴上的
      * baseMediaDecodeTime（比如从第 5.25 秒开始），不处理的话播放器
      * 会把前 5 秒当成空白，一个 2 秒的片段显示成 7 秒黑屏。
-     * 这里直接改 tfdt 的 8 个字节，不做重封装。
+     * 这里直接改 tfdt 的字节，不做重封装。
+     *
+     * 有音轨时必须逐条轨道各自归零：视频 tfdt 减视频基准、音频 tfdt 减音频基准。
+     * 只改第一条（视频）的话，音频会保留绝对时间（录了 10 分钟才保存的话
+     * 音频从第 600 秒开始），播放器表现为「声音整段消失」。
      */
     snapshot() {
         if (!this.ready) return null
 
-        const baseTicks = this.fragments[0].tfdtTicks
+        const first = this.fragments[0]
+        const baseByTrack = {}
+        for (const item of first.tfdts || []) {
+            baseByTrack[item.trackId] = item.value
+        }
+
         const pieces = this.fragments.map((f) => {
-            if (f.tfdtOffset < 0 || f.tfdtTicks === null || baseTicks === null) return f.data
+            const list = f.tfdts || []
+            if (list.length === 0) return f.data
             const copy = Buffer.from(f.data)
-            writeBaseMediaDecodeTime(copy, f.tfdtOffset, f.tfdtVersion, f.tfdtTicks - baseTicks)
+            for (const item of list) {
+                const base = baseByTrack[item.trackId]
+                if (base === undefined) continue
+                writeBaseMediaDecodeTime(copy, item.offset, item.version, item.value - base)
+            }
             return copy
         })
         return Buffer.concat([this.initSegment, ...pieces])
@@ -293,6 +374,8 @@ class Fmp4RingBuffer {
     clear() {
         this.initSegment = null
         this.timescale = 0
+        this.mainTrackId = 0
+        this.timescales = {}
         this.fragments = []
         this.totalBytes = 0
         this._pending = Buffer.alloc(0)
@@ -301,4 +384,11 @@ class Fmp4RingBuffer {
     }
 }
 
-module.exports = { Fmp4RingBuffer, readBox, parseMoovTimescale, parseBaseMediaDecodeTime }
+module.exports = {
+    Fmp4RingBuffer,
+    readBox,
+    parseMoovTimescale,
+    parseMoovTracks,
+    parseBaseMediaDecodeTime,
+    locateTfdts
+}

@@ -18,7 +18,8 @@
     "rec:smoke": "node scripts/recorder-smoke.js",
     "rec:replay": "node scripts/replay-smoke.js",
     "postinstall": "electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "postuninstall": "electron-builder install-app-deps",
+    "rec:audio": "node scripts/audio-smoke.js"
   },
   "main": "background.js",
   "dependencies": {

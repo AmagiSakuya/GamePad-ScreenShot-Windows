@@ -801,6 +801,8 @@ const recorderEngine = createRecorder({
   isPackaged: app.isPackaged,
   resourcesPath: process.resourcesPath,
   appPath: app.getAppPath(),
+  // 采集脚本写到 userData 下（和 keySender 一样），打包后也能原地更新
+  app,
   log
 })
 
@@ -877,9 +879,32 @@ function buildRecorderOptions(overrides = {}) {
     width,
     height,
     testWidth,
-    testHeight
+    testHeight,
+    // 系统声音：必录，配置里只记「录哪一路输出」。
+    // deviceId 为空表示跟随系统默认输出（用户在 Windows 里换默认设备会跟着变）
+    audio: {
+      deviceId: merged.audio && typeof merged.audio.deviceId === 'string' ? merged.audio.deviceId : '',
+      bitrate: clampNumber(merged.audio && merged.audio.bitrate, 64000, 512000, 192000)
+    }
   }
 }
+
+ipcMain.handle('recorder:audio-devices', async (_, options) => {
+  try {
+    return await recorderEngine.listAudioDevices({ force: !!(options && options.force) })
+  } catch (error) {
+    log.error('[recorder] audio device list failed:', error)
+    return { ok: false, devices: [], error: error.message || String(error) }
+  }
+})
+
+ipcMain.handle('recorder:audio-probe', async (_, deviceId) => {
+  try {
+    return await recorderEngine.probeAudioDevice(deviceId || '')
+  } catch (error) {
+    return { ok: false, error: error.message || String(error) }
+  }
+})
 
 ipcMain.handle('recorder:capabilities', async (_, options) => {
   try {

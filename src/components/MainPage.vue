@@ -425,7 +425,9 @@ export default {
         bufferMaxMB: 2048,
         width: 1920,
         height: 1080,
-        cursor: true
+        cursor: true,
+        // 系统声音（WASAPI 环回）：必录，没有开关；deviceId 为空 = 跟随系统默认输出
+        audio: { deviceId: '', bitrate: 192000 }
       },
       // 回放缓存的实时状态（主进程主动推送）
       replayState: { active: false, ready: false, duration: 0, targetSeconds: 0, bytes: 0 },
@@ -627,20 +629,24 @@ export default {
       return 'ok';
     },
 
-    /** 没测过就开监听时问一次；返回 false 表示「先去测试」 */
+    /**
+     * 没测过就开监听时问一次；返回 false 表示「先去测试」。
+     *
+     * 一律用应用内确认框，不再弹系统 MessageBox ——
+     * 白色系统框压在这个深色界面上非常突兀，而且和手柄模式下的同一个问题长得不一样。
+     */
     async confirmEncoderUntested(state) {
       const key = state === 'stale' ? 'Recording.encoderCheckStale'
         : state === 'idle' ? 'Recording.encoderCheckIdle'
           : 'Recording.encoderCheckMissing';
-      const title = this.$t('Recording.encoderCheckTitle');
-      const message = this.$t(key);
-      const detail = this.$t('Recording.encoderCheckHint');
-      const okLabel = this.$t('Recording.encoderCheckStart');
-      const cancelLabel = this.$t('Recording.encoderCheckTest');
-      if (isPadMode()) {
-        return await askConfirm({ title, message, detail, okLabel, cancelLabel });
-      }
-      return await window.electronAPI.showConfirmMessageBox(title, message, detail, [okLabel, cancelLabel]);
+      return await askConfirm({
+        title: this.$t('Recording.encoderCheckTitle'),
+        message: this.$t(key),
+        detail: this.$t('Recording.encoderCheckHint'),
+        okLabel: this.$t('Recording.encoderCheckStart'),
+        cancelLabel: this.$t('Recording.encoderCheckTest'),
+        icon: 'info'
+      });
     },
 
     /**
@@ -705,10 +711,19 @@ export default {
         bufferSeconds: c.bufferSeconds,
         bufferMaxMB: c.bufferMaxMB,
         width: c.width,
-        height: c.height
+        height: c.height,
+        // 系统声音：必录，这里只决定录哪一路输出（空 = 跟随 Windows 默认）
+        audio: {
+          deviceId: (c.audio && c.audio.deviceId) || ''
+        }
       });
       if (result && result.ok) {
         this.replayState = result.state;
+        // 设备被占用 / 被拔掉时录制会降级成无声，必须让用户看到原因，
+        // 否则就会出现「录了半天没有声音」却毫无提示的情况
+        if (result.meta && result.meta.audioError) {
+          this.showError(this.$t('Recording.audioFailed', { reason: result.meta.audioError }));
+        }
         return true;
       }
       if (result && result.error) {
@@ -1596,8 +1611,13 @@ export default {
 .rec-dialog {
   position: relative;
   width: min(520px, 100%);
-  max-height: min(86vh, 700px);
+  /* 高度给足：配置项比第一版多了「系统声音」一行，
+     700px 的旧上限在 1080p / 125% 缩放下会刚好溢出，冒出滚动条 */
+  max-height: min(92vh, 780px);
   overflow-y: auto;
+  /* 兜底：内容再长也不出现系统那根白色滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
   padding: 14px 16px 16px;
   border-radius: var(--radius);
   border: 1px solid var(--line-strong);
@@ -1605,6 +1625,26 @@ export default {
      否则弹窗是透的，后面的卡片会透上来（第一版就踩了这个） */
   background: var(--surface), var(--bg);
   box-shadow: var(--shadow);
+}
+
+.rec-dialog::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rec-dialog::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rec-dialog::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 99px;
+  background: var(--line-strong);
+  background-clip: padding-box;
+}
+
+.rec-dialog::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-3);
+  background-clip: padding-box;
 }
 
 .rec-dialog-head {

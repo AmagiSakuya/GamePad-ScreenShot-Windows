@@ -9,6 +9,31 @@
       </div>
     </div>
 
+    <!-- 系统声音：WASAPI 环回抓的是「输出设备正在播放的混音」，
+         不是麦克风，也不需要用户装虚拟声卡。
+         声音是必录项（没有开关），这里只让用户指定「录哪一路输出」——
+         有多个输出设备（扬声器 / HDMI / 虚拟设备）时必须能选，
+         不选就是「跟随 Windows 当前默认」，换默认设备时自动跟着变。 -->
+    <div class="rec-group" v-if="config.audio">
+      <div class="rec-field">
+        <span>{{ $t('Recording.audio') }}</span>
+        <select class="ui-select" v-model="config.audio.deviceId" data-gp :title="$t('Recording.audioDevice')">
+          <option value="">{{ $t('Recording.audioDeviceDefault') }}</option>
+          <option v-for="device in audioDevices" :key="device.id" :value="device.id">
+            {{ device.name }}{{ device.default ? ' · ' + $t('Recording.audioDeviceCurrent') : '' }}
+          </option>
+        </select>
+        <button class="rec-icon-btn" data-gp :disabled="audioLoading"
+          :title="$t('refresh')" @click="loadAudioDevices(true)">
+          <AppIcon name="refresh" :size="12" />
+        </button>
+      </div>
+
+      <p class="rec-hint" v-if="audioError">{{ audioError }}</p>
+      <p class="rec-hint" v-else-if="audioLoading">{{ $t('Recording.probing') }}</p>
+      <p class="rec-hint" v-else>{{ $t('Recording.audioDeviceHint') }}</p>
+    </div>
+
     <label class="rec-field">
       <span>{{ $t('Recording.engine') }}</span>
       <select class="ui-select" v-model="config.encoderId">
@@ -177,7 +202,9 @@ const DEFAULTS = {
   // 而 1080p 用核显 QSV 都有 1.35x 余量 —— 这也正好对齐 OBS 默认的「重缩放输出」
   width: 1920,
   height: 1080,
-  cursor: true
+  cursor: true,
+  // 系统声音是必录项（没有开关），deviceId 为空 = 跟随系统默认输出设备
+  audio: { deviceId: '', bitrate: 192000 }
 };
 
 export default {
@@ -214,7 +241,11 @@ export default {
       capabilities: null,
       loading: false,
       testing: false,
-      testResult: null
+      testResult: null,
+      // 系统声音：可选输出设备列表（WASAPI 渲染端点）
+      audioDevices: [],
+      audioLoading: false,
+      audioError: ''
     };
   },
   computed: {
@@ -297,15 +328,59 @@ export default {
   async mounted() {
     this.applyDefaults();
     await this.probe();
+    // 声音必录，设备列表进弹窗就拿 —— 越早越好，选设备时不用等
+    this.loadAudioDevices(false);
   },
   methods: {
     /** 补齐缺失字段：老版本配置里没有这些 key，直接用会让 select 空掉 */
     applyDefaults() {
       Object.keys(DEFAULTS).forEach((key) => {
-        if (this.config[key] === undefined || this.config[key] === null) {
-          this.config[key] = DEFAULTS[key];
+        const fallback = DEFAULTS[key];
+        const current = this.config[key];
+        if (current === undefined || current === null) {
+          // 对象型默认值要展开拷贝，否则多个 recorder 实例会共用同一个引用
+          this.$set(this.config, key, fallback && typeof fallback === 'object' ? { ...fallback } : fallback);
         }
       });
+      // 老配置里的 audio 可能只有一部分字段
+      if (this.config.audio && typeof this.config.audio === 'object') {
+        // 上一版有「录制/关闭」开关，现在声音必录，清掉残留字段免得两套语义并存
+        if ('enabled' in this.config.audio) delete this.config.audio.enabled;
+        Object.keys(DEFAULTS.audio).forEach((key) => {
+          if (this.config.audio[key] === undefined || this.config.audio[key] === null) {
+            this.$set(this.config.audio, key, DEFAULTS.audio[key]);
+          }
+        });
+      }
+    },
+
+    /**
+     * 拉取「输出设备」列表。
+     *
+     * 枚举本身要 1.5 秒左右（PowerShell 启动 + 现场编译 C#），
+     * 所以只在展开设置/点刷新时拉，不做轮询 —— 热插拔靠刷新按钮。
+     */
+    async loadAudioDevices(force) {
+      if (!window.electronAPI || !window.electronAPI.getAudioDevices) return;
+      this.audioLoading = true;
+      this.audioError = '';
+      try {
+        const result = await window.electronAPI.getAudioDevices({ force: !!force });
+        if (result && result.ok) {
+          this.audioDevices = result.devices || [];
+          // 之前选的设备被拔掉了：退回「跟随系统默认」，避免录不到声音还看不出原因
+          const picked = this.config.audio.deviceId;
+          if (picked && !this.audioDevices.some((d) => d.id === picked)) {
+            this.config.audio.deviceId = '';
+          }
+        } else {
+          this.audioError = (result && result.error) || 'device list failed';
+        }
+      } catch (error) {
+        this.audioError = String(error);
+      } finally {
+        this.audioLoading = false;
+      }
     },
     async probe() {
       if (!window.electronAPI || !window.electronAPI.getRecorderCapabilities) return;
@@ -426,7 +501,9 @@ export default {
 .rec-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* 8px 而不是 10px：多一行「系统声音」后弹窗刚好卡在滚动边缘，
+     每个间距省 2px，整块能少 20 多像素，768p 上也不会出滚动条 */
+  gap: 8px;
   min-height: 0;
 }
 
@@ -523,6 +600,32 @@ export default {
   gap: 10px;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* 音频设备行右侧的刷新按钮：固定 32×32，和 select 同高 */
+.rec-icon-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.rec-icon-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.rec-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .rec-slider .ui-range {

@@ -55,7 +55,7 @@ import pkg from '../../package.json';
 import AppIcon from '@/components/AppIcon.vue';
 import SettingsCard from '@/components/SettingsCard.vue';
 import { captureSoundState, setCaptureSound, playCaptureSound } from '@/lib/captureSound';
-import { isPadMode, askConfirm, setNavEnabled } from '@/lib/gamepadNav';
+import { askConfirm, setNavEnabled } from '@/lib/gamepadNav';
 
 const { OVERLAY_SCALE_MIN, OVERLAY_SCALE_MAX, OVERLAY_SCALE_STEP, normalizeOverlayScale } = require('@/lib/overlayScale');
 
@@ -480,22 +480,15 @@ export default {
     },
     /** 清空日志：先确认，再删除日志文件夹内的所有日志文件 */
     async clearLogs() {
-      // 手柄模式下系统消息框选不了，改用应用内确认框
-      const confirmed = isPadMode()
-        ? await askConfirm({
-          title: this.$t('SystemSettingsPage.clearLogsConfirmTitle'),
-          message: this.$t('SystemSettingsPage.clearLogsConfirmMessage'),
-          detail: this.$t('SystemSettingsPage.clearLogsConfirmDetail', { path: this.dataPaths.logFolder || '-' }),
-          okLabel: this.$t('SystemSettingsPage.confirmButton'),
-          cancelLabel: this.$t('SystemSettingsPage.cancelButton'),
-          danger: true
-        })
-        : await window.electronAPI.showConfirmMessageBox(
-          this.$t('SystemSettingsPage.clearLogsConfirmTitle'),
-          this.$t('SystemSettingsPage.clearLogsConfirmMessage'),
-          this.$t('SystemSettingsPage.clearLogsConfirmDetail', { path: this.dataPaths.logFolder || '-' }),
-          [this.$t('SystemSettingsPage.confirmButton'), this.$t('SystemSettingsPage.cancelButton')]
-        );
+      // 统一用应用内确认框：系统 MessageBox 是白底的，压在深色界面上很突兀
+      const confirmed = await askConfirm({
+        title: this.$t('SystemSettingsPage.clearLogsConfirmTitle'),
+        message: this.$t('SystemSettingsPage.clearLogsConfirmMessage'),
+        detail: this.$t('SystemSettingsPage.clearLogsConfirmDetail', { path: this.dataPaths.logFolder || '-' }),
+        okLabel: this.$t('SystemSettingsPage.confirmButton'),
+        cancelLabel: this.$t('SystemSettingsPage.cancelButton'),
+        danger: true
+      });
       if (!confirmed) return;
 
       const result = await window.electronAPI.clearLogFiles();

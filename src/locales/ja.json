@@ -329,6 +329,12 @@
         }
     },
     "Recording": {
+        "audio": "システム音声",
+        "audioDevice": "出力デバイス",
+        "audioDeviceDefault": "システムの既定に従う",
+        "audioDeviceCurrent": "現在の既定",
+        "audioDeviceHint": "このデバイスが再生している音を録ります（マイクではありません）。",
+        "audioFailed": "システム音声を録音できませんでした：{reason}",
         "longPress": "ループ録画の長押し",
         "longPressHint": "スクリーンショットのショートカット（ゲームパッドの組み合わせ）を長押しすると直近の録画を保存します",
         "settings": "エンコード設定",

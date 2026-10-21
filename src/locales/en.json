@@ -363,6 +363,12 @@
         }
     },
     "Recording": {
+        "audio": "System audio",
+        "audioDevice": "Output device",
+        "audioDeviceDefault": "System default",
+        "audioDeviceCurrent": "current default",
+        "audioDeviceHint": "Captures what this device is playing, not the microphone.",
+        "audioFailed": "System audio was not captured: {reason}",
         "enabled": "Long press to save the last N seconds (replay buffer)",
         "target": "Capture source",
         "targetScreen": "Entire screen",

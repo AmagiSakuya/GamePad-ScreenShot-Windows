@@ -17,12 +17,17 @@ const { ENCODERS } = require('./encoders')
 const { buildRecordCommand } = require('./command')
 const { createSession } = require('./session')
 const { Fmp4RingBuffer } = require('./fmp4')
+const { createAudioCapture } = require('./audioCapture')
 
 function createRecorder(deps = {}) {
-    const { isPackaged = false, resourcesPath = '', appPath = process.cwd(), log = console } = deps
+    const { isPackaged = false, resourcesPath = '', appPath = process.cwd(), log = console, app = null } = deps
+
+    // 系统声音采集器（WASAPI 环回）。设备枚举也走它，设置页共用同一套。
+    const audioCapture = createAudioCapture({ app, log, scriptDir: deps.audioScriptDir })
 
     let activeSession = null
     let activeConfig = null
+    let activeAudio = null
     let capabilitiesCache = null
 
     // 回放缓存（长按保存最近 N 秒）的独立状态
@@ -135,12 +140,55 @@ function createRecorder(deps = {}) {
     /**
      * 开始录制。output 传 { type:'file', path } 录制到文件；
      * 传 { type:'pipe' } 则通过 onData 吐出 fMP4 片段流（回放缓存用）。
+     *
+     * 系统声音的启动顺序不能反：采集进程先建好命名管道并阻塞等待连接，
+     * ffmpeg 才能把 `\\.\pipe\...` 当成输入打开。所以这里是
+     * 「起采集 → 拿格式拼命令 → 起 ffmpeg」三步，而不是先拼命令再起进程。
      */
     async function startRecord(config = {}, handlers = {}) {
         if (activeSession) throw new Error('A recording session is already running')
 
         const exe = ffmpegPath()
-        const { args, meta } = buildRecordCommand(config)
+
+        let audioHandle = null
+        let audioError = ''
+        // 系统声音是必录项：只要配置里带了 audio 段就启动采集（deviceId 为空 = 系统默认输出）
+        if (config.audio) {
+            try {
+                audioHandle = await audioCapture.start({ deviceId: config.audio.deviceId })
+            } catch (error) {
+                // 设备被拔掉 / 被独占时不让整段录制失败：
+                // 降级成无声录像，但把原因带回上层（UI 要能说出来）
+                audioError = error.message || String(error)
+                if (log && typeof log.warn === 'function') {
+                    log.warn('[recorder] system audio unavailable, recording without it:', audioError)
+                }
+            }
+        }
+
+        let args
+        let meta
+        try {
+            const built = buildRecordCommand({
+                ...config,
+                audio: audioHandle
+                    ? {
+                        pipePath: audioHandle.pipePath,
+                        sampleRate: audioHandle.sampleRate,
+                        channels: audioHandle.channels,
+                        sampleFormat: audioHandle.sampleFormat,
+                        bitrate: config.audio.bitrate
+                    }
+                    : null
+            })
+            args = built.args
+            meta = built.meta
+        } catch (error) {
+            if (audioHandle) audioHandle.kill()
+            throw error
+        }
+        if (audioError) meta.audioError = audioError
+
         const session = createSession({
             exe,
             args,
@@ -148,6 +196,8 @@ function createRecorder(deps = {}) {
             onLog: handlers.onLog,
             onData: handlers.onData,
             onExit: (result) => {
+                if (audioHandle) audioHandle.kill()
+                if (activeAudio === audioHandle) activeAudio = null
                 if (activeSession === session) {
                     activeSession = null
                     activeConfig = null
@@ -157,9 +207,15 @@ function createRecorder(deps = {}) {
         })
 
         activeSession = session
+        activeAudio = audioHandle
         activeConfig = { config, meta }
         if (log && typeof log.info === 'function') {
-            log.info('[recorder] start', { backend: meta.backend, args: args.join(' ') })
+            log.info('[recorder] start', {
+                backend: meta.backend,
+                audio: meta.audio ? meta.audio.sampleFormat + ' ' + meta.audio.sampleRate + 'Hz/' + meta.audio.channels + 'ch' : 'off',
+                audioError: audioError || undefined,
+                args: args.join(' ')
+            })
         }
         return { session, meta, args }
     }
@@ -167,6 +223,13 @@ function createRecorder(deps = {}) {
     async function stopRecord(options) {
         if (!activeSession) return null
         const session = activeSession
+        // 先停采集：管道不再有数据，ffmpeg 的音频输入自然收尾，
+        // 避免它在给已关闭的管道写数据时卡住最后一个 fragment
+        const audio = activeAudio
+        activeAudio = null
+        if (audio) {
+            try { await audio.stop(400) } catch (error) { /* ignore */ }
+        }
         const result = await session.stop(options)
         return result
     }
@@ -242,6 +305,11 @@ function createRecorder(deps = {}) {
         replaySession = null
         replayBuffer = null
         replayConfig = null
+        const audio = activeAudio
+        activeAudio = null
+        if (audio) {
+            try { await audio.stop(400) } catch (error) { /* ignore */ }
+        }
         if (!session) return null
         return session.stop(options)
     }
@@ -266,6 +334,10 @@ function createRecorder(deps = {}) {
      * 而 Windows 上父进程退出不会带走子进程，不杀就会留下孤儿进程继续吃 GPU。
      */
     function killNow() {
+        // 采集进程也要杀：Windows 上父进程退出不会带走子进程，
+        // 留下一个还在占着音频设备的 PowerShell 会很显眼
+        audioCapture.killAll()
+        activeAudio = null
         for (const session of [replaySession, activeSession]) {
             if (session && session._child) {
                 try { session._child.kill() } catch (error) { /* 已经退出 */ }
@@ -288,6 +360,9 @@ function createRecorder(deps = {}) {
         stopReplayBuffer,
         getReplayState,
         killNow,
+        // 系统声音：设置页要的「输出设备列表」和「这个设备能不能录」
+        listAudioDevices: (options) => audioCapture.listDevices(options),
+        probeAudioDevice: (deviceId) => audioCapture.probe(deviceId),
         getActiveConfig: () => activeConfig
     }
 }

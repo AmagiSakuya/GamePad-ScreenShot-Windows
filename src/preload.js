@@ -152,6 +152,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     recorderSelfTest: (config) => ipcRenderer.invoke('recorder:selftest', config),
     getRecordingConfig: () => ipcRenderer.invoke('recorder:config-get'),
     saveRecordingConfig: (config) => ipcRenderer.invoke('recorder:config-set', config),
+    /** 系统声音：可选的所有「输出设备」（WASAPI 渲染端点） */
+    getAudioDevices: (options) => ipcRenderer.invoke('recorder:audio-devices', options),
+    /** 试开一次指定输出设备，返回是否可录以及实际格式 */
+    probeAudioDevice: (deviceId) => ipcRenderer.invoke('recorder:audio-probe', deviceId),
     /** 启动回放缓存（最近 N 秒常驻在内存里） */
     startReplayBuffer: (overrides) => ipcRenderer.invoke('recorder:replay-start', overrides),
     stopReplayBuffer: () => ipcRenderer.invoke('recorder:replay-stop'),

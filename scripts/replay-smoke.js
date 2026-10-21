@@ -45,7 +45,9 @@ async function main() {
             fps: 60,
             mode: 'quality',
             quality: 23,
-            bufferSeconds: BUFFER_SECONDS
+            bufferSeconds: BUFFER_SECONDS,
+            // 系统声音必录：回放缓存也要带上音频轨（否则和生产链路不一致）
+            audio: {}
         },
         {
             onProgress: (sample) => {

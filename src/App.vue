@@ -2340,18 +2340,76 @@ html.theme-light .gp-mask {
 
 /* ---------- 确认框 ---------- */
 .gp-confirm {
-  width: 430px;
+  width: 440px;
+}
+
+/* 内边距统一点：标题 / 正文 / 按钮区都从同一条 16px 线上起 */
+.gp-confirm .gp-sheet-head {
+  padding: 15px 16px 12px;
+}
+
+.gp-confirm .gp-sheet-body {
+  padding: 12px 16px 14px;
+}
+
+.gp-confirm .gp-sheet-foot {
+  padding: 10px 16px 14px;
+}
+
+/* 标题左侧的小图标块：和信息类 / 危险类弹窗的语气对上 */
+.gp-confirm-ico {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.gp-confirm-ico.danger {
+  background: rgba(239, 108, 108, 0.12);
+  color: var(--danger);
+}
+
+.gp-confirm-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右上角关闭叉：和系统对话框一样，等价于「取消」 */
+.gp-sheet-close {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.gp-sheet-close:hover {
+  color: var(--ink);
+  background: var(--field);
 }
 
 .gp-confirm-msg {
-  margin: 4px 2px 0;
+  margin: 0;
   font-size: 12.5px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--ink);
 }
 
 .gp-confirm-detail {
-  margin: 8px 2px 0;
+  margin: 8px 0 0;
   font-size: 10.5px;
   line-height: 1.6;
   color: var(--ink-3);

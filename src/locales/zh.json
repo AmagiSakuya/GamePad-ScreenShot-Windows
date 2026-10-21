@@ -363,6 +363,12 @@
         }
     },
     "Recording": {
+        "audio": "系统声音",
+        "audioDevice": "输出设备",
+        "audioDeviceDefault": "跟随系统默认",
+        "audioDeviceCurrent": "当前默认",
+        "audioDeviceHint": "录的是这个设备正在播放的声音，不是麦克风。",
+        "audioFailed": "系统声音没有录进去：{reason}",
         "enabled": "长按保存最近一段（回放缓存）",
         "target": "录制来源",
         "targetScreen": "整个屏幕",

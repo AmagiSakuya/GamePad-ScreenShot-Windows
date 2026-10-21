@@ -329,6 +329,12 @@
         }
     },
     "Recording": {
+        "audio": "Systemaudio",
+        "audioDevice": "Ausgabegerät",
+        "audioDeviceDefault": "Systemstandard",
+        "audioDeviceCurrent": "aktueller Standard",
+        "audioDeviceHint": "Nimmt auf, was dieses Gerät wiedergibt – nicht das Mikrofon.",
+        "audioFailed": "Systemaudio wurde nicht aufgenommen: {reason}",
         "longPress": "Langdruck (Loop)",
         "longPressHint": "Screenshot-Tastenkombination lange drücken, um die letzten Sekunden zu speichern",
         "settings": "Encoder-Einstellungen",
