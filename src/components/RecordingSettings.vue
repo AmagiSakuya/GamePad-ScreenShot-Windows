@@ -142,16 +142,16 @@
       <p class="rec-hint">{{ $t('Recording.bufferHint') }}</p>
     </div>
 
-    <!-- 实时缓冲状态：只要进程在跑就亮绿点，ready 只影响显示内容 ——
-         「已经在录但还没攒够第一段」和「根本没启动」是两件事 -->
-    <div class="rec-status" :class="{ live: state.active }">
+    <!-- 实时缓冲状态：只在真的在缓冲时出现。
+         「未启动」那一行纯属噪音 —— 没在录的时候弹窗里不必占位，
+         而「已经在录但还没攒够第一段」和「缓冲中」仍然是两件事 -->
+    <div class="rec-status" v-if="state.active">
       <span class="rec-dot"></span>
-      <span v-if="!state.active">{{ $t('Recording.stateIdle') }}</span>
-      <span v-else-if="!state.ready">{{ $t('Recording.stateStarting') }}</span>
+      <span v-if="!state.ready">{{ $t('Recording.stateStarting') }}</span>
       <span v-else>
         {{ $t('Recording.stateBuffered', { sec: state.duration.toFixed(1), total: state.targetSeconds }) }}
       </span>
-      <span class="rec-status-meta" v-if="state.active && state.bytes > 0">
+      <span class="rec-status-meta" v-if="state.bytes > 0">
         {{ (state.bytes / 1024 / 1024).toFixed(0) }} MB
       </span>
     </div>
@@ -673,35 +673,26 @@ export default {
   flex: 0 0 auto;
 }
 
-/* 实时缓冲状态：未启动是灰的，缓冲中就亮绿灯 */
+/* 实时缓冲状态：只在缓冲期间出现（没在录时整块都不渲染），所以恒为「亮起」态 */
 .rec-status {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 7px 10px;
   border-radius: 7px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--accent-line);
   background: var(--surface-2, rgba(255, 255, 255, 0.03));
   font-size: 11px;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .rec-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ink-3);
-  flex: 0 0 auto;
-}
-
-.rec-status.live {
-  border-color: var(--accent-line);
-  color: var(--ink-2);
-}
-
-.rec-status.live .rec-dot {
   background: var(--ok, #4ade80);
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.16);
+  flex: 0 0 auto;
 }
 
 .rec-status-meta {

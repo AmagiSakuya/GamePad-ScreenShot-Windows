@@ -320,7 +320,7 @@
         <div class="rec-dialog-head">
           <div class="ui-card-head-left">
             <div class="ui-card-ico warn"><AppIcon name="camera" :size="13" /></div>
-            <span class="ui-card-title">{{ $t('ui.sectionRecording') }}</span>
+            <span class="ui-card-title">{{ $t('Recording.settings') }}</span>
           </div>
         </div>
         <RecordingSettings :config="recordingConfig" :state="replayState" :target="recordingTarget"
