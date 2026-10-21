@@ -791,6 +791,15 @@ async function activate() {
       return
     }
   }
+  /*
+   * 顶栏按钮点完但没弹浮层（切换浅色/深色就是这种）：焦点必须留在原按钮上。
+   * 顶栏按钮本来就不在页面导航列表里，如果落到下面的兜底逻辑会被误判成
+   * 「原元素已消失」，焦点被扔回页面内容 —— 用户就会看到焦点「自己跑下去了」。
+   */
+  if (el.hasAttribute(BAR_ATTR) && el.isConnected) {
+    setFocus(el, { instant: true })
+    return
+  }
   // 点击导致列表刷新（增删条目）后，原来那个元素可能已经没了
   const list = collect()
   if (list.length && (!currentEl || !currentEl.isConnected || !list.includes(currentEl))) {
