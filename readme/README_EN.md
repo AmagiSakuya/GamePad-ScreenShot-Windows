@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Take full-screen, window or OBS screenshots with your gamepad</strong>
+  <strong>Take full-screen or window screenshots and keep the last moments recorded, right from your gamepad</strong>
 </p>
 
 <div align="center">
@@ -22,7 +22,7 @@
 
 ## 📖 Introduction
 
-A Windows utility that lets you trigger screenshots with **gamepad button combinations** or **axis values** instead of the keyboard — perfect for games that capture the mouse or run in full screen. Screenshots can be saved to disk or the clipboard, and you can also connect to **OBS via WebSocket** to capture any OBS scene. It also supports **mapping gamepad buttons to keyboard keys or combos**, turning the controller into a shortcut pad.
+A Windows utility that lets you trigger screenshots with **gamepad button combinations** or **axis values** instead of the keyboard — perfect for games that capture the mouse or run in full screen. Screenshots can be saved to disk or the clipboard, and the built-in **loop recording** engine keeps the recent past in memory so a **long press** turns your highlight into an MP4 — no OBS required. It also supports **mapping gamepad buttons to keyboard keys or combos**, turning the controller into a shortcut pad.
 
 - ✅ Trigger via button combinations / axis values (D-pad, L2 / R2, …)
 - ✅ Extra keyboard hotkey trigger
@@ -32,8 +32,8 @@ A Windows utility that lets you trigger screenshots with **gamepad button combin
 - ✅ Filename conflict handling: overwrite / append timestamp / skip / ask every time
 - ✅ Screenshot sound effects — 5 built-in sounds, volume control
 - ✅ Overlay notification with configurable position, duration and size
-- ✅ **OBS-WebSocket** integration — capture any OBS scene
-- ✅ Long-press the shortcut to save the **OBS replay buffer** as a clip
+- ✅ **Loop recording** — long-press the combo to save the last N seconds with the built-in FFmpeg engine (NVENC / QSV / AMF / x264), no OBS needed
+- ✅ Adjustable long-press threshold, overlay thumbnail after saving
 - ✅ Built-in gamepad tester — buttons, axes and D-pad light up in real time
 - ✅ 9 interface languages, dark / light themes, 6 accent colors
 - ✅ **Gamepad buttons → keyboard keys** — a single button or a combo sends any key / key combo, including Win and media keys
@@ -112,19 +112,17 @@ Great for actions that only exist on the keyboard — switching tracks, push-to-
 
 ---
 
-## ⚙️ Capturing via OBS
+## 🔁 Loop recording
 
-1. Enable the **WebSocket Server** in OBS manually (usually under the "Tools" menu).
-2. Open the **ScreenShot** page and switch **Capture Method** to **OBS** — the OBS connection panel expands right below.
+Recording isn't "start → stop": the engine keeps the **most recent seconds** in memory while you're listening, and only writes to disk on a long press.
 
-<p align="center">
-  <img src="images/shot-obs.png" alt="OBS Connect" width="720" />
-</p>
+1. Open the **ScreenShot** page and switch **Loop recording** to **On** under *Capture Source*.
+2. Pick the **Long press** seconds right below (0.5 / 0.8 / 1 / 1.5 / 2 / 3 s) — hold the combo that long to save; release earlier and you get a normal screenshot.
+3. **Settings** fine-tunes the encoder (NVENC / QSV / AMF / x264), resolution, fps, quality or bitrate, buffer length and memory cap.
+4. Not sure whether it will drop frames? Run **Test encoder performance** — it does a real capture + encode and reports dropped frames and headroom.
+5. Saved MP4s use the same folder and filename template as screenshots, and an overlay with a **thumbnail** confirms the save.
 
-3. Enter the OBS server **address** (`ws://IP:Port`) and **password**.
-4. Click **Connect OBS**.
-5. Once connected, select the **scene** you want to capture from the dropdown.
-6. Hold the shortcut to capture the scene. With "Save replay buffer on long press" enabled, a **long-press** saves the OBS replay buffer as a clip.
+> **Note:** the recording source follows **Capture Target** — screen records the whole display, window records just that window. The buffer only runs while listening, so the encoder is released when you stop.
 
 ---
 

@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "Gamepad-Screenshot-Tool",
     "screenshotSettings": "Screenshot-Einstellungen",
-    "obsConnect": "OBS-Verbindung",
     "gamepadTester": "Controller-Test",
     "systemSettings": "Systemeinstellungen",
     "mappingSettings": "Tastenbelegung",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "Screenshot erstellt",
         "screenshotSaved": "Lokal gespeichert",
-        "replayBufferSaved": "Aufnahme gespeichert",
-        "replayBufferSavedDesc": "OBS-Replay-Puffer wurde lokal gespeichert"
+        "replaySaved": "Loop-Aufnahme gespeichert",
+        "replaySavedDesc": "Die letzten {sec} s wurden lokal gespeichert"
     },
     "screenshotSound": {
         "None": "Stumm",
@@ -72,24 +71,6 @@
         "Sound3": "Sound 3",
         "Sound4": "Sound 4",
         "Sound5": "Sound 5"
-    },
-    "OBSPage": {
-        "obsAddress": "OBS-Serveradresse",
-        "obsPassword": "OBS-Serverpasswort",
-        "selectScene": "Szene auswählen",
-        "connectService": "OBS verbinden",
-        "disconnect": "Trennen",
-        "obsServiceNotFound": "OBS-WebSocket-Dienst nicht gefunden",
-        "obsNotConnected": "Verbindung zu OBS nicht möglich",
-        "invalidSceneSelected": "Keine gültige Szene ausgewählt",
-        "obsScreenshotError": "Fehler beim OBS-Screenshot",
-        "saveReplayBufferOnLongPress": "Replay-Puffer per langem Druck speichern",
-        "replayBufferHint": "Verwendet denselben Speicherort und dieselbe Dateinamen-Vorlage wie Screenshots",
-        "replayBufferNotActive": "Der OBS-Replay-Puffer ist nicht aktiv",
-        "replayBufferSaved": "OBS-Replay-Puffer gespeichert",
-        "replayBufferError": "OBS-Replay-Puffer konnte nicht gespeichert werden: ",
-        "obsStatusConnected": "Verbunden",
-        "obsStatusDisconnected": "Nicht verbunden"
     },
     "GampadTesterPage": {
         "selectController": "Controller auswählen",
@@ -191,7 +172,6 @@
         "noCombo": "Noch keine Tastenkombination",
         "noGamepad": "Kein Controller verbunden",
         "notSet": "Nicht festgelegt",
-        "desktopCapture": "Desktop-Aufnahme",
         "lockedHint": "Aktiv · Einstellungen gesperrt",
         "testSound": "Anhören",
         "notifyHintDesc": "Der Benachrichtigungsstil wird in den Systemeinstellungen angepasst",
@@ -231,8 +211,6 @@
         "close": "Schließen",
         "closeModal": "Schließen",
         "sectionSave": "Speichern",
-        "listeningHint": "Tastenkombination halten zum Aufnehmen · Lang drücken (OBS) speichert Replay",
-        "captureMethod": "Aufnahmemethode",
         "about": "Über",
         "data": "Daten",
         "homepage": "Projektseite",
@@ -250,7 +228,8 @@
         "mappingRunning": "Zuordnung aktiv",
         "mappingIdle": "Zuordnung aus",
         "captureRunning": "Aufnahme aktiv",
-        "captureIdle": "Aufnahme aus"
+        "captureIdle": "Aufnahme aus",
+        "sectionRecording": "Loop-Aufnahme"
     },
     "MappingPage": {
         "onTitle": "Tastenzuordnung aktiv",
@@ -348,5 +327,21 @@
             "documents": "Dokumente",
             "downloads": "Downloads"
         }
+    },
+    "Recording": {
+        "longPress": "Langdruck (Loop)",
+        "longPressHint": "Screenshot-Tastenkombination lange drücken, um die letzten Sekunden zu speichern",
+        "settings": "Encoder-Einstellungen",
+        "encoderCheckTitle": "Loop-Aufnahme: Encoder nicht geprüft",
+        "encoderCheckMissing": "Die Loop-Aufnahme ist aktiv, aber die aktuellen Encoder-Einstellungen wurden noch nie getestet. Reicht die Kodierung nicht aus, gehen in gespeicherten Clips Frames verloren.",
+        "encoderCheckStale": "Die Encoder-Einstellungen (Engine / Auflösung / FPS) wurden geändert, das letzte Testergebnis gilt nicht mehr.",
+        "encoderCheckIdle": "Beim letzten Test war das Bild statisch, die echte Last konnte nicht gemessen werden.",
+        "encoderCheckHint": "Bitte einmal „Encoder-Einstellungen → Encoder-Leistung testen“ ausführen, bevor die Überwachung startet.",
+        "encoderCheckStart": "Trotzdem starten",
+        "encoderCheckTest": "Erst testen",
+        "overloadRuntime": "Encoder überlastet, Frames gehen verloren (Geschwindigkeit {speed}x, {dropped} verworfen) — 1920×1080 oder NVENC erwägen",
+        "overloadLive": "Encoder überlastet: {speed}x, {dropped} Frames verworfen — Auflösung senken oder Encoder wechseln",
+        "lastTestNever": "Diese Encoder-Einstellungen wurden noch nicht getestet",
+        "lastTest": "Letzter Test: {time} · {speed}x · {dropped} Frames verworfen"
     }
 }

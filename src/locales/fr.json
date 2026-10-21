@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "Outil de capture manette",
     "screenshotSettings": "Réglages de capture",
-    "obsConnect": "Connexion OBS",
     "gamepadTester": "Test de manette",
     "systemSettings": "Réglages système",
     "mappingSettings": "Mappage des boutons",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "Capture réussie",
         "screenshotSaved": "Enregistrée localement",
-        "replayBufferSaved": "Enregistrement sauvegardé",
-        "replayBufferSavedDesc": "Le tampon de rejeu OBS a été sauvegardé localement"
+        "replaySaved": "Enregistrement en boucle sauvegardé",
+        "replaySavedDesc": "Les {sec} dernières secondes ont été sauvegardées localement"
     },
     "screenshotSound": {
         "None": "Muet",
@@ -72,24 +71,6 @@
         "Sound3": "Son 3",
         "Sound4": "Son 4",
         "Sound5": "Son 5"
-    },
-    "OBSPage": {
-        "obsAddress": "Adresse du serveur OBS",
-        "obsPassword": "Mot de passe du serveur OBS",
-        "selectScene": "Choisir une scène",
-        "connectService": "Se connecter à OBS",
-        "disconnect": "Se déconnecter",
-        "obsServiceNotFound": "Service OBS WebSocket introuvable",
-        "obsNotConnected": "Impossible de se connecter à OBS",
-        "invalidSceneSelected": "Aucune scène valide sélectionnée",
-        "obsScreenshotError": "Erreur de capture OBS",
-        "saveReplayBufferOnLongPress": "Appui long pour sauvegarder le tampon de rejeu",
-        "replayBufferHint": "Utilise le même dossier et le même modèle de nom que les captures",
-        "replayBufferNotActive": "Le tampon de rejeu OBS n'est pas activé",
-        "replayBufferSaved": "Tampon de rejeu OBS sauvegardé",
-        "replayBufferError": "Échec de la sauvegarde du tampon de rejeu OBS : ",
-        "obsStatusConnected": "Connecté",
-        "obsStatusDisconnected": "Non connecté"
     },
     "GampadTesterPage": {
         "selectController": "Choisir une manette",
@@ -191,7 +172,6 @@
         "noCombo": "Aucun raccourci ajouté",
         "noGamepad": "Aucune manette connectée",
         "notSet": "Non défini",
-        "desktopCapture": "Capture du bureau",
         "lockedHint": "Écoute · réglages verrouillés",
         "testSound": "Écouter",
         "notifyHintDesc": "Le style de notification se règle dans les réglages système",
@@ -231,8 +211,6 @@
         "close": "Fermer",
         "closeModal": "Fermer",
         "sectionSave": "Enregistrement",
-        "listeningHint": "Maintenez le raccourci pour capturer · appui long (OBS) pour le rejeu",
-        "captureMethod": "Méthode de capture",
         "about": "À propos",
         "data": "Données",
         "homepage": "Page du projet",
@@ -250,7 +228,8 @@
         "mappingRunning": "Mappage actif",
         "mappingIdle": "Mappage arrêté",
         "captureRunning": "Capture active",
-        "captureIdle": "Capture arrêtée"
+        "captureIdle": "Capture arrêtée",
+        "sectionRecording": "Enregistrement en boucle"
     },
     "MappingPage": {
         "onTitle": "Le mappage est activé",
@@ -348,5 +327,21 @@
             "documents": "Documents",
             "downloads": "Téléchargements"
         }
+    },
+    "Recording": {
+        "longPress": "Appui long (boucle)",
+        "longPressHint": "Maintenez le raccourci de capture (combinaison de manette) pour sauvegarder les dernières secondes",
+        "settings": "Réglages d'encodage",
+        "encoderCheckTitle": "Enregistrement en boucle : encodage non vérifié",
+        "encoderCheckMissing": "L'enregistrement en boucle est activé, mais les réglages d'encodage actuels n'ont jamais été testés. Si l'encodage ne suit pas, les clips enregistrés perdront des images.",
+        "encoderCheckStale": "Les réglages d'encodage (moteur / résolution / fps) ont changé, le dernier test ne s'applique plus.",
+        "encoderCheckIdle": "Lors du dernier test, l'écran était statique : la charge réelle n'a pas pu être mesurée.",
+        "encoderCheckHint": "Lancez une fois « Réglages d'encodage → Tester les performances d'encodage » avant de démarrer l'écoute.",
+        "encoderCheckStart": "Démarrer quand même",
+        "encoderCheckTest": "Tester d'abord",
+        "overloadRuntime": "Encodeur surchargé, des images sont perdues (vitesse {speed}x, {dropped} perdues) — envisagez 1920×1080 ou NVENC",
+        "overloadLive": "Encodeur surchargé : {speed}x, {dropped} images perdues — réduisez la résolution ou changez d'encodeur",
+        "lastTestNever": "Ces réglages d'encodage n'ont pas encore été testés",
+        "lastTest": "Dernier test : {time} · {speed}x · {dropped} images perdues"
     }
 }

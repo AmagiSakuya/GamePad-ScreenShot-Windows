@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Capturas de pantalla completa, de ventana o de OBS con tu mando</strong>
+  <strong>Capturas de pantalla completa y de ventana, más grabación en bucle de los últimos segundos, con tu mando</strong>
 </p>
 
 <div align="center">
@@ -22,7 +22,7 @@
 
 ## 📖 Introducción
 
-Una utilidad para Windows que permite hacer capturas con **combinaciones de botones** o **valores de eje** del mando en lugar del teclado — perfecta para juegos que capturan el ratón o se ejecutan a pantalla completa. Las capturas se guardan en disco o en el portapapeles, y además puede conectarse a **OBS** por WebSocket para capturar cualquier escena. También permite **mapear los botones del mando a teclas o combinaciones del teclado**, como un panel de atajos.
+Una utilidad para Windows que permite hacer capturas con **combinaciones de botones** o **valores de eje** del mando en lugar del teclado — perfecta para juegos que capturan el ratón o se ejecutan a pantalla completa. Las capturas se guardan en disco o en el portapapeles, y el motor integrado de **grabación en bucle** mantiene en memoria los últimos segundos: una **pulsación larga** convierte tu momento en un MP4, sin necesidad de OBS. También permite **mapear los botones del mando a teclas o combinaciones del teclado**, como un panel de atajos.
 
 - ✅ Disparo por combinación de botones o valor de eje (cruceta, L2 / R2…)
 - ✅ Disparador de teclado adicional
@@ -32,8 +32,8 @@ Una utilidad para Windows que permite hacer capturas con **combinaciones de boto
 - ✅ Gestión de nombres duplicados: sobrescribir / añadir marca de tiempo / no guardar / preguntar siempre
 - ✅ Efectos de sonido de captura — 5 sonidos integrados con volumen ajustable
 - ✅ Notificación superpuesta con posición, duración y tamaño configurables
-- ✅ Integración con **OBS-WebSocket** — captura cualquier escena de OBS
-- ✅ Pulsación larga para guardar el **búfer de repetición de OBS** como clip
+- ✅ **Grabación en bucle** — mantén la combinación para guardar los últimos N segundos con el motor FFmpeg integrado (NVENC / QSV / AMF / x264), sin OBS
+- ✅ Segundos de pulsación larga ajustables y miniatura en el aviso al guardar
 - ✅ Prueba de mando integrada — botones, ejes y cruceta se iluminan en vivo
 - ✅ 9 idiomas de interfaz, temas oscuro / claro y 6 colores de acento
 - ✅ **Botones del mando → teclas del teclado** — un botón o una combinación envía cualquier tecla / combinación, incluidas Win y teclas multimedia
@@ -112,19 +112,17 @@ Ideal para acciones que solo existen en el teclado — cambiar de canción, puls
 
 ---
 
-## ⚙️ Capturar mediante OBS
+## 🔁 Grabación en bucle
 
-1. Activa manualmente el **servidor WebSocket** en OBS (normalmente en el menú «Herramientas»).
-2. Abre la página **Captura** y cambia el **método de captura** a **OBS** — el panel de conexión OBS se despliega justo debajo.
+Grabar aquí no es «iniciar → detener»: el motor mantiene en memoria los **últimos segundos** mientras escuchas y solo escribe en disco con una pulsación larga.
 
-<p align="center">
-  <img src="images/shot-obs.png" alt="Conexión OBS" width="720" />
-</p>
+1. Abre la página **Captura** y cambia **Grabación en bucle** a **Activada** en *Origen de captura*.
+2. Justo debajo elige los segundos de **Pulsación larga** (0,5 / 0,8 / 1 / 1,5 / 2 / 3 s): mantén la combinación ese tiempo para guardar; si sueltas antes, se hace una captura normal.
+3. En **Ajustes** puedes afinar el codificador (NVENC / QSV / AMF / x264), la resolución, los fps, la calidad o el bitrate, la duración del búfer y el límite de memoria.
+4. ¿Dudas de si perderá fotogramas? **Probar rendimiento del codificador** hace una captura + codificación real e indica los fotogramas perdidos y el margen.
+5. Los MP4 guardados usan la misma carpeta y plantilla de nombre que las capturas, y un aviso con **miniatura** confirma el guardado.
 
-3. Introduce la **dirección** del servidor OBS (`ws://IP:Puerto`) y la **contraseña**.
-4. Haz clic en **Conectar con OBS**.
-5. Una vez conectado, elige en la lista desplegable la **escena** que quieras capturar.
-6. Mantén el atajo para capturar la escena. Con «Mantén el atajo para guardar la repetición» activado, una **pulsación larga** guarda el búfer de repetición de OBS como clip.
+> **Nota:** la fuente de grabación sigue al **Objetivo de captura**: pantalla graba todo el monitor y ventana solo esa ventana. El búfer solo funciona mientras escuchas.
 
 ---
 

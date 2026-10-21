@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Capturez l'écran, une fenêtre ou OBS avec votre manette</strong>
+  <strong>Capturez l'écran ou une fenêtre et gardez les dernières secondes en boucle, depuis votre manette</strong>
 </p>
 
 <div align="center">
@@ -22,7 +22,7 @@
 
 ## 📖 Présentation
 
-Un utilitaire Windows qui permet de déclencher des captures d'écran avec des **combinaisons de boutons** ou des **valeurs d'axe** de votre manette, plutôt qu'au clavier — idéal pour les jeux qui capturent la souris ou tournent en plein écran. Les captures s'enregistrent sur le disque ou dans le presse-papiers, et une connexion à **OBS** via WebSocket permet de capturer n'importe quelle scène. Il permet aussi de **mapper les boutons de la manette sur des touches ou combinaisons du clavier**, comme un pavé de raccourcis.
+Un utilitaire Windows qui permet de déclencher des captures d'écran avec des **combinaisons de boutons** ou des **valeurs d'axe** de votre manette, plutôt qu'au clavier — idéal pour les jeux qui capturent la souris ou tournent en plein écran. Les captures s'enregistrent sur le disque ou dans le presse-papiers, et le moteur d'**enregistrement en boucle** intégré garde les dernières secondes en mémoire : un **appui long** transforme votre moment en MP4, sans OBS. Il permet aussi de **mapper les boutons de la manette sur des touches ou combinaisons du clavier**, comme un pavé de raccourcis.
 
 - ✅ Déclenchement par combinaison de boutons ou valeur d'axe (croix directionnelle, L2 / R2…)
 - ✅ Déclencheur clavier supplémentaire
@@ -32,8 +32,8 @@ Un utilitaire Windows qui permet de déclencher des captures d'écran avec des *
 - ✅ Gestion des conflits de noms : écraser / ajouter un horodatage / ne pas enregistrer / demander à chaque fois
 - ✅ Effets sonores de capture — 5 sons intégrés, volume réglable
 - ✅ Notification en superposition : position, durée et taille réglables
-- ✅ Intégration **OBS-WebSocket** — capture de n'importe quelle scène OBS
-- ✅ Appui long pour enregistrer le **tampon de rejeu OBS** en clip
+- ✅ **Enregistrement en boucle** — un appui long sauvegarde les N dernières secondes avec le moteur FFmpeg intégré (NVENC / QSV / AMF / x264), sans OBS
+- ✅ Durée de l'appui long réglable et vignette de confirmation après sauvegarde
 - ✅ Testeur de manette intégré — boutons, axes et croix directionnelle s'allument en direct
 - ✅ 9 langues d'interface, thèmes sombre / clair, 6 couleurs d'accent
 - ✅ **Boutons de manette → touches du clavier** — un bouton ou une combi envoie n’importe quelle touche / combinaison, y compris Win et les touches multimédia
@@ -112,19 +112,17 @@ Idéal pour les actions réservées au clavier — changer de piste, push-to-tal
 
 ---
 
-## ⚙️ Capturer via OBS
+## 🔁 Enregistrement en boucle
 
-1. Activez manuellement le **serveur WebSocket** dans OBS (généralement dans le menu « Outils »).
-2. Ouvrez la page **Capture** et passez la **méthode de capture** sur **OBS** — le panneau de connexion OBS se déploie juste en dessous.
+Ici, enregistrer ne veut pas dire « démarrer → arrêter » : le moteur garde les **dernières secondes** en mémoire pendant l'écoute et n'écrit sur le disque qu'à l'appui long.
 
-<p align="center">
-  <img src="images/shot-obs.png" alt="Connexion OBS" width="720" />
-</p>
+1. Ouvrez la page **Capture** et passez **Enregistrement en boucle** sur **Activé** dans *Source de capture*.
+2. Juste en dessous, choisissez les secondes d'**Appui long** (0,5 / 0,8 / 1 / 1,5 / 2 / 3 s) : maintenez la combinaison ce temps pour sauvegarder ; relâchez plus tôt et vous obtenez une capture classique.
+3. **Paramètres** permet d'ajuster l'encodeur (NVENC / QSV / AMF / x264), la résolution, les fps, la qualité ou le débit, la durée du tampon et la mémoire maximale.
+4. Peur de perdre des images ? **Tester les performances d'encodage** fait une vraie capture + encodage et indique les images perdues et la marge restante.
+5. Les MP4 enregistrés utilisent le même dossier et le même modèle de nom que les captures, et une notification avec **vignette** confirme la sauvegarde.
 
-3. Saisissez l'**adresse** du serveur OBS (`ws://IP:Port`) et le **mot de passe**.
-4. Cliquez sur **Se connecter à OBS**.
-5. Une fois connecté, choisissez dans la liste déroulante la **scène** à capturer.
-6. Maintenez le raccourci pour capturer la scène. Si « Appui long pour sauvegarder le tampon de rejeu » est activé, un **appui long** enregistre le tampon de rejeu OBS en clip.
+> **Remarque :** la source d'enregistrement suit la **cible de capture** — écran enregistre tout l'écran, fenêtre seulement cette fenêtre. Le tampon ne tourne que pendant l'écoute.
 
 ---
 

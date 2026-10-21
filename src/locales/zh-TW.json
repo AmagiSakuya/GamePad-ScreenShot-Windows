@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "遊戲手把截圖工具",
     "screenshotSettings": "截圖設定",
-    "obsConnect": "OBS 連線",
     "gamepadTester": "手把測試",
     "systemSettings": "系統設定",
     "mappingSettings": "按鍵映射",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "截圖成功",
         "screenshotSaved": "已儲存到本機",
-        "replayBufferSaved": "錄影儲存成功",
-        "replayBufferSavedDesc": "OBS 回放快取已儲存到本機"
+        "replaySaved": "循環錄製已儲存",
+        "replaySavedDesc": "最近 {sec} 秒已儲存到本機"
     },
     "screenshotSound": {
         "None": "靜音",
@@ -72,24 +71,6 @@
         "Sound3": "音效 3",
         "Sound4": "音效 4",
         "Sound5": "音效 5"
-    },
-    "OBSPage": {
-        "obsAddress": "OBS 伺服器位址",
-        "obsPassword": "OBS 伺服器密碼",
-        "selectScene": "選擇場景",
-        "connectService": "連線 OBS",
-        "disconnect": "中斷連線",
-        "obsServiceNotFound": "找不到 OBS WebSocket 服務",
-        "obsNotConnected": "無法連線到 OBS",
-        "invalidSceneSelected": "沒有選擇正確的場景",
-        "obsScreenshotError": "OBS 截圖發生錯誤",
-        "saveReplayBufferOnLongPress": "長按組合鍵儲存回放快取",
-        "replayBufferHint": "使用與截圖相同的儲存路徑與檔案名稱範本",
-        "replayBufferNotActive": "OBS 回放快取尚未啟用",
-        "replayBufferSaved": "OBS 回放快取已儲存",
-        "replayBufferError": "儲存 OBS 回放快取失敗：",
-        "obsStatusConnected": "已連線",
-        "obsStatusDisconnected": "未連線"
     },
     "GampadTesterPage": {
         "selectController": "選擇控制器",
@@ -191,7 +172,6 @@
         "noCombo": "尚未新增組合鍵",
         "noGamepad": "未連接手把",
         "notSet": "未設定",
-        "desktopCapture": "桌面擷取",
         "lockedHint": "監聽中 · 設定已鎖定",
         "testSound": "試聽",
         "notifyHintDesc": "通知樣式請在「系統設定」中調整",
@@ -231,8 +211,6 @@
         "close": "關閉",
         "closeModal": "關閉",
         "sectionSave": "儲存方式",
-        "listeningHint": "按住組合鍵截圖 · 長按（OBS）儲存回放",
-        "captureMethod": "截圖方式",
         "about": "關於",
         "data": "資料",
         "homepage": "專案首頁",
@@ -250,7 +228,8 @@
         "mappingRunning": "映射執行中",
         "mappingIdle": "映射已關閉",
         "captureRunning": "截圖執行中",
-        "captureIdle": "截圖已關閉"
+        "captureIdle": "截圖已關閉",
+        "sectionRecording": "循環錄製"
     },
     "MappingPage": {
         "onTitle": "按鍵映射已啟用",
@@ -348,5 +327,21 @@
             "documents": "文件",
             "downloads": "下載"
         }
+    },
+    "Recording": {
+        "longPress": "循環錄製長按觸發",
+        "longPressHint": "長按截圖觸發鍵（手把組合鍵）可儲存最近一段錄影",
+        "settings": "編碼設定",
+        "encoderCheckTitle": "循環錄製：編碼設定未驗證",
+        "encoderCheckMissing": "循環錄製已開啟，但還沒測過目前的編碼設定。開始監聽後若編碼跟不上，儲存的影片會掉格。",
+        "encoderCheckStale": "編碼設定（引擎 / 解析度 / 影格率）改過了，上次的測試結果已不適用。",
+        "encoderCheckIdle": "上次測試時畫面是靜止的，沒測出真實負載。",
+        "encoderCheckHint": "建議先在「編碼設定 → 測試編碼效能」跑一次，再開始監聽。",
+        "encoderCheckStart": "繼續啟動",
+        "encoderCheckTest": "先去測試",
+        "overloadRuntime": "編碼過載，正在掉格（速度 {speed}x，丟 {dropped} 格）——建議降到 1920×1080 或改用 NVENC",
+        "overloadLive": "編碼過載：速度 {speed}x，掉格 {dropped} —— 降低解析度或換編碼器可緩解",
+        "lastTestNever": "還沒測試過這套編碼設定",
+        "lastTest": "上次測試：{time} · 速度 {speed}x · 掉格 {dropped}"
     }
 }

@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Vollbild-, Fenster- und OBS-Screenshots direkt per Gamepad</strong>
+  <strong>Vollbild- und Fenster-Screenshots plus Loop-Aufnahme der letzten Sekunden direkt per Gamepad</strong>
 </p>
 
 <div align="center">
@@ -22,7 +22,7 @@
 
 ## 📖 Einführung
 
-Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** oder **Achsenwerte** auslösen statt über die Tastatur — ideal für Spiele, die die Maus einfangen oder im Vollbild laufen. Screenshots lassen sich auf der Festplatte oder in der Zwischenablage speichern; über WebSocket kann zusätzlich **OBS** verbunden werden, um beliebige Szenen aufzunehmen. Außerdem lassen sich **Gamepad-Tasten auf Tastaturtasten oder -kombinationen abbilden** — der Controller wird zur Shortcut-Leiste.
+Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** oder **Achsenwerte** auslösen statt über die Tastatur — ideal für Spiele, die die Maus einfangen oder im Vollbild laufen. Screenshots lassen sich auf der Festplatte oder in der Zwischenablage speichern; die integrierte **Loop-Aufnahme** hält die letzten Sekunden im Speicher, sodass ein **langer Druck** den Höhepunkt als MP4 sichert — ganz ohne OBS. Außerdem lassen sich **Gamepad-Tasten auf Tastaturtasten oder -kombinationen abbilden** — der Controller wird zur Shortcut-Leiste.
 
 - ✅ Auslösen per Tastenkombination oder Achsenwert (Steuerkreuz, L2 / R2 …)
 - ✅ Zusätzlicher Tastatur-Auslöser
@@ -32,8 +32,8 @@ Ein Windows-Tool, mit dem Sie Screenshots über **Gamepad-Tastenkombinationen** 
 - ✅ Umgang mit Dateinamenskonflikten: Überschreiben / Zeitstempel anhängen / Nicht speichern / Jedes Mal fragen
 - ✅ Screenshot-Soundeffekte — 5 eingebaute Sounds, Lautstärke regelbar
 - ✅ Overlay-Benachrichtigung mit einstellbarer Position, Dauer und Größe
-- ✅ **OBS-WebSocket**-Anbindung — beliebige OBS-Szenen aufnehmen
-- ✅ Langes Drücken speichert den **OBS-Replay-Puffer** als Clip
+- ✅ **Loop-Aufnahme** — langer Druck speichert die letzten N Sekunden mit integriertem FFmpeg-Encoder (NVENC / QSV / AMF / x264), ohne OBS
+- ✅ Einstellbare Langdruck-Dauer, Vorschaubild im Overlay nach dem Speichern
 - ✅ Integrierter Controller-Test — Tasten, Achsen und Steuerkreuz leuchten live auf
 - ✅ 9 Oberflächensprachen, dunkles / helles Design, 6 Akzentfarben
 - ✅ **Gamepad-Tasten → Tastaturtasten** — eine Taste oder Kombi löst beliebige Tasten / Kombinationen aus, inkl. Win- und Medientasten
@@ -112,19 +112,17 @@ Praktisch für Aktionen, die es nur auf der Tastatur gibt – Titel wechseln, Pu
 
 ---
 
-## ⚙️ Über OBS aufnehmen
+## 🔁 Loop-Aufnahme der letzten Sekunden
 
-1. Aktivieren Sie den **WebSocket-Server** in OBS manuell (meist im Menü „Tools").
-2. Öffnen Sie die Seite **Aufnahme** und stellen Sie die **Aufnahmemethode** auf **OBS** — darunter klappt das OBS-Verbindungsfeld auf.
+Aufnehmen heißt hier nicht „Start → Stopp": Die Engine hält die **letzten Sekunden** im Speicher, solange die Überwachung läuft, und schreibt erst beim langen Druck auf die Festplatte.
 
-<p align="center">
-  <img src="images/shot-obs.png" alt="OBS-Verbindung" width="720" />
-</p>
+1. Öffnen Sie die Seite **Aufnahme** und stellen Sie **Loop-Aufnahme** unter *Aufnahmequelle* auf **Ein**.
+2. Wählen Sie direkt darunter die Sekunden für **Langdruck** (0,5 / 0,8 / 1 / 1,5 / 2 / 3 s) — so lange halten, dann wird gespeichert; früher loslassen erzeugt ein normales Bild.
+3. Unter **Einstellungen** lassen sich Encoder (NVENC / QSV / AMF / x264), Auflösung, FPS, Qualität oder Bitrate, Pufferlänge und Speicherlimit feinjustieren.
+4. Unsicher, ob Frames verloren gehen? **Encoder-Leistung testen** führt eine echte Aufnahme + Kodierung aus und nennt verworfene Frames und Reserven.
+5. Gespeicherte MP4s nutzen denselben Ordner und dieselbe Dateinamen-Vorlage wie Screenshots; ein Overlay mit **Vorschaubild** bestätigt das Speichern.
 
-3. Geben Sie die **Adresse** des OBS-Servers (`ws://IP:Port`) und das **Passwort** ein.
-4. Klicken Sie auf **OBS verbinden**.
-5. Wählen Sie nach dem Verbinden in der Dropdown-Liste die **Szene** aus, die aufgenommen werden soll.
-6. Halten Sie die Tastenkombination gedrückt, um die Szene aufzunehmen. Bei aktiviertem „Replay-Puffer per langem Druck speichern" sichert ein **langer Druck** den OBS-Replay-Puffer als Clip.
+> **Hinweis:** Die Aufnahmequelle folgt dem **Aufnahmeziel** — Bildschirm nimmt den ganzen Monitor auf, Fenster nur dieses Fenster. Der Puffer läuft nur während der Überwachung.
 
 ---
 

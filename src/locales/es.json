@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "Herramienta de captura con mando",
     "screenshotSettings": "Ajustes de captura",
-    "obsConnect": "Conexión OBS",
     "gamepadTester": "Prueba de mando",
     "systemSettings": "Ajustes del sistema",
     "mappingSettings": "Mapeo de botones",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "Captura realizada",
         "screenshotSaved": "Guardada localmente",
-        "replayBufferSaved": "Grabación guardada",
-        "replayBufferSavedDesc": "El búfer de repetición de OBS se guardó localmente"
+        "replaySaved": "Grabación en bucle guardada",
+        "replaySavedDesc": "Los últimos {sec} s se guardaron localmente"
     },
     "screenshotSound": {
         "None": "Silencio",
@@ -72,24 +71,6 @@
         "Sound3": "Sonido 3",
         "Sound4": "Sonido 4",
         "Sound5": "Sonido 5"
-    },
-    "OBSPage": {
-        "obsAddress": "Dirección del servidor OBS",
-        "obsPassword": "Contraseña del servidor OBS",
-        "selectScene": "Seleccionar escena",
-        "connectService": "Conectar con OBS",
-        "disconnect": "Desconectar",
-        "obsServiceNotFound": "No se encontró el servicio OBS WebSocket",
-        "obsNotConnected": "No se puede conectar con OBS",
-        "invalidSceneSelected": "No se seleccionó una escena válida",
-        "obsScreenshotError": "Error al capturar con OBS",
-        "saveReplayBufferOnLongPress": "Mantén el atajo para guardar la repetición",
-        "replayBufferHint": "Usa la misma ruta y plantilla de nombre que las capturas",
-        "replayBufferNotActive": "El búfer de repetición de OBS no está activo",
-        "replayBufferSaved": "Búfer de repetición de OBS guardado",
-        "replayBufferError": "No se pudo guardar el búfer de repetición de OBS: ",
-        "obsStatusConnected": "Conectado",
-        "obsStatusDisconnected": "Sin conexión"
     },
     "GampadTesterPage": {
         "selectController": "Seleccionar mando",
@@ -191,7 +172,6 @@
         "noCombo": "Aún no hay atajos",
         "noGamepad": "Ningún mando conectado",
         "notSet": "Sin definir",
-        "desktopCapture": "Captura de escritorio",
         "lockedHint": "Escuchando · ajustes bloqueados",
         "testSound": "Escuchar",
         "notifyHintDesc": "El estilo de notificación se ajusta en los ajustes del sistema",
@@ -231,8 +211,6 @@
         "close": "Cerrar",
         "closeModal": "Cerrar",
         "sectionSave": "Guardado",
-        "listeningHint": "Mantén el atajo para capturar · pulsación larga (OBS) para guardar la repetición",
-        "captureMethod": "Método de captura",
         "about": "Acerca de",
         "data": "Datos",
         "homepage": "Página del proyecto",
@@ -250,7 +228,8 @@
         "mappingRunning": "Mapeo activo",
         "mappingIdle": "Mapeo detenido",
         "captureRunning": "Captura activa",
-        "captureIdle": "Captura detenida"
+        "captureIdle": "Captura detenida",
+        "sectionRecording": "Grabación en bucle"
     },
     "MappingPage": {
         "onTitle": "El mapeo está activado",
@@ -348,5 +327,21 @@
             "documents": "Documentos",
             "downloads": "Descargas"
         }
+    },
+    "Recording": {
+        "longPress": "Pulsación larga (bucle)",
+        "longPressHint": "Mantén pulsado el atajo de captura (combinación del mando) para guardar los últimos segundos",
+        "settings": "Ajustes de codificación",
+        "encoderCheckTitle": "Grabación en bucle: codificación sin verificar",
+        "encoderCheckMissing": "La grabación en bucle está activada, pero los ajustes de codificación actuales nunca se han probado. Si la codificación no da abasto, los clips guardados perderán fotogramas.",
+        "encoderCheckStale": "Los ajustes de codificación (motor / resolución / fps) han cambiado, la última prueba ya no se aplica.",
+        "encoderCheckIdle": "En la última prueba la pantalla estaba estática, así que no se pudo medir la carga real.",
+        "encoderCheckHint": "Ejecuta una vez «Ajustes de codificación → Probar rendimiento del codificador» antes de empezar a escuchar.",
+        "encoderCheckStart": "Iniciar igualmente",
+        "encoderCheckTest": "Probar primero",
+        "overloadRuntime": "Codificador sobrecargado, se están perdiendo fotogramas ({speed}x, {dropped} perdidos) — considera 1920×1080 o NVENC",
+        "overloadLive": "Codificador sobrecargado: {speed}x, {dropped} fotogramas perdidos — baja la resolución o cambia de codificador",
+        "lastTestNever": "Estos ajustes de codificación aún no se han probado",
+        "lastTest": "Última prueba: {time} · {speed}x · {dropped} fotogramas perdidos"
     }
 }

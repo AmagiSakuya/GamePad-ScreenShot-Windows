@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "游戏手柄截图工具",
     "screenshotSettings": "截图设置",
-    "obsConnect": "OBS连接",
     "gamepadTester": "控制器调试",
     "systemSettings": "系统设置",
     "mappingSettings": "按键映射",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "截图成功",
         "screenshotSaved": "已保存到本地",
-        "replayBufferSaved": "录像保存成功",
-        "replayBufferSavedDesc": "OBS 回放缓存已保存到本地"
+        "replaySaved": "循环录制已保存",
+        "replaySavedDesc": "最近 {sec} 秒已保存到本地"
     },
     "screenshotSound": {
         "None": "静音",
@@ -72,24 +71,6 @@
         "Sound3": "音效 3",
         "Sound4": "音效 4",
         "Sound5": "音效 5"
-    },
-    "OBSPage": {
-        "obsAddress": "OBS 服务器地址",
-        "obsPassword": "OBS 服务器密码",
-        "selectScene": "选择场景",
-        "connectService": "连接OBS",
-        "disconnect": "断开连接",
-        "obsServiceNotFound": "未找到OBS Websocket服务",
-        "obsNotConnected": "无法连接到OBS",
-        "invalidSceneSelected": "没有选择正确的场景",
-        "obsScreenshotError": "OBS截图出错",
-        "saveReplayBufferOnLongPress": "长按组合键保存回放缓存",
-        "replayBufferHint": "使用与截图相同的保存路径和文件名模板",
-        "replayBufferNotActive": "OBS 回放缓存尚未启用",
-        "replayBufferSaved": "OBS 回放缓存已保存",
-        "replayBufferError": "保存 OBS 回放缓存失败：",
-        "obsStatusConnected": "已连接",
-        "obsStatusDisconnected": "未连接"
     },
     "GampadTesterPage": {
         "selectController": "选择控制器",
@@ -191,7 +172,6 @@
         "noCombo": "尚未添加组合键",
         "noGamepad": "未连接手柄",
         "notSet": "未设置",
-        "desktopCapture": "桌面捕获",
         "lockedHint": "监听中 · 配置已锁定",
         "testSound": "试听",
         "notifyHintDesc": "通知样式在「系统设置」中调整",
@@ -231,8 +211,6 @@
         "close": "关闭",
         "closeModal": "关闭",
         "sectionSave": "保存方式",
-        "listeningHint": "按住组合键截图 · 长按（OBS）保存回放",
-        "captureMethod": "截图方式",
         "about": "关于",
         "data": "数据",
         "homepage": "项目主页",
@@ -251,7 +229,7 @@
         "mappingIdle": "映射已关闭",
         "captureRunning": "截图运行中",
         "captureIdle": "截图已关闭",
-        "sectionRecording": "录像"
+        "sectionRecording": "循环录制"
     },
     "Update": {
         "title": "软件更新",
@@ -413,7 +391,7 @@
         "disabledShort": "关闭",
         "engineMissing": "内置录制引擎不可用：{reason}",
         "sourceFollowsScreenshot": "跟随截图来源",
-        "settings": "设置",
+        "settings": "编码设置",
         "close": "关闭",
         "rateControl": "速率控制",
         "modeQuality": "质量优先",
@@ -439,6 +417,19 @@
         "bitrateHint": "固定码率，画面剧烈变化时可能糊",
         "presetHint": "越快占用越低，同画质下文件略大",
         "profileHint": "main 兼容性最好；high 压缩率略高，个别老设备可能不认",
-        "bufferHint": "长按保存时往前取多少秒，越久占内存越多"
+        "bufferHint": "长按保存时往前取多少秒，越久占内存越多",
+        "longPress": "循环录制长按触发",
+        "longPressHint": "长按截图触发键（手柄组合键）可保存最近一段录像",
+        "encoderCheckTitle": "循环录制：编码设置未验证",
+        "encoderCheckMissing": "循环录制已开启，但还没测过当前编码设置。开始监听后如果编码跟不上，保存的视频会丢帧。",
+        "encoderCheckStale": "编码设置（引擎 / 分辨率 / 帧率）改过了，上次的测试结果不再适用。",
+        "encoderCheckIdle": "上次测试时画面是静止的，没测出真实负载。",
+        "encoderCheckHint": "建议先在「编码设置 → 测试编码性能」跑一次，再开始监听。",
+        "encoderCheckStart": "继续启动",
+        "encoderCheckTest": "先去测试",
+        "overloadRuntime": "编码过载，正在丢帧（速度 {speed}x，丢 {dropped} 帧）——建议降到 1920×1080 或换用 NVENC",
+        "overloadLive": "编码过载：速度 {speed}x，丢帧 {dropped} —— 降低分辨率或换编码器可缓解",
+        "lastTestNever": "还没有测试过这套编码设置",
+        "lastTest": "上次测试：{time} · 速度 {speed}x · 丢帧 {dropped}"
     }
 }

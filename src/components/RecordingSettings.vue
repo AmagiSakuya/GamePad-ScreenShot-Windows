@@ -131,7 +131,11 @@
       </span>
     </div>
 
+    <!-- 实时过载：录制中编码跟不上，正在丢帧 -->
+    <div class="rec-result warn" v-if="overloadText">{{ overloadText }}</div>
+
     <div class="rec-actions">
+      <span class="rec-last-test" v-if="lastTestText">{{ lastTestText }}</span>
       <button class="ui-btn" :disabled="testing || engineBroken" @click="runSelfTest">
         <AppIcon name="wave" :size="13" />
         {{ testing ? $t('Recording.testing') : $t('Recording.test') }}
@@ -167,6 +171,8 @@ const DEFAULTS = {
   gopSeconds: 1,
   bufferSeconds: 30,
   bufferMaxMB: 2048,
+  // 长按触发阈值（毫秒）：截图页那一行下拉设置的实际值，这里只做兜底补齐
+  longPressMs: 1000,
   // 默认缩到 1080p：4K 原生在多数机器上刚好卡在过载边缘（实测 4K60 NVENC 只有 1.0x），
   // 而 1080p 用核显 QSV 都有 1.35x 余量 —— 这也正好对齐 OBS 默认的「重缩放输出」
   width: 1920,
@@ -251,6 +257,32 @@ export default {
     /** ffmpeg 整个跑不起来（缺失/被杀软隔离），此时所有配置都没意义 */
     engineBroken() {
       return !!(this.capabilities && this.capabilities.error);
+    },
+    /** 实时过载提示：由父组件把主进程的 summary 结论传进来 */
+    overloadText() {
+      const state = this.state || {};
+      if (!state.overloaded) return '';
+      return this.$t('Recording.overloadLive', {
+        speed: (Number(state.speed) || 0).toFixed(2),
+        dropped: Number(state.dropped) || 0
+      });
+    },
+    /** 「这套设置测过没有 / 测出什么」，直接摆在测试按钮左边，避免用户来回猜 */
+    lastTestText() {
+      const test = this.config && this.config.lastTest;
+      if (!test || !test.at) return this.$t('Recording.lastTestNever');
+      if (test.measured === false) return this.$t('Recording.encoderCheckIdle');
+      let time = '';
+      try {
+        time = new Date(test.at).toLocaleString();
+      } catch (error) {
+        time = '';
+      }
+      return this.$t('Recording.lastTest', {
+        time,
+        speed: (Number(test.speed) || 0).toFixed(2),
+        dropped: Number(test.dropped) || 0
+      });
     }
   },
   watch: {
@@ -363,6 +395,22 @@ export default {
               })
             };
           }
+        }
+
+        // 把「这套设置测过了」记进配置：截图页在开始监听前会读它决定要不要提醒。
+        // 硬失败（引擎跑不起来 / 一帧没出）不记录，免得把「没测过」伪装成「测过」。
+        if (result && (result.ok || result.measured)) {
+          this.config.lastTest = {
+            at: Date.now(),
+            measured: !!result.measured,
+            ok: !!result.ok,
+            speed: Number(result.speed) || 0,
+            dropped: Number(result.dropFrames) || 0,
+            encoderId: this.config.encoderId,
+            fps: this.config.fps,
+            width: this.config.width,
+            height: this.config.height
+          };
         }
       } catch (error) {
         this.testResult = { tone: 'bad', text: String(error) };
@@ -553,9 +601,21 @@ export default {
 
 .rec-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-top: 2px;
+}
+
+/* 上次测试结论：贴着测试按钮左侧，长文案省略而不是换行挤压按钮 */
+.rec-last-test {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 10px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rec-result {

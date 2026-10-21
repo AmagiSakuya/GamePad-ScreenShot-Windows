@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "ゲームパッド スクリーンショットツール",
     "screenshotSettings": "スクリーンショット設定",
-    "obsConnect": "OBS 接続",
     "gamepadTester": "コントローラー診断",
     "systemSettings": "システム設定",
     "mappingSettings": "ボタンマッピング",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "スクリーンショット完了",
         "screenshotSaved": "ローカルに保存しました",
-        "replayBufferSaved": "リプレイを保存しました",
-        "replayBufferSavedDesc": "OBS のリプレイバッファーをローカルに保存しました"
+        "replaySaved": "ループ録画を保存しました",
+        "replaySavedDesc": "直近 {sec} 秒をローカルに保存しました"
     },
     "screenshotSound": {
         "None": "消音",
@@ -72,24 +71,6 @@
         "Sound3": "サウンド 3",
         "Sound4": "サウンド 4",
         "Sound5": "サウンド 5"
-    },
-    "OBSPage": {
-        "obsAddress": "OBS サーバーアドレス",
-        "obsPassword": "OBS サーバーパスワード",
-        "selectScene": "シーンを選択",
-        "connectService": "OBS に接続",
-        "disconnect": "切断",
-        "obsServiceNotFound": "OBS WebSocket サービスが見つかりません",
-        "obsNotConnected": "OBS に接続できません",
-        "invalidSceneSelected": "正しいシーンが選択されていません",
-        "obsScreenshotError": "OBS のキャプチャでエラーが発生しました",
-        "saveReplayBufferOnLongPress": "ショートカット長押しでリプレイを保存",
-        "replayBufferHint": "スクリーンショットと同じ保存先・ファイル名テンプレートを使用します",
-        "replayBufferNotActive": "OBS のリプレイバッファーが有効になっていません",
-        "replayBufferSaved": "OBS のリプレイバッファーを保存しました",
-        "replayBufferError": "OBS のリプレイバッファーの保存に失敗しました：",
-        "obsStatusConnected": "接続済み",
-        "obsStatusDisconnected": "未接続"
     },
     "GampadTesterPage": {
         "selectController": "コントローラーを選択",
@@ -191,7 +172,6 @@
         "noCombo": "ショートカットが未登録です",
         "noGamepad": "コントローラー未接続",
         "notSet": "未設定",
-        "desktopCapture": "デスクトップキャプチャ",
         "lockedHint": "待機中 · 設定はロックされています",
         "testSound": "試聴",
         "notifyHintDesc": "通知スタイルは「システム設定」で変更できます",
@@ -231,8 +211,6 @@
         "close": "閉じる",
         "closeModal": "閉じる",
         "sectionSave": "保存方法",
-        "listeningHint": "ショートカットを押して撮影 · 長押し（OBS）でリプレイ保存",
-        "captureMethod": "キャプチャ方法",
         "about": "このアプリについて",
         "data": "データ",
         "homepage": "プロジェクトページ",
@@ -250,7 +228,8 @@
         "mappingRunning": "マッピング実行中",
         "mappingIdle": "マッピング停止中",
         "captureRunning": "キャプチャ実行中",
-        "captureIdle": "キャプチャ停止中"
+        "captureIdle": "キャプチャ停止中",
+        "sectionRecording": "ループ録画"
     },
     "MappingPage": {
         "onTitle": "ボタンマッピングは有効です",
@@ -348,5 +327,21 @@
             "documents": "ドキュメント",
             "downloads": "ダウンロード"
         }
+    },
+    "Recording": {
+        "longPress": "ループ録画の長押し",
+        "longPressHint": "スクリーンショットのショートカット（ゲームパッドの組み合わせ）を長押しすると直近の録画を保存します",
+        "settings": "エンコード設定",
+        "encoderCheckTitle": "ループ録画：エンコード設定が未確認です",
+        "encoderCheckMissing": "ループ録画はオンですが、現在のエンコード設定はまだテストしていません。エンコードが追いつかないと、保存した動画でフレームが落ちます。",
+        "encoderCheckStale": "エンコード設定（エンジン / 解像度 / フレームレート）が変わったため、前回のテスト結果は使えません。",
+        "encoderCheckIdle": "前回のテスト時は画面が静止していたため、実際の負荷を測れませんでした。",
+        "encoderCheckHint": "「エンコード設定 → エンコード性能をテスト」を一度実行してから監視を開始してください。",
+        "encoderCheckStart": "そのまま開始",
+        "encoderCheckTest": "先にテスト",
+        "overloadRuntime": "エンコードが追いつかずフレームが落ちています（速度 {speed}x、{dropped} フレーム）— 1920×1080 か NVENC を検討してください",
+        "overloadLive": "エンコード過負荷：速度 {speed}x、ドロップ {dropped} — 解像度を下げるかエンコーダーを変更してください",
+        "lastTestNever": "このエンコード設定はまだテストしていません",
+        "lastTest": "前回のテスト：{time} · {speed}x · ドロップ {dropped}"
     }
 }

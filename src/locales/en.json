@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "Gamepad ScreenShot Tool",
     "screenshotSettings": "ScreenShot",
-    "obsConnect": "OBS Connect",
     "gamepadTester": "Gamepad Tester",
     "systemSettings": "System Settings",
     "mappingSettings": "Button Mapping",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "Screenshot taken",
         "screenshotSaved": "Screenshot saved",
-        "replayBufferSaved": "Replay saved",
-        "replayBufferSavedDesc": "OBS replay buffer saved locally"
+        "replaySaved": "Loop recording saved",
+        "replaySavedDesc": "The last {sec}s were saved locally"
     },
     "screenshotSound": {
         "None": "Mute",
@@ -72,24 +71,6 @@
         "Sound3": "Sound 3",
         "Sound4": "Sound 4",
         "Sound5": "Sound 5"
-    },
-    "OBSPage": {
-        "obsAddress": "OBS Address",
-        "obsPassword": "OBS Password",
-        "selectScene": "Select Scene",
-        "connectService": "Connect OBS",
-        "disconnect": "Disconnect",
-        "obsServiceNotFound": "OBS WebSocket service not found",
-        "obsNotConnected": "Cannot connected to OBS",
-        "invalidSceneSelected": "No valid scene selected",
-        "obsScreenshotError": "Failed to capture screenshot from OBS",
-        "saveReplayBufferOnLongPress": "Save replay buffer on long press",
-        "replayBufferHint": "Uses the screenshot folder and filename template",
-        "replayBufferNotActive": "OBS replay buffer is not active",
-        "replayBufferSaved": "OBS replay buffer saved",
-        "replayBufferError": "Failed to save OBS replay buffer: ",
-        "obsStatusConnected": "Connected",
-        "obsStatusDisconnected": "Disconnected"
     },
     "GampadTesterPage": {
         "selectController": "Select Controller",
@@ -210,7 +191,6 @@
         "close": "Close",
         "closeModal": "Close",
         "sectionSave": "Saving",
-        "listeningHint": "Hold the shortcut to capture · Long-press (OBS) to save replay",
         "idle": "Idle",
         "ready": "Ready to listen",
         "readyTag": "Ready",
@@ -218,7 +198,6 @@
         "noCombo": "No shortcut added yet",
         "noGamepad": "No controller connected",
         "notSet": "Not set",
-        "desktopCapture": "Desktop",
         "lockedHint": "Listening · settings locked",
         "testSound": "Preview",
         "notifyHintDesc": "Notification style is configured in System Settings",
@@ -232,7 +211,6 @@
         "pressed": "Pressed",
         "hatHint": "Xbox-style D-pads report as hat — directions light up here",
         "noHat": "This device reports no hat (D-pad)",
-        "captureMethod": "Capture Method",
         "about": "About",
         "data": "Data",
         "homepage": "Project Page",
@@ -251,7 +229,7 @@
         "mappingIdle": "Mapping off",
         "captureRunning": "Capture on",
         "captureIdle": "Capture off",
-        "sectionRecording": "Recording"
+        "sectionRecording": "Loop recording"
     },
     "Update": {
         "title": "Software Update",
@@ -413,7 +391,7 @@
         "disabledShort": "Off",
         "engineMissing": "Built-in recorder unavailable: {reason}",
         "sourceFollowsScreenshot": "Follows screenshot source",
-        "settings": "Settings",
+        "settings": "Encoder settings",
         "close": "Close",
         "rateControl": "Rate control",
         "modeQuality": "Quality",
@@ -439,6 +417,19 @@
         "bitrateHint": "Fixed bitrate; heavy motion may look soft",
         "presetHint": "Faster uses less CPU and produces slightly larger files",
         "profileHint": "main has the best compatibility; high compresses a bit better",
-        "bufferHint": "How many seconds to keep before a long press. Longer uses more memory"
+        "bufferHint": "How many seconds to keep before a long press. Longer uses more memory",
+        "longPress": "Loop long press",
+        "longPressHint": "Long-press the screenshot shortcut (gamepad combo) to save the last few seconds",
+        "encoderCheckTitle": "Loop recording: encoder not verified",
+        "encoderCheckMissing": "Loop recording is on, but the current encoder settings have never been tested. If encoding cannot keep up, saved clips will drop frames.",
+        "encoderCheckStale": "The encoder settings (engine / resolution / fps) changed, so the last test result no longer applies.",
+        "encoderCheckIdle": "The last test ran while the screen was static, so the real load could not be measured.",
+        "encoderCheckHint": "Run “Encoder settings → Test encoder performance” once before you start listening.",
+        "encoderCheckStart": "Start anyway",
+        "encoderCheckTest": "Test first",
+        "overloadRuntime": "Encoder overloaded, frames are being dropped (speed {speed}x, {dropped} dropped) — consider 1920×1080 or NVENC",
+        "overloadLive": "Encoder overloaded: speed {speed}x, {dropped} frames dropped — lower the resolution or switch encoder",
+        "lastTestNever": "These encoder settings have not been tested yet",
+        "lastTest": "Last test: {time} · {speed}x · {dropped} frames dropped"
     }
 }

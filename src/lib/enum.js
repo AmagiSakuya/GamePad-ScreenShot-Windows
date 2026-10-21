@@ -16,11 +16,6 @@ const CommonButtonEnum = {
 }
 
 
-const ScreenShotWayEnum = {
-    DesktopCapturer: 'Default',
-    OBS: 'OBS', 
-}
-
 const CaptureTargetTypeEnum = {
     Screen: 'screen',
     Window: 'window'
@@ -33,4 +28,4 @@ const ScreenShotSaveWayEnum = {
 }
 
 
-module.exports = { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum }
+module.exports = { screenshotSoundEnum, CommonButtonEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum }

@@ -70,21 +70,10 @@
             <div class="ui-card-ico"><AppIcon name="camera" :size="13" /></div>
             <span class="ui-card-title">{{ $t('screenshotSource') }}</span>
           </div>
-          <span class="ui-badge">{{ screenshotWayLabel }}</span>
+          <span class="ui-badge">{{ captureTypeLabel }}</span>
         </div>
         <div class="ui-rows">
           <div class="ui-row">
-            <span class="ui-label"><AppIcon name="sliders" :size="13" />{{ $t('ui.captureMethod') }}</span>
-            <div class="ui-ctl">
-              <select class="ui-select" v-model="config.screenshotWay" style="min-width:158px">
-                <option v-for="(value, index) in screenShotWayEnum" :key="index" :value="value">
-                  {{ value === screenShotWayEnum.OBS ? 'OBS' : $t('ui.desktopCapture') }}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div class="ui-row" v-if="config.screenshotWay == screenShotWayEnum.DesktopCapturer">
             <span class="ui-label"><AppIcon name="target" :size="13" />{{ $t('captureTarget') }}</span>
             <div class="ui-ctl">
               <div class="ui-seg">
@@ -96,8 +85,7 @@
             </div>
           </div>
 
-          <div class="ui-row"
-            v-if="config.screenshotWay == screenShotWayEnum.DesktopCapturer && config.captureTargetType === captureTargetTypeEnum.Screen">
+          <div class="ui-row" v-if="config.captureTargetType === captureTargetTypeEnum.Screen">
             <span class="ui-label"><AppIcon name="monitor" :size="13" />{{ $t('screenToCapture') }}</span>
             <div class="ui-ctl" style="flex:1;justify-content:flex-end">
               <select class="ui-select" v-model="config.screenSourceId" @focus="loadScreenSources" style="min-width:176px">
@@ -108,8 +96,7 @@
             </div>
           </div>
 
-          <div class="ui-row"
-            v-if="config.screenshotWay == screenShotWayEnum.DesktopCapturer && config.captureTargetType === captureTargetTypeEnum.Window">
+          <div class="ui-row" v-if="config.captureTargetType === captureTargetTypeEnum.Window">
             <span class="ui-label"><AppIcon name="appWindow" :size="13" />{{ $t('windowToCapture') }}</span>
             <div class="ui-ctl" style="flex:1;justify-content:flex-end">
               <select class="ui-select" v-model="config.windowSourceId" @focus="loadCaptureWindows" style="min-width:150px;max-width:100%">
@@ -123,38 +110,32 @@
             </div>
           </div>
 
-          <!-- 截图方式为 OBS 时才在「截图来源」内展开 OBS 连接设置 -->
-          <div class="obs-inline" v-if="config.screenshotWay == screenShotWayEnum.OBS">
-            <div class="obs-inline-head">
-              <span class="ui-label"><AppIcon name="link" :size="13" />{{ $t('obsConnect') }}</span>
-              <div class="obs-head-right">
-                <span class="ui-hint" :title="$t('OBSPage.replayBufferHint')">{{ $t('OBSPage.saveReplayBufferOnLongPress') }}</span>
-                <button class="ui-switch" :class="{ on: config.obsReplayBufferOnLongPress }"
-                  @click="config.obsReplayBufferOnLongPress = !config.obsReplayBufferOnLongPress"></button>
-                <span class="ui-badge" :class="{ on: obsConnected }">
-                  {{ obsConnected ? $t('OBSPage.obsStatusConnected') : $t('OBSPage.obsStatusDisconnected') }}
-                </span>
-              </div>
-            </div>
-            <OBSConnectPage ref="obsConnectPageRef" :windowsNotify="windowsNotify" />
-          </div>
-
-          <!-- 回放缓存：长按保存最近 N 秒。来源直接跟随上面的截图来源，
-               所以这里只留一个开关 + 设置入口，不重复配置采集目标 -->
+          <!-- 循环录制（回放缓存）：长按截图触发键保存最近 N 秒。
+               采集目标直接跟随上面的截图来源，所以这里只有开关、长按阈值和设置入口 -->
           <div class="ui-row">
             <span class="ui-label"><AppIcon name="camera" :size="13" />{{ $t('ui.sectionRecording') }}</span>
             <div class="ui-ctl">
-              <!-- 和「截图目标」同样的分段样式：开 / 关，不再额外显示状态文字
-                   （缓冲进度在设置弹窗里看，这里保持和其他行一样的克制） -->
               <div class="ui-seg">
-                <button :class="{ on: !recordingConfig.enabled }"
-                  @click="setRecordingEnabled(false)">{{ $t('Recording.switchOff') }}</button>
                 <button :class="{ on: recordingConfig.enabled }"
                   @click="setRecordingEnabled(true)">{{ $t('Recording.switchOn') }}</button>
+                <button :class="{ on: !recordingConfig.enabled }"
+                  @click="setRecordingEnabled(false)">{{ $t('Recording.switchOff') }}</button>
               </div>
               <button class="ui-btn sm" data-gp @click="openRecordingDialog">
                 <AppIcon name="sliders" :size="12" />{{ $t('Recording.settings') }}
               </button>
+            </div>
+          </div>
+
+          <p class="rec-tip">{{ $t('Recording.longPressHint') }}</p>
+
+          <!-- 长按阈值：只在开启时出现，关着的时候这一行没有任何意义 -->
+          <div class="ui-row" v-if="recordingConfig.enabled">
+            <span class="ui-label"><AppIcon name="clock" :size="13" />{{ $t('Recording.longPress') }}</span>
+            <div class="ui-ctl" style="flex:1;justify-content:flex-end">
+              <input class="ui-range" type="range" min="300" max="3000" step="100"
+                v-model.number="recordingConfig.longPressMs" @change="saveRecordingConfig">
+              <span class="range-val" style="width:46px">{{ longPressLabel(recordingConfig.longPressMs) }}</span>
             </div>
           </div>
         </div>
@@ -356,12 +337,11 @@
 </template>
 
 <script>
-const { screenshotSoundEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum } = require('@/lib/enum')
+const { screenshotSoundEnum, ScreenShotSaveWayEnum, CaptureTargetTypeEnum } = require('@/lib/enum')
 const { KeyCode } = require('@/lib/keycode')
 import { hasCaptureSound, setCaptureSound, playCaptureSound as playSound } from '@/lib/captureSound'
 import { toPlain } from '@/lib/ipcSafe'
-import { isPadMode, pickFolder } from '@/lib/gamepadNav'
-import OBSConnectPage from '@/components/OBSConnectPage.vue'
+import { isPadMode, pickFolder, askConfirm } from '@/lib/gamepadNav'
 import RecordingSettings from '@/components/RecordingSettings.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import PageHero from '@/components/PageHero.vue'
@@ -376,7 +356,7 @@ let errorFlashTimer;
 
 export default {
   name: 'MainPage',
-  components: { OBSConnectPage, RecordingSettings, AppIcon, PageHero },
+  components: { RecordingSettings, AppIcon, PageHero },
   props: {
     windowsNotify: {
       type: Function,
@@ -392,7 +372,6 @@ export default {
         comboKeys: [],
         sound: screenshotSoundEnum.Sound1,
         soundPower: 1,
-        screenshotWay: ScreenShotWayEnum.DesktopCapturer,
         captureTargetType: CaptureTargetTypeEnum.Screen,
         screenSourceId: '',
         windowSourceId: '',
@@ -401,11 +380,9 @@ export default {
         fileNameTemplate: 'Screenshot_%timestamp%',
         saveByActiveWinTitle: false,
         keyboardTrigger: false,
-        keyboardTriggerKeyCode: null,
-        obsReplayBufferOnLongPress: false
+        keyboardTriggerKeyCode: null
       },
       screenshotSoundEnum: screenshotSoundEnum,
-      screenShotWayEnum: ScreenShotWayEnum,
       screenShotSaveWayEnum: ScreenShotSaveWayEnum,
       captureTargetTypeEnum: CaptureTargetTypeEnum,
       screenSources: [],
@@ -430,10 +407,11 @@ export default {
       comboLongPressHandled: false,
       physicalButtonCount: 0,
       hatCount: 0,
-      obsConnected: false,
       // 内置录像引擎配置（与截图配置分开存，互不影响）
       recordingConfig: {
         enabled: false,
+        // 长按多少毫秒触发保存（界面上叫「循环录制长按触发」，300~3000ms）
+        longPressMs: 1000,
         encoderId: '',
         fps: 60,
         mode: 'quality',
@@ -476,13 +454,13 @@ export default {
       if (!this.currentGamePad || !this.currentGamePad.name) return false
       return (this.loadedGamePads || []).some(device => this.isSameDevice(device, this.currentGamePad))
     },
-    screenshotWayLabel() {
-      return this.config.screenshotWay === ScreenShotWayEnum.OBS ? 'OBS' : this.$t('ui.desktopCapture')
+    /** 「截图来源」卡片右上角的徽标：屏幕 / 窗口 */
+    captureTypeLabel() {
+      return this.config.captureTargetType === CaptureTargetTypeEnum.Window
+        ? this.$t('captureTargetWindow')
+        : this.$t('captureTargetScreen')
     },
     targetSummary() {
-      if (this.config.screenshotWay === ScreenShotWayEnum.OBS) {
-        return 'OBS'
-      }
       if (this.config.captureTargetType === CaptureTargetTypeEnum.Window) {
         const win = this.captureWindows.find(w => String(w.id) === String(this.config.windowSourceId))
         return win ? this.windowSourceLabel(win) : this.$t('captureTargetWindow')
@@ -495,13 +473,6 @@ export default {
       const ticker = this.formatPreviewTicker
       const name = this.formatFileName(this.config.fileNameTemplate, ticker)
       return name ? `${name}.${this.config.imageFormat}` : ''
-    },
-    /** 录像卡片右上角的徽标：关 / 未启动 / 准备中 / 已缓冲 12s / 30s */
-    replayBadge() {
-      if (!this.recordingConfig.enabled) return this.$t('Recording.disabledShort')
-      if (!this.replayState.active) return this.$t('Recording.stateIdle')
-      if (!this.replayState.ready) return this.$t('Recording.stateWarming')
-      return `${this.replayState.duration.toFixed(0)}s / ${this.replayState.targetSeconds}s`
     },
     /** 录制目标直接由截图配置推导，不另外存一份 */
     recordingTarget() {
@@ -562,8 +533,15 @@ export default {
     } catch (error) { /* 状态读不到就按未启动显示 */ }
     window.electronAPI.onReplayProgress((state) => {
       if (state && state.buffer) {
-        this.replayState = { ...state.buffer };
+        // 过载信息单独带出来：buffer 里只有缓冲时长/字节，没有编码压力
+        this.replayState = {
+          ...state.buffer,
+          overloaded: !!state.overloaded,
+          speed: Number(state.speed) || 0,
+          dropped: Number(state.dropped) || 0
+        };
       }
+      this.trackOverload(state);
     });
     window.electronAPI.onReplayExit(() => {
       this.replayState = { active: false, ready: false, duration: 0, targetSeconds: this.replayState.targetSeconds, bytes: 0 };
@@ -603,6 +581,91 @@ export default {
       } catch (error) {
         // 读不到就用默认值，不该影响截图功能
       }
+      // 长按阈值必须落在滑条范围内，否则滑条位置会跑偏
+      const longPressMs = Number(this.recordingConfig.longPressMs);
+      this.recordingConfig.longPressMs = Number.isFinite(longPressMs) && longPressMs > 0
+        ? Math.min(3000, Math.max(300, Math.round(longPressMs / 100) * 100))
+        : 1000;
+    },
+
+    /** 把录像配置落盘（开关和长按阈值这些不需要重启进程的改动走这里） */
+    saveRecordingConfig() {
+      try {
+        window.electronAPI.saveRecordingConfig(JSON.parse(JSON.stringify(this.recordingConfig)));
+      } catch (error) { /* 存不下不影响本次会话 */ }
+    },
+
+    /** 长按阈值的显示文案：800ms → 0.8 s，1000ms → 1 s */
+    longPressLabel(value) {
+      const seconds = Number(value) / 1000;
+      return `${Number.isInteger(seconds) ? seconds : seconds.toFixed(1)} s`;
+    },
+
+    // ===== 编码测试门禁 =====
+
+    /**
+     * 「当前这套编码设置」到底测过没有。
+     *
+     *   ok      —— 测过，而且实测出了真实负载，可以直接开监听
+     *   missing —— 从来没测过
+     *   stale   —— 测过，但之后改过引擎 / 分辨率 / 帧率，结论不再适用
+     *   idle    —— 测过，但当时画面是静止的（0 帧），没测出实际负载
+     *
+     * 判据只看会显著改变负载的三项（引擎、分辨率、帧率）；
+     * 画质、码率、缓冲时长这些不影响「会不会过载」，改了不要求重测。
+     */
+    encoderTestState() {
+      const test = this.recordingConfig.lastTest;
+      if (!test || !test.at) return 'missing';
+      const config = this.recordingConfig;
+      const changed = String(test.encoderId || '') !== String(config.encoderId || '')
+        || Number(test.fps) !== Number(config.fps)
+        || Number(test.width) !== Number(config.width)
+        || Number(test.height) !== Number(config.height);
+      if (changed) return 'stale';
+      if (test.measured === false) return 'idle';
+      return 'ok';
+    },
+
+    /** 没测过就开监听时问一次；返回 false 表示「先去测试」 */
+    async confirmEncoderUntested(state) {
+      const key = state === 'stale' ? 'Recording.encoderCheckStale'
+        : state === 'idle' ? 'Recording.encoderCheckIdle'
+          : 'Recording.encoderCheckMissing';
+      const title = this.$t('Recording.encoderCheckTitle');
+      const message = this.$t(key);
+      const detail = this.$t('Recording.encoderCheckHint');
+      const okLabel = this.$t('Recording.encoderCheckStart');
+      const cancelLabel = this.$t('Recording.encoderCheckTest');
+      if (isPadMode()) {
+        return await askConfirm({ title, message, detail, okLabel, cancelLabel });
+      }
+      return await window.electronAPI.showConfirmMessageBox(title, message, detail, [okLabel, cancelLabel]);
+    },
+
+    /**
+     * 运行时过载监控。
+     *
+     * 主进程推来的 overloaded 是「最近 8 个采样的 speed 中位数 < 0.95 且确实在丢帧」，
+     * 单个采样抖动不会误报。连续两次（约 1 秒）才提示，一次监听里只提示一次 ——
+     * 过载是持续性状态，每 500ms 弹一次只会让提示失去意义。
+     */
+    trackOverload(state) {
+      if (!this.listening || !this.recordingConfig.enabled) return;
+      if (!state || !state.overloaded) {
+        this._overloadStreak = 0;
+        return;
+      }
+      this._overloadStreak = (this._overloadStreak || 0) + 1;
+      if (this._overloadStreak < 2 || this._overloadWarned) return;
+      this._overloadWarned = true;
+      const text = this.$t('Recording.overloadRuntime', {
+        speed: Number(state.speed || 0).toFixed(2),
+        dropped: Number(state.dropped || 0)
+      });
+      this.showError(text);
+      // 玩游戏时窗口在后台，页内红条根本看不见，这时候靠系统通知兜底
+      if (document.hidden && this.windowsNotify) this.windowsNotify(text);
     },
 
     onRecordingConfigChange(config) {
@@ -662,13 +725,11 @@ export default {
       this.showRecordingDialog = false;
     },
 
-    /** 开关回放缓存：立即落盘并同步缓冲进程 */
+    /** 开关循环录制：立即落盘并同步缓冲进程 */
     async setRecordingEnabled(enabled) {
       if (this.recordingConfig.enabled === enabled) return;
       this.recordingConfig.enabled = enabled;
-      try {
-        window.electronAPI.saveRecordingConfig(JSON.parse(JSON.stringify(this.recordingConfig)));
-      } catch (error) { /* 存不下不影响本次 */ }
+      this.saveRecordingConfig();
       await this.syncReplayBuffer();
     },
 
@@ -722,6 +783,8 @@ export default {
       }
 
       const replayConfig = await this.prepareCaptureConfig();
+      // 记下这次存了多长：通知和文件名之外的反馈都用它，避免和缓冲状态抢时序
+      const seconds = Math.max(1, Math.round(state.duration || state.targetSeconds || 0));
       const result = await window.electronAPI.saveReplay({
         path: replayConfig.path,
         calcedFileName: replayConfig.calcedFileName
@@ -729,10 +792,13 @@ export default {
 
       if (result && result.ok) {
         await this.playCaptureSound();
+        // 和截图一样带预览位：主进程会用 ffmpeg 从刚存的文件里抽一帧当缩略图，
+        // 抽不出来时 img 为空，浮窗自动退回通用录像图标
         await this.showCaptureNotification({
-          title: this.$t('overlayNotify.replayBufferSaved'),
-          desc: this.$t('overlayNotify.replayBufferSavedDesc'),
-          type: 'text'
+          img: result.thumb,
+          type: 'video',
+          title: this.$t('overlayNotify.replaySaved'),
+          desc: this.$t('overlayNotify.replaySavedDesc', { sec: seconds })
         });
       } else if (result && result.error) {
         this.showError(result.error);
@@ -766,12 +832,7 @@ export default {
 
       try {
         const m_config = await this.prepareCaptureConfig();
-        let filePath;
-        if (this.config.screenshotWay == this.screenShotWayEnum.DesktopCapturer) {
-          filePath = await window.electronAPI.screenShot(m_config)
-        } else if (this.config.screenshotWay == this.screenShotWayEnum.OBS) {
-          filePath = await this.$refs.obsConnectPageRef.takeScreenshot(m_config)
-        }
+        const filePath = await window.electronAPI.screenShot(m_config)
 
         if (filePath == void 0 || filePath == null) {
           return;
@@ -907,8 +968,17 @@ export default {
         const globalParsed = JSON.parse(savedGlobal);
         this.config = { ...this.config, ...globalParsed };
       }
+      this.dropLegacyCaptureConfig();
       this.normalizeLegacySound();
       this.config.comboKeys = [];
+    },
+    /**
+     * OBS 截图方式已整体移除，老存档里的 screenshotWay / obsReplayBufferOnLongPress
+     * 读进来只会被一路重新写回去，这里直接丢掉，避免存档里长期留着死字段。
+     */
+    dropLegacyCaptureConfig() {
+      delete this.config.screenshotWay;
+      delete this.config.obsReplayBufferOnLongPress;
     },
     /**
      * 旧存档的音效值是 NS2 / PS，平台音效已废弃，统一回落到音效 1。
@@ -950,6 +1020,8 @@ export default {
       }
 
       //#region 升级老配置
+      this.dropLegacyCaptureConfig();
+
       if (Array.isArray(this.config.comboKeys)) {
         this.config.comboKeys = this.config.comboKeys.map(k => typeof k === 'number' ? 'Button' + k : k);
       }
@@ -973,10 +1045,6 @@ export default {
         this.config.saveByActiveWinTitle = false;
       }
 
-      if (this.config.obsReplayBufferOnLongPress == null || this.config.obsReplayBufferOnLongPress == undefined) {
-        this.config.obsReplayBufferOnLongPress = false;
-      }
-
       if (this.config.screenSourceId == null) {
         this.config.screenSourceId = '';
       }
@@ -997,7 +1065,6 @@ export default {
         comboKeys: [],
         sound: screenshotSoundEnum.Sound1,
         soundPower: 1,
-        screenshotWay: ScreenShotWayEnum.DesktopCapturer,
         captureTargetType: CaptureTargetTypeEnum.Screen,
         screenSourceId: '',
         windowSourceId: '',
@@ -1006,8 +1073,7 @@ export default {
         fileNameTemplate: 'Screenshot_%timestamp%',
         saveByActiveWinTitle: false,
         keyboardTrigger: false,
-        keyboardTriggerKeyCode: null,
-        obsReplayBufferOnLongPress: false
+        keyboardTriggerKeyCode: null
       }
     },
     /** 用名称 + VID/PID 判定是否同一支手柄（设备重连后 _index 会变，不能只靠它） */
@@ -1155,7 +1221,7 @@ export default {
         return;
       }
 
-      if (this.config.screenshotWay === ScreenShotWayEnum.DesktopCapturer && this.config.captureTargetType === CaptureTargetTypeEnum.Window) {
+      if (this.config.captureTargetType === CaptureTargetTypeEnum.Window) {
         await this.loadCaptureWindows();
         if (!this.config.windowSourceId) {
           this.showError(this.$t('alertMsg.captureWindowEmpty'));
@@ -1163,21 +1229,23 @@ export default {
         }
       }
 
-      //尝试连接OBS
-      if (this.config.screenshotWay == ScreenShotWayEnum.OBS) {
-        const obsPage = this.$refs.obsConnectPageRef
-        if (!obsPage) {
-          this.showError(this.$t('OBSPage.obsNotConnected'))
-          return;
-        }
-        if (!obsPage.isConnected) {
-          await obsPage.connectOBS();
-          if (!obsPage.isConnected) {
-            this.showError(this.$t('OBSPage.obsNotConnected'))
+      // 开了循环录制就先确认这套编码设置测试过没有 ——
+      // 没测过直接开监听，很可能在想存的那一段上丢帧，而且丢得无声无息
+      if (this.recordingConfig.enabled) {
+        const testState = this.encoderTestState();
+        if (testState !== 'ok') {
+          const goOn = await this.confirmEncoderUntested(testState);
+          if (!goOn) {
+            // 「先测试」：直接把编码设置弹窗打开，省得用户自己找
+            this.openRecordingDialog();
             return;
           }
         }
       }
+
+      // 每次开始监听都重置过载提示：上一次的告警不该压住这一次
+      this._overloadWarned = false;
+      this._overloadStreak = 0;
 
       //尝试启动
       let m_device = this.resolveCurrentDevice()
@@ -1247,12 +1315,6 @@ export default {
     async handleScreenShotTrigger() {
       this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
       this.axesValuePreview = await window.electronAPI.getCurrentAxesValue()
-
-      // 同步 OBS 连接状态到卡片徽章
-      const obsPage = this.$refs.obsConnectPageRef
-      if (obsPage) {
-        this.obsConnected = !!obsPage.isConnected
-      }
 
       //如果是监听中
       if (this.listening) {
@@ -1342,34 +1404,13 @@ export default {
         return;
       }
 
-      const isLongPressReplay = this.config.screenshotWay === ScreenShotWayEnum.OBS &&
-        this.config.obsReplayBufferOnLongPress &&
-        !this.comboLongPressHandled &&
-        Date.now() - this.comboPressedAt >= 1000;
-
-      // 内置引擎优先：用户显式打开了「长按保存最近一段」，就以它为准，
-      // 不再看 OBS 那套开关（两条路同时开时只会有一个生效，避免存两份）
+      // 长按阈值由「循环录制 → 长按触发」决定：到点就直接存最近一段，
+      // 松手时因为 comboLongPressHandled 已置位，不会再补一张截图
+      const longPressMs = Number(this.recordingConfig.longPressMs) || 1000;
       if (this.recordingConfig.enabled && !this.comboLongPressHandled &&
-        Date.now() - this.comboPressedAt >= 1000) {
+        Date.now() - this.comboPressedAt >= longPressMs) {
         this.comboLongPressHandled = true;
         await this.saveReplayByBuiltin();
-        return;
-      }
-
-      if (isLongPressReplay) {
-        this.comboLongPressHandled = true;
-        const obsPage = this.$refs.obsConnectPageRef
-        if (!obsPage) return;
-        const replayConfig = await this.prepareCaptureConfig();
-        const saved = await obsPage.saveReplayBuffer(replayConfig);
-        if (saved) {
-          await this.playCaptureSound();
-          await this.showCaptureNotification({
-            title: this.$t('overlayNotify.replayBufferSaved'),
-            desc: this.$t('overlayNotify.replayBufferSavedDesc'),
-            type: 'text'
-          });
-        }
       }
     },
     async handleComboReleased() {
@@ -1383,6 +1424,9 @@ export default {
     },
     async stopListen() {
       this.listening = false;
+      // 过载提示的状态跟着监听会话走，下次开始重新计
+      this._overloadWarned = false;
+      this._overloadStreak = 0;
       // 停止监听就关掉回放缓存，不让编码器在待机时白占 GPU
       await this.syncReplayBuffer();
       let listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
@@ -1741,40 +1785,13 @@ export default {
   text-align: right;
 }
 
-/* OBS 内嵌块（仅截图方式为 OBS 时出现在「截图来源」卡片内） */
-.obs-inline {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  /* 贴近上方「截图方式」行，避免内容被垂直居中后上下各留一大块空白 */
-  justify-content: flex-start;
-  gap: 8px;
-  padding-top: 9px;
-  margin-top: 2px;
-  border-top: 1px dashed var(--line-strong);
-}
-
-.obs-inline-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-width: 0;
-}
-
-.obs-head-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  min-width: 0;
-}
-
-.obs-head-right .ui-hint {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 150px;
+/* 循环录制的说明行：缩进到和标签文字对齐，和「可用字段」那种整块说明区分开 */
+.rec-tip {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--ink-3);
 }
 
 @media (max-width: 1080px) {

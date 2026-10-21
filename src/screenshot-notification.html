@@ -42,15 +42,27 @@
       color: #fff;
       font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
     }
-    .preview {
+    /* ---------- 预览位 ----------
+       截图：直接显示保存下来的图片
+       循环录制：显示从片段里抽的缩略图 + 播放角标；抽不出帧就退回录像图标 */
+    .thumb {
+      position: relative;
       width: 64px;
       height: 64px;
+      flex: 0 0 auto;
+    }
+    .preview {
+      display: block;
+      width: 100%;
+      height: 100%;
       border-radius: 12px;
       background: #222;
       object-fit: cover;
       box-shadow: 0 2px 8px rgba(0,0,0,0.18);
       border: 2px solid #444;
+      box-sizing: border-box;
     }
+    .thumb.no-img .preview { display: none; }
     .video-icon {
       display: none;
       width: 64px;
@@ -59,14 +71,30 @@
       background: #8b1e2d;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      font-size: 28px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.18);
       border: 2px solid #b93a4a;
+      box-sizing: border-box;
     }
-    .stage.video .preview { display: none; }
-    .stage.video .video-icon { display: flex; }
-    .stage.text .preview,
-    .stage.text .video-icon { display: none; }
+    .thumb.no-img .video-icon { display: flex; }
+    .play-badge {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+    }
+    .stage.video .play-badge { display: flex; }
+    .stage.text .thumb { display: none; }
     .info {
       display: flex;
       flex-direction: column;
@@ -117,8 +145,13 @@
 <body>
   <div class="stage" id="notification">
     <div class="card" id="zoomer">
-      <img class="preview" id="preview" src="file:///E:/JavaScriptSpace/gamepad-screenshot/src/screenshot-notification.html" alt="截图预览">
-      <div class="video-icon" id="video-icon" aria-label="录像">🎥</div>
+      <div class="thumb" id="thumb">
+        <img class="preview" id="preview" alt="预览">
+        <div class="video-icon" id="video-icon" aria-hidden="true">🎥</div>
+        <span class="play-badge" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z" /></svg>
+        </span>
+      </div>
       <div class="info">
         <div class="title" id="title">截图成功</div>
         <div class="desc" id="desc">已保存到本地</div>
@@ -128,8 +161,12 @@
   <script>
     // 支持直接通过 query 传参
     const params = new URLSearchParams(location.search);
-    if (params.has('img')) {
-      document.getElementById('preview').src = params.get('img');
+    // 预览位：有图就用图，没图（文字通知 / 抽帧失败）就退回录像图标
+    const previewSrc = params.get('img');
+    if (previewSrc) {
+      document.getElementById('preview').src = previewSrc;
+    } else {
+      document.getElementById('thumb').classList.add('no-img');
     }
     if (params.has('title')) {
       document.getElementById('title').textContent = params.get('title');

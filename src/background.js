@@ -13,6 +13,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 import sdl from '@kmamal/sdl'
 const fs = require('fs')
 const path = require('path')
+const { pathToFileURL } = require('url')
 const vm = require('vm')
 
 if (process.platform === 'win32') {
@@ -20,7 +21,7 @@ if (process.platform === 'win32') {
 }
 
 //Scripts
-const { screenshotSoundEnum, CommonButtonEnum, ScreenShotWayEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
+const { screenshotSoundEnum, CommonButtonEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
 const { snapUiScale, migrateLegacyUiScale, UI_SCALE_DEFAULT, UI_SCALE_MIN, UI_SCALE_MAX, UI_SCALE_VERSION } = require('@/lib/uiScale')
 const configStore = require('@/lib/configLoader')
 // 手柄按键映射（手柄 → 键盘）：引擎读 SDL 设备状态，键盘通过常驻 PowerShell 调用 keybd_event 发送
@@ -792,6 +793,7 @@ function toPlainDevice(device) {
 // 分辨率帧率码率、以及编码过载自检。
 
 const { createRecorder } = require('@/lib/recorder')
+const { run: runFfmpeg } = require('@/lib/recorder/ffmpeg')
 
 const RECORDING_CONFIG_KEY = 'recordingConfig'
 
@@ -804,6 +806,8 @@ const recorderEngine = createRecorder({
 
 // 缓冲进度推送的节流时间戳（主进程侧，避免每个采样都过一遍 IPC）
 let lastReplayPush = 0
+// 上一次生成的回放缩略图（保存新片段时顺手删掉，避免临时目录堆积）
+let lastReplayThumb = ''
 
 function clampNumber(value, min, max, fallback) {
   const n = Number(value)
@@ -911,18 +915,22 @@ ipcMain.handle('recorder:replay-start', async (_, overrides) => {
   try {
     const options = buildRecorderOptions(overrides || {})
     const started = await recorderEngine.startReplayBuffer(options, {
-      onProgress: (sample) => {
+      onProgress: (sample, summary) => {
         // 前端只关心「缓冲了多少秒」，完整采样太吵，按 500ms 节流推送
         const now = Date.now()
         if (now - lastReplayPush < 500) return
         lastReplayPush = now
+        // 过载判定用 session.summarize 的结论（近 8 个采样的 speed 中位数 + 真实丢帧），
+        // 不要用单个采样的 speed —— ddagrab 画面静止时突增一批帧会把瞬时 speed 打到 0.5
+        const overload = summary || {}
         if (win && !win.isDestroyed()) {
           win.webContents.send('recorder:replay-progress', {
             buffer: sample.buffer,
-            speed: sample.speed,
-            fps: sample.fps,
+            speed: overload.medianSpeed || sample.speed,
+            fps: overload.avgFps || sample.fps,
             dropFrames: sample.dropFrames,
-            overloaded: sample.speed > 0 && sample.speed < 0.95
+            dropped: overload.dropped || 0,
+            overloaded: !!overload.overloaded
           })
         }
       },
@@ -959,6 +967,39 @@ ipcMain.handle('recorder:replay-stop', async () => {
 ipcMain.handle('recorder:replay-state', () => recorderEngine.getReplayState())
 
 /**
+ * 给刚保存的回放片段抽一帧当浮窗缩略图。
+ *
+ * 存的是分片 MP4（moov 里没有样本索引），所以不用 -ss 跳转 ——
+ * 直接从第一帧解，省掉退索引的麻烦，1~2 秒的缓冲里抽一张也足够快。
+ * 任何失败都只返回空串：缩略图是锦上添花，不能让它把「保存成功」变成失败。
+ */
+async function makeReplayThumbnail(videoPath) {
+  try {
+    const exe = recorderEngine.ffmpegPath()
+    const target = path.join(app.getPath('temp'), `replay-thumb-${Date.now()}.jpg`)
+    const result = await runFfmpeg(exe, [
+      '-hide_banner', '-loglevel', 'error',
+      '-i', videoPath,
+      '-frames:v', '1',
+      '-vf', 'scale=192:-2',
+      '-q:v', '4',
+      '-y', target
+    ], 10000)
+    if (!result.ok || !fs.existsSync(target)) return ''
+
+    // 只留最新一张：浮窗要的尺寸很小，没必要攒文件
+    if (lastReplayThumb && lastReplayThumb !== target) {
+      try { fs.unlinkSync(lastReplayThumb) } catch (error) { /* 正被浮窗占用就算了 */ }
+    }
+    lastReplayThumb = target
+    return pathToFileURL(target).href
+  } catch (error) {
+    log.warn('[recorder] replay thumbnail failed:', error)
+    return ''
+  }
+}
+
+/**
  * 保存最近 N 秒。
  * 文件名走和截图一样的模板与冲突策略，扩展名固定 mp4。
  */
@@ -974,7 +1015,8 @@ ipcMain.handle('recorder:replay-save', async (_, config) => {
 
     const saved = await recorderEngine.saveReplay(filePath)
     log.info('[recorder] replay saved:', filePath, saved)
-    return { ok: true, path: filePath, ...saved }
+    const thumb = await makeReplayThumbnail(filePath)
+    return { ok: true, path: filePath, thumb, ...saved }
   } catch (error) {
     log.error('[recorder] replay save failed:', error)
     return { ok: false, error: error.message || String(error) }
@@ -1582,6 +1624,21 @@ ipcMain.handle('get-active-win-info', () => {
 let overlayWindow = null;
 let overlayTimeout = null;
 
+/**
+ * 浮窗预览图统一转成 file:// URL。
+ * 通知页本身是 file:// 页面，直接把 `C:\a\b.jpg` 塞进 img.src 会被当成
+ * 非法 scheme（"c:"），预览位就永远加载不出来。
+ */
+function toPreviewUrl(target) {
+  if (!target || typeof target !== 'string') return ''
+  if (/^(file|data|https?):/i.test(target)) return target
+  try {
+    return pathToFileURL(target).href
+  } catch (error) {
+    return ''
+  }
+}
+
 function showScreenshotNotification({ img, title = '截图成功', desc = '已保存到本地', type, duration = 3000 }) {
   // 如果已有通知，先关闭
   if (overlayWindow) {
@@ -1642,7 +1699,7 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
   const overlayWindowFilePath = app.isPackaged ? path.join(process.resourcesPath, 'html', 'screenshot-notification.html') : '../src/screenshot-notification.html';
 
   overlayWindow.loadFile(overlayWindowFilePath, {
-    query: { img, title, desc, type, pos, scale }
+    query: { img: toPreviewUrl(img), title, desc, type: type || '', pos, scale }
   });
 
   overlayWindow.once('ready-to-show', () => {

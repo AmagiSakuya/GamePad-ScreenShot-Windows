@@ -1,7 +1,6 @@
 {
     "gamepadScreenShotTool": "Инструмент скриншотов для геймпада",
     "screenshotSettings": "Настройки скриншотов",
-    "obsConnect": "Подключение OBS",
     "gamepadTester": "Тест контроллера",
     "systemSettings": "Системные настройки",
     "mappingSettings": "Назначение кнопок",
@@ -62,8 +61,8 @@
     "overlayNotify": {
         "screenshotSuccess": "Скриншот сделан",
         "screenshotSaved": "Сохранено локально",
-        "replayBufferSaved": "Запись сохранена",
-        "replayBufferSavedDesc": "Буфер повтора OBS сохранён локально"
+        "replaySaved": "Циклическая запись сохранена",
+        "replaySavedDesc": "Последние {sec} с сохранены локально"
     },
     "screenshotSound": {
         "None": "Без звука",
@@ -72,24 +71,6 @@
         "Sound3": "Звук 3",
         "Sound4": "Звук 4",
         "Sound5": "Звук 5"
-    },
-    "OBSPage": {
-        "obsAddress": "Адрес сервера OBS",
-        "obsPassword": "Пароль сервера OBS",
-        "selectScene": "Выбрать сцену",
-        "connectService": "Подключиться к OBS",
-        "disconnect": "Отключиться",
-        "obsServiceNotFound": "Служба OBS WebSocket не найдена",
-        "obsNotConnected": "Не удаётся подключиться к OBS",
-        "invalidSceneSelected": "Сцена выбрана неверно",
-        "obsScreenshotError": "Ошибка захвата OBS",
-        "saveReplayBufferOnLongPress": "Удерживайте комбинацию для сохранения повтора",
-        "replayBufferHint": "Использует тот же путь и шаблон имени, что и скриншоты",
-        "replayBufferNotActive": "Буфер повтора OBS не активирован",
-        "replayBufferSaved": "Буфер повтора OBS сохранён",
-        "replayBufferError": "Не удалось сохранить буфер повтора OBS: ",
-        "obsStatusConnected": "Подключено",
-        "obsStatusDisconnected": "Не подключено"
     },
     "GampadTesterPage": {
         "selectController": "Выбрать контроллер",
@@ -191,7 +172,6 @@
         "noCombo": "Комбинации пока не добавлены",
         "noGamepad": "Контроллер не подключён",
         "notSet": "Не задано",
-        "desktopCapture": "Захват рабочего стола",
         "lockedHint": "Ожидание · настройки заблокированы",
         "testSound": "Прослушать",
         "notifyHintDesc": "Стиль уведомлений настраивается в системных настройках",
@@ -231,8 +211,6 @@
         "close": "Закрыть",
         "closeModal": "Закрыть",
         "sectionSave": "Сохранение",
-        "listeningHint": "Удерживайте комбинацию для скриншота · долгое нажатие (OBS) сохраняет повтор",
-        "captureMethod": "Способ захвата",
         "about": "О программе",
         "data": "Данные",
         "homepage": "Страница проекта",
@@ -250,7 +228,8 @@
         "mappingRunning": "Маппинг работает",
         "mappingIdle": "Маппинг остановлен",
         "captureRunning": "Захват работает",
-        "captureIdle": "Захват остановлен"
+        "captureIdle": "Захват остановлен",
+        "sectionRecording": "Циклическая запись"
     },
     "MappingPage": {
         "onTitle": "Маппинг включён",
@@ -348,5 +327,21 @@
             "documents": "Документы",
             "downloads": "Загрузки"
         }
+    },
+    "Recording": {
+        "longPress": "Долгое нажатие (цикл)",
+        "longPressHint": "Удерживайте клавишу снимка (комбинацию геймпада), чтобы сохранить последние секунды",
+        "settings": "Настройки кодирования",
+        "encoderCheckTitle": "Циклическая запись: кодировщик не проверен",
+        "encoderCheckMissing": "Циклическая запись включена, но текущие настройки кодирования ни разу не тестировались. Если кодировщик не успевает, в сохранённых клипах будут пропуски кадров.",
+        "encoderCheckStale": "Настройки кодирования (движок / разрешение / fps) изменились, прошлый результат теста больше не действует.",
+        "encoderCheckIdle": "Во время последнего теста экран был статичен, реальную нагрузку измерить не удалось.",
+        "encoderCheckHint": "Запустите «Настройки кодирования → Проверка производительности кодировщика» перед началом прослушивания.",
+        "encoderCheckStart": "Всё равно начать",
+        "encoderCheckTest": "Сначала тест",
+        "overloadRuntime": "Кодировщик перегружен, кадры теряются (скорость {speed}x, потеряно {dropped}) — попробуйте 1920×1080 или NVENC",
+        "overloadLive": "Перегрузка кодировщика: {speed}x, потеряно {dropped} кадров — снизьте разрешение или смените кодировщик",
+        "lastTestNever": "Эти настройки кодирования ещё не тестировались",
+        "lastTest": "Последний тест: {time} · {speed}x · потеряно {dropped}"
     }
 }
