@@ -23,6 +23,8 @@ if (process.platform === 'win32') {
 //Scripts
 const { screenshotSoundEnum, CommonButtonEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
 const { snapUiScale, migrateLegacyUiScale, UI_SCALE_DEFAULT, UI_SCALE_MIN, UI_SCALE_MAX, UI_SCALE_VERSION } = require('@/lib/uiScale')
+// 窗口来源枚举：不要求窗口带标题栏，否则无边框全屏的游戏会被过滤掉
+const { enumerateCaptureWindows } = require('@/lib/captureWindows')
 const configStore = require('@/lib/configLoader')
 // 手柄按键映射（手柄 → 键盘）：引擎读 SDL 设备状态，键盘通过常驻 PowerShell 调用 keybd_event 发送
 const { createKeySender } = require('@/lib/keySender')
@@ -537,27 +539,7 @@ ipcMain.handle('get-screen-sources', async () => {
 })
 
 ipcMain.handle('get-capture-windows', async () => {
-  if (process.platform !== 'win32' || typeof activeWin.getOpenWindows !== 'function') {
-    captureWindowCache = [];
-    return captureWindowCache;
-  }
-
-  const windows = await activeWin.getOpenWindows();
-  captureWindowCache = windows
-    .filter((item) => item && item.id && item.title && item.bounds)
-    .filter((item) => item.bounds.width > 0 && item.bounds.height > 0)
-    .filter((item) => item.bounds.x > -10000 && item.bounds.y > -10000)
-    .map((item) => {
-      return {
-        id: item.id,
-        title: item.title,
-        ownerName: item.owner && item.owner.name ? item.owner.name : '',
-        processId: item.owner && item.owner.processId ? item.owner.processId : 0,
-        path: item.owner && item.owner.path ? item.owner.path : '',
-        bounds: item.bounds
-      };
-    });
-
+  captureWindowCache = await enumerateCaptureWindows();
   return captureWindowCache;
 })
 
@@ -614,12 +596,16 @@ async function captureWindowBuffer(windowId, format) {
 }
 
 async function resolveCaptureWindow(config) {
-  let selectedWindow = captureWindowCache.find((item) => String(item.id) === String(config.windowSourceId));
+  const windowId = String(config.windowSourceId);
+  let selectedWindow = captureWindowCache.find((item) => String(item.id) === windowId);
   if (!selectedWindow) {
-    const windows = await activeWin.getOpenWindows();
-    selectedWindow = windows
-      .filter((item) => item && item.id && item.title && item.bounds)
-      .find((item) => String(item.id) === String(config.windowSourceId));
+    // 缓存过期（比如截完图窗口才切换）就现场重枚举一次，口径和下拉框保持一致
+    try {
+      captureWindowCache = await enumerateCaptureWindows();
+    } catch (error) {
+      log.warn('Re-enumerate capture windows failed:', error);
+    }
+    selectedWindow = captureWindowCache.find((item) => String(item.id) === windowId);
   }
   if (!selectedWindow) {
     throw new Error($t('captureWindowNotFound'));
