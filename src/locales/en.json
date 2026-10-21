@@ -229,7 +229,11 @@
         "mappingIdle": "Mapping off",
         "captureRunning": "Capture on",
         "captureIdle": "Capture off",
-        "sectionRecording": "Loop recording"
+        "sectionRecording": "Loop recording",
+        "recMonitor": "Loop recording status",
+        "recRunning": "Rec on",
+        "recArmed": "Rec ready",
+        "recOff": "Rec off"
     },
     "Update": {
         "title": "Software Update",

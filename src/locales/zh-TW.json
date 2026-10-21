@@ -229,7 +229,11 @@
         "mappingIdle": "映射已關閉",
         "captureRunning": "截圖執行中",
         "captureIdle": "截圖已關閉",
-        "sectionRecording": "循環錄製"
+        "sectionRecording": "循環錄製",
+        "recMonitor": "循環錄製狀態",
+        "recRunning": "錄製中",
+        "recArmed": "錄製待命",
+        "recOff": "錄製關閉"
     },
     "MappingPage": {
         "onTitle": "按鍵映射已啟用",

@@ -229,7 +229,11 @@
         "mappingIdle": "Mapeo detenido",
         "captureRunning": "Captura activa",
         "captureIdle": "Captura detenida",
-        "sectionRecording": "Grabación en bucle"
+        "sectionRecording": "Grabación en bucle",
+        "recMonitor": "Estado de la grabación en bucle",
+        "recRunning": "Grab. activo",
+        "recArmed": "Grab. listo",
+        "recOff": "Grab. inactivo"
     },
     "MappingPage": {
         "onTitle": "El mapeo está activado",

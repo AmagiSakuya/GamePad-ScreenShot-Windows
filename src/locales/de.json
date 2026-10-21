@@ -229,7 +229,11 @@
         "mappingIdle": "Zuordnung aus",
         "captureRunning": "Aufnahme aktiv",
         "captureIdle": "Aufnahme aus",
-        "sectionRecording": "Loop-Aufnahme"
+        "sectionRecording": "Loop-Aufnahme",
+        "recMonitor": "Status der Loop-Aufnahme",
+        "recRunning": "Aufn. läuft",
+        "recArmed": "Aufn. bereit",
+        "recOff": "Aufn. aus"
     },
     "MappingPage": {
         "onTitle": "Tastenzuordnung aktiv",

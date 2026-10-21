@@ -18,10 +18,16 @@
       </div>
 
       <div class="bar-mid">
-        <!-- 截图监听（相机图标）与按键映射（键盘图标）分开显示，避免混淆 -->
+        <!-- 截图监听（相机图标）与按键映射（键盘图标）分开显示，避免混淆。
+             循环录制依附于截图监听（只有监听在跑才会缓冲），所以合成同一颗胶囊：
+             左半是截图监听，右半是录制的实时状态 —— 关 / 待命 / 录制中 三种色调 -->
         <span class="state-pill" :class="listening ? 'on' : 'off'" :title="$t('ui.captureMonitor')">
           <AppIcon name="camera" :size="11" />
           <i></i>{{ listening ? $t('ui.captureRunning') : $t('ui.captureIdle') }}
+          <span class="pill-div" aria-hidden="true"></span>
+          <span class="rec-zone" :class="'is-' + recTone" :title="$t('ui.recMonitor')">
+            <span class="rec-dot" aria-hidden="true"></span>{{ recLabel }}
+          </span>
         </span>
         <span class="state-pill mapping" :class="mappingEnabled ? 'on' : 'off'" :title="$t('ui.mappingMonitor')">
           <AppIcon name="keyboard" :size="11" />
@@ -216,6 +222,9 @@ export default {
       listening: false,
       // 按键映射引擎是否启用（顶栏第二个状态胶囊）
       mappingEnabled: false,
+      // 循环录制：enabled 是设置里的开关，active 是缓冲进程真的在跑
+      recordingEnabled: false,
+      recordingActive: false,
       isDark: true,
       accent: 'lime',
       uiScale: 1,
@@ -263,6 +272,19 @@ export default {
     },
     currentAccentHex() {
       return this.isDark ? this.currentAccent.dark.accent : this.currentAccent.light.accent
+    },
+    /**
+     * 循环录制的展示色调。
+     * off 关闭 / armed 已开启但缓冲没起来（待命）/ on 缓冲进程正在跑
+     */
+    recTone() {
+      if (!this.recordingEnabled) return 'off'
+      return this.recordingActive ? 'on' : 'armed'
+    },
+    recLabel() {
+      if (this.recTone === 'on') return this.$t('ui.recRunning')
+      if (this.recTone === 'armed') return this.$t('ui.recArmed')
+      return this.$t('ui.recOff')
     },
     /** 清单里的更新说明按语言取，缺省回落到英文 / 中文 */
     updateNotes() {
@@ -358,10 +380,21 @@ export default {
   },
   methods: {
     startTraySync() {
+      // 截图页始终常驻（v-show），所以这里直接读它的实例状态：
+      // 监听开关决定托盘图标，录制开关 + 缓冲状态决定顶栏右侧那颗「录制」指示
       const sync = () => {
-        const listening = this.$refs['mainPageRef'] ? !!this.$refs['mainPageRef'].listening : false
+        const page = this.$refs['mainPageRef']
+        const listening = page ? !!page.listening : false
         if (listening !== this.listening) {
           this.listening = listening
+        }
+        const recordingEnabled = !!(page && page.recordingConfig && page.recordingConfig.enabled)
+        if (recordingEnabled !== this.recordingEnabled) {
+          this.recordingEnabled = recordingEnabled
+        }
+        const recordingActive = !!(page && page.replayState && page.replayState.active)
+        if (recordingActive !== this.recordingActive) {
+          this.recordingActive = recordingActive
         }
         if (listening !== this.currentTrayListening) {
           this.currentTrayListening = listening
@@ -581,7 +614,11 @@ html.theme-dark {
   --cyan-soft: rgba(79, 216, 232, 0.12);
   --ok: #3CD39E;
   --warn: #FFB240;
+  --warn-soft: rgba(255, 178, 64, 0.13);
+  --warn-line: rgba(255, 178, 64, 0.30);
   --danger: #FB5F76;
+  --danger-soft: rgba(251, 95, 118, 0.14);
+  --danger-line: rgba(251, 95, 118, 0.34);
   --shadow: 0 18px 40px -32px #000;
   --radius: 14px;
   --radius-s: 9px;
@@ -614,7 +651,11 @@ html.theme-light {
   --cyan-soft: rgba(30, 159, 184, 0.10);
   --ok: #2F8C63;
   --warn: #C97B14;
+  --warn-soft: rgba(201, 123, 20, 0.12);
+  --warn-line: rgba(201, 123, 20, 0.30);
   --danger: #D94A5E;
+  --danger-soft: rgba(217, 74, 94, 0.11);
+  --danger-line: rgba(217, 74, 94, 0.30);
   --shadow: 0 14px 30px -26px rgba(0, 0, 0, 0.45);
   --scroll-thumb: rgba(22, 32, 22, 0.18);
 }
@@ -841,6 +882,69 @@ body {
 
 .state-pill .app-icon {
   opacity: 0.85;
+}
+
+/* 胶囊内分区线：同一颗胶囊里，左边「截图监听」、右边「循环录制」 */
+.pill-div {
+  width: 1px;
+  height: 12px;
+  flex: 0 0 auto;
+  background: var(--line-strong);
+  /* 抵消 .state-pill 的 7px gap，让两段看起来是贴着分区的 */
+  margin: 0 -1px;
+}
+
+/* 循环录制状态：默认（关闭）灰、已开启待命琥珀、正在缓冲红色脉冲 */
+.rec-zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-2);
+  font-size: 10.5px;
+  transition: color 0.18s ease;
+}
+
+.rec-zone .rec-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.rec-zone.is-armed {
+  color: var(--warn);
+}
+
+.rec-zone.is-armed .rec-dot {
+  opacity: 1;
+  box-shadow: 0 0 0 3px var(--warn-soft);
+}
+
+/* 录制中：红点脉冲，是整条顶栏里唯一会呼吸的红色元素 */
+.rec-zone.is-on {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.rec-zone.is-on .rec-dot {
+  opacity: 1;
+  box-shadow: 0 0 0 3px var(--danger-soft);
+  animation: recPulse 1.3s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+/* 最小窗口宽度下顶栏三段挤不下：录制那段只留一个状态灯，文字收掉 */
+@media (max-width: 1000px) {
+  .rec-zone {
+    gap: 0;
+    font-size: 0;
+  }
 }
 
 /* 映射监听：用紫色与截图监听的绿色区分开 */

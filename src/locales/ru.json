@@ -229,7 +229,11 @@
         "mappingIdle": "Маппинг остановлен",
         "captureRunning": "Захват работает",
         "captureIdle": "Захват остановлен",
-        "sectionRecording": "Циклическая запись"
+        "sectionRecording": "Циклическая запись",
+        "recMonitor": "Состояние циклической записи",
+        "recRunning": "Зап. идёт",
+        "recArmed": "Зап. готова",
+        "recOff": "Зап. выкл"
     },
     "MappingPage": {
         "onTitle": "Маппинг включён",

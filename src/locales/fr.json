@@ -229,7 +229,11 @@
         "mappingIdle": "Mappage arrêté",
         "captureRunning": "Capture active",
         "captureIdle": "Capture arrêtée",
-        "sectionRecording": "Enregistrement en boucle"
+        "sectionRecording": "Enregistrement en boucle",
+        "recMonitor": "État de l'enregistrement en boucle",
+        "recRunning": "Enr. actif",
+        "recArmed": "Enr. prêt",
+        "recOff": "Enr. inactif"
     },
     "MappingPage": {
         "onTitle": "Le mappage est activé",

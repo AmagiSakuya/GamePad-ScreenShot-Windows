@@ -229,7 +229,11 @@
         "mappingIdle": "マッピング停止中",
         "captureRunning": "キャプチャ実行中",
         "captureIdle": "キャプチャ停止中",
-        "sectionRecording": "ループ録画"
+        "sectionRecording": "ループ録画",
+        "recMonitor": "ループ録画の状態",
+        "recRunning": "録画中",
+        "recArmed": "録画待機",
+        "recOff": "録画オフ"
     },
     "MappingPage": {
         "onTitle": "ボタンマッピングは有効です",

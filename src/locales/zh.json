@@ -229,7 +229,11 @@
         "mappingIdle": "映射已关闭",
         "captureRunning": "截图运行中",
         "captureIdle": "截图已关闭",
-        "sectionRecording": "循环录制"
+        "sectionRecording": "循环录制",
+        "recMonitor": "循环录制状态",
+        "recRunning": "录制中",
+        "recArmed": "录制待命",
+        "recOff": "录制关闭"
     },
     "Update": {
         "title": "软件更新",

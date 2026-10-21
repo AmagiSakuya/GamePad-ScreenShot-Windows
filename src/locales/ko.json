@@ -229,7 +229,11 @@
         "mappingIdle": "매핑 중지됨",
         "captureRunning": "캡처 실행 중",
         "captureIdle": "캡처 중지됨",
-        "sectionRecording": "루프 녹화"
+        "sectionRecording": "루프 녹화",
+        "recMonitor": "루프 녹화 상태",
+        "recRunning": "녹화 중",
+        "recArmed": "녹화 대기",
+        "recOff": "녹화 꺼짐"
     },
     "MappingPage": {
         "onTitle": "버튼 매핑이 켜졌습니다",
