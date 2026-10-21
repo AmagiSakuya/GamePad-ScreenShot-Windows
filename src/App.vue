@@ -1841,6 +1841,12 @@ input {
   text-overflow: ellipsis;
 }
 
+/* 没有任何选中项时（返回键清空之后）的占位文案，弱化到不会喧宾夺主 */
+.gp-hint-empty {
+  color: var(--ink-3);
+  opacity: 0.7;
+}
+
 /* 滑条上的「确定 = 调节数值」提示：比普通提示更显眼一点 */
 .gp-hint-adjust {
   color: var(--accent);

@@ -235,6 +235,20 @@ function exitAdjust() {
   if (currentEl) currentEl.classList.remove('gp-adjust')
 }
 
+/**
+ * 取消选中：焦点环消失，界面上没有任何被选中的元素。
+ * 只表示「这一层没有选中项」，不退出手柄模式 —— 提示条还在，按方向键重新选中即可。
+ */
+function clearFocus() {
+  exitAdjust()
+  if (currentEl) currentEl.classList.remove('gp-focus')
+  currentEl = null
+  anchorEl = null
+  gpNav.focusLabel = ''
+  gpNav.focusKind = ''
+  holdDir = null
+}
+
 function setFocus(el, options) {
   if (!el) return
   const instant = !!(options && options.instant)
@@ -688,20 +702,27 @@ function back() {
     return
   }
 
-  // 页面层：「返回」= 回到本页主操作（启动 / 停止按钮），不直接退出手柄模式。
-  // 否则在调试 / 设置这类没有主按钮的页面会按到最后「什么都没有被聚焦」。
-  // 退出手柄模式统一走菜单键（≡）、鼠标或键盘操作。
+  // 页面层：「返回」= 取消选中，不直接退出手柄模式（退出统一走菜单键 / 鼠标 / 键盘）。
+  //
+  // 只有页面自己用 data-gp-autofocus 声明了「主操作」（截图页的启动 / 映射页的启用）时，
+  // 返回才先回到那个主操作；再按一次同样会取消选中。
+  // 调试 / 设置这类没有主操作的页面不做「定格在第一个元素」的保底 —— 那会让返回键
+  // 永远卡在「刷新」「基础设置」上，看起来像坏了。
   const list = collect()
   if (!list.length) return
-  const home = initialFocusTarget(list)
-  if (home && home !== currentEl) {
+  // 已经没有任何选中项：返回保持空状态，不再把焦点「保底」塞回某个元素
+  if (!currentEl) return
+  // 焦点指向的元素已经被移除（列表刷新等），直接取消选中，而不是另找一个顶上
+  if (!list.includes(currentEl)) {
+    clearFocus()
+    return
+  }
+  const home = markedIn(list)
+  if (home && currentEl !== home) {
     setFocus(home)
     return
   }
-  // 当前焦点指向的元素已经被移除（列表刷新等），重新锚定一下
-  if (currentEl && !list.includes(currentEl)) {
-    setFocus(home || list[0], { instant: true })
-  }
+  clearFocus()
 }
 
 function switchPage(direction) {
@@ -987,6 +1008,7 @@ function installDebugBridge() {
     move,
     activate,
     back,
+    clear: clearFocus,
     exit: exitPadMode,
     refocus: refocusOverlay,
     focusEl: (el) => setFocus(el, { instant: true }),

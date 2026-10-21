@@ -2,10 +2,11 @@
 /**
  * 手柄界面导航自检
  * =========================================================
- * 改完 UI 之后跑一遍，回答三个问题：
+ * 改完 UI 之后跑一遍，回答四个问题：
  *   1. 每个可聚焦元素的上下左右分别落到哪个元素？（导航图）
  *   2. 有没有「按了没反应又出不去」的死胡同？
  *   3. 滑条是不是仍然是「先按确定才能调值」的两段式？
+ *   4. 返回键会不会「保底定格」在某个元素上？连续按返回必须走到「没有任何被选中」。
  *
  * 用法：
  *   node scripts/gp-nav-check.js                 检查 + 终端摘要 + JSON/HTML 报告
@@ -226,11 +227,38 @@ const PROBE = () => {
     })
   })
 
+  // 返回键语义：不应「保底定格」在某个元素上，连续按返回必须能走到「没有任何被选中」
+  const backProbe = (() => {
+    const marked = Array.from(document.querySelectorAll('[data-gp-autofocus]'))
+      .filter((el) => items.some((x) => x.el === el))
+    const home = marked[0] || null
+    const start = items.find((x) => x.el !== home) || items[0]
+    if (!start) return null
+    nav.focusEl(start.el)
+    nav.back()
+    const first = nav.current()
+    const toHome = start.el === home ? true : (home ? first === home : first === null)
+    nav.back()
+    const second = nav.current()
+    nav.back()
+    const third = nav.current()
+    return {
+      hasHome: !!home,
+      homeLabel: home ? describe(home) : '',
+      startLabel: start.label,
+      firstStop: first ? describe(first) : '',
+      toHome,
+      cleared: second === null,
+      stays: third === null
+    }
+  })()
+
   window.__gpNavEls = items.map((x) => x.el)
   nav.exit('probe')
   return {
     items: result.map(({ i, label, tag, type, inHeader, rect, dirs }) => ({ i, label, tag, type, inHeader, rect, dirs })),
-    ranges
+    ranges,
+    back: backProbe
   }
 }
 
@@ -330,7 +358,7 @@ const DRAW = ({ currentIndex, targets }) => {
    断言
    ========================================================= */
 function analysePage(name, data) {
-  const { items, ranges } = data
+  const { items, ranges, back } = data
   const dirs = ['up', 'down', 'left', 'right']
 
   // 同名元素很多（设置页一排「启用/禁用」），diff 必须用「名称#第几个」当唯一键
@@ -348,7 +376,7 @@ function analysePage(name, data) {
 
   const deadEnds = items.filter((r) => dirs.every((d) => r.dirs[d] < 0 || r.dirs[d] === r.i))
   const unreachable = items.filter((r) => !inDegree[r.i] && !r.inHeader)
-  return { name, items, ranges, deadEnds, unreachable }
+  return { name, items, ranges, back, deadEnds, unreachable }
 }
 
 function runAssertions(pages) {
@@ -366,6 +394,22 @@ function runAssertions(pages) {
         title: `[${p.name}] 这些元素只能靠兜底/初焦点到达`,
         detail: p.unreachable.map((r) => `#${r.i} ${r.label}`).join(' / ')
       })
+    }
+    // 返回键：不允许「保底定格」在某个元素上，最终必须是「没有任何被选中」
+    if (p.back) {
+      const b = p.back
+      push(b.toHome,
+        b.hasHome
+          ? `[${p.name}] 返回先回到页面主操作`
+          : `[${p.name}] 返回直接取消选中（没有保底元素）`,
+        b.hasHome
+          ? `「${b.startLabel}」→「${b.homeLabel}」`
+          : `「${b.startLabel}」→ 无选中`)
+      push(b.cleared && b.stays,
+        `[${p.name}] 连续返回最终没有任何被选中`,
+        b.cleared && b.stays
+          ? '焦点清空，且空选中后继续按返回保持空'
+          : `清空=${b.cleared ? '是' : '否'}，空选中后继续按=${b.stays ? '保持空' : '又被聚焦'}`)
     }
     p.ranges.forEach((r) => {
       // 核心是「没按确定时左右不改值」；按右是移开焦点还是原地不动取决于右侧有没有邻居
@@ -434,7 +478,7 @@ function writeHtml(report, shotsExist) {
       <td>${r.adjustExited ? '✅' : '❌'}</td></tr>`).join('')
     return `
     <section>
-      <h2>${esc(p.name)} <span class="muted">${p.items.length} 个可聚焦元素 · 死胡同 ${p.deadEnds.length}</span></h2>
+      <h2>${esc(p.name)} <span class="muted">${p.items.length} 个可聚焦元素 · 死胡同 ${p.deadEnds.length}${p.back ? ` · 返回 → ${p.back.hasHome ? '主操作 → 无选中' : '直接无选中'}` : ''}</span></h2>
       ${rangeRows ? `<table class="ranges"><thead><tr><th>滑条</th><th>名称</th><th>右=导航</th><th>未确认不改值</th><th>确认进调节</th><th>调节改值</th><th>再确认退出</th></tr></thead><tbody>${rangeRows}</tbody></table>` : ''}
       <table><thead><tr><th>#</th><th>元素</th><th>↑ ↓ ← →</th><th>位置</th>${shotsExist ? '<th>标注图</th>' : ''}</tr></thead><tbody>${rows}</tbody></table>
     </section>`
@@ -571,6 +615,7 @@ ${pageBlocks}
       key: p.key,
       name: p.name,
       ranges: p.ranges,
+      back: p.back,
       deadEnds: p.deadEnds.map((r) => ({ i: r.i, label: r.label })),
       unreachable: p.unreachable.map((r) => ({ i: r.i, label: r.label })),
       items: p.items

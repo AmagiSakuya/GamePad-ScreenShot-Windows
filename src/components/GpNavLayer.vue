@@ -24,6 +24,8 @@
           </span>
         </template>
         <span v-if="focusLabel" class="gp-hint-focus" :title="focusLabel">{{ focusLabel }}</span>
+        <!-- 返回键清空选中后：明确告诉用户「现在没有任何被选中」，而不是留一片空白 -->
+        <span v-else class="gp-hint-focus gp-hint-empty">{{ $t('GpNav.noSelect') }}</span>
       </div>
     </transition>
 
