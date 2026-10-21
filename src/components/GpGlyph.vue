@@ -15,6 +15,13 @@
   <i v-else-if="kind === 'shoulder'" class="gp-glyph" aria-hidden="true">
     <span class="gp-glyph-pill">{{ label }}</span>
   </i>
+  <!-- 左摇杆：外圈 + 中心轴，和「十字键」区分开（页面内导航只认摇杆） -->
+  <i v-else-if="kind === 'stick'" class="gp-glyph" aria-hidden="true">
+    <svg viewBox="0 0 16 16" focusable="false">
+      <circle cx="8" cy="8" r="6.1" />
+      <circle class="stick-dot" cx="8" cy="8" r="3" />
+    </svg>
+  </i>
   <i v-else class="gp-glyph" aria-hidden="true">
     <span class="gp-glyph-pill menu">≡</span>
   </i>
@@ -24,7 +31,7 @@
 export default {
   name: 'GpGlyph',
   props: {
-    /** face = 面键四向图 / shoulder = 肩键 L·R / menu = 菜单键 */
+    /** face = 面键四向图 / shoulder = 肩键 L·R / menu = 菜单键 / stick = 左摇杆 */
     kind: { type: String, default: 'face' },
     /** kind=face 时高亮的位置 */
     pos: { type: String, default: 'bottom' },

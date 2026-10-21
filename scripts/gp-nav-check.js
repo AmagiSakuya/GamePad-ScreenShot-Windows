@@ -148,6 +148,8 @@ const PROBE = () => {
   const SELECTOR = ['button', 'select', 'textarea', 'input', 'a[href]', '[data-gp]'].join(',')
   const isVisible = (el) => {
     if (!el || !el.isConnected || el.disabled || el.type === 'hidden') return false
+    // 顶栏工具按钮走十字键专属通道，不参与页面内导航
+    if (el.hasAttribute('data-gp-bar')) return false
     const position = getComputedStyle(el).position
     if (!el.offsetParent && position !== 'fixed') return false
     const r = el.getBoundingClientRect()
@@ -183,6 +185,7 @@ const PROBE = () => {
     tag: el.tagName,
     type: el.type || '',
     inHeader: !!el.closest('header'),
+    isBar: el.hasAttribute('data-gp-bar'),
     rect: rectOf(el),
     el
   }))
@@ -253,12 +256,78 @@ const PROBE = () => {
     }
   })()
 
+  // 调试页专有：右上「刷新」与下方「选择控制器」必须左右互通
+  // （两者上下相邻但左右完全不重叠，是最容易「按了没反应」的地方）
+  const headProbe = (() => {
+    // MainPage 是 v-show 常驻的，同名按钮在别的页面里也存在，必须只取当前可见的那个
+    const pick = (sel) => Array.from(document.querySelectorAll(sel)).find((el) => isVisible(el)) || null
+    const refresh = pick('.page-head .ui-btn')
+    const sel = pick('.device-row select')
+    if (!refresh || !sel) return null
+    nav.focusEl(refresh)
+    nav.move('left', 'stick')
+    const left = nav.current()
+    nav.focusEl(sel)
+    nav.move('right', 'stick')
+    const right = nav.current()
+    return {
+      leftToSelect: left === sel,
+      rightToRefresh: right === refresh,
+      leftLabel: left ? describe(left) : '',
+      rightLabel: right ? describe(right) : ''
+    }
+  })()
+
+  // 顶栏工具按钮（主题 / 主题色 / 字号 / 语言）：
+  // 十字键是它独占的通道（任意方向都不进页面），摇杆负责把焦点抢回页面
+  const barProbe = (() => {
+    const bars = nav.bar ? nav.bar() : []
+    const out = { count: bars.length, listed: items.filter((x) => x.isBar).length }
+    if (!bars.length) return out
+    const start = items.find((x) => !x.el.closest('header'))
+    if (!start) return out
+
+    // 十字键任何方向都只能把焦点拿到顶栏，不能在页面内移动
+    nav.focusEl(start.el)
+    nav.move('up', 'hat')
+    out.upEnters = !!nav.barFocus()
+    nav.focusEl(start.el)
+    nav.move('right', 'hat')
+    out.entered = !!nav.barFocus() && bars.indexOf(nav.current()) === 0
+    if (!out.entered) return out
+
+    // 顶栏内十字键上下同样不离开这一组
+    nav.move('down', 'hat')
+    out.verticalStays = !!nav.barFocus()
+    nav.move('up', 'hat')
+    out.verticalBack = !!nav.barFocus()
+
+    // 组内首尾循环
+    const seen = new Set([bars.indexOf(nav.current())])
+    for (let i = 0; i < bars.length; i++) {
+      nav.move('right', 'hat')
+      seen.add(bars.indexOf(nav.current()))
+    }
+    out.covered = seen.size
+    out.looped = bars.indexOf(nav.current()) === 0
+
+    // 摇杆：抢回页面，并且回到十字键按下之前停留的那个元素
+    nav.move('left', 'stick')
+    const cur = nav.current()
+    out.grabbed = !!cur && !cur.closest('header')
+    out.backToLast = cur === start.el
+    nav.clear()
+    return out
+  })()
+
   window.__gpNavEls = items.map((x) => x.el)
   nav.exit('probe')
   return {
     items: result.map(({ i, label, tag, type, inHeader, rect, dirs }) => ({ i, label, tag, type, inHeader, rect, dirs })),
     ranges,
-    back: backProbe
+    back: backProbe,
+    bar: barProbe,
+    head: headProbe
   }
 }
 
@@ -358,7 +427,7 @@ const DRAW = ({ currentIndex, targets }) => {
    断言
    ========================================================= */
 function analysePage(name, data) {
-  const { items, ranges, back } = data
+  const { items, ranges, back, bar, head } = data
   const dirs = ['up', 'down', 'left', 'right']
 
   // 同名元素很多（设置页一排「启用/禁用」），diff 必须用「名称#第几个」当唯一键
@@ -376,7 +445,7 @@ function analysePage(name, data) {
 
   const deadEnds = items.filter((r) => dirs.every((d) => r.dirs[d] < 0 || r.dirs[d] === r.i))
   const unreachable = items.filter((r) => !inDegree[r.i] && !r.inHeader)
-  return { name, items, ranges, back, deadEnds, unreachable }
+  return { name, items, ranges, back, bar, head, deadEnds, unreachable }
 }
 
 function runAssertions(pages) {
@@ -419,6 +488,35 @@ function runAssertions(pages) {
           ? `按右${r.leftSliderWithoutConfirm ? '移开焦点' : '原地不动'}且不改值 → 确认进入调节 → 调节改值 → 再确认退出`
           : JSON.stringify(r))
     })
+
+    // 调试页：右上「刷新」与下方「选择控制器」左右互通
+    if (p.head) {
+      push(p.head.leftToSelect, `[${p.name}] 「刷新」按左 → 选择控制器`,
+        p.head.leftLabel ? `→ ${p.head.leftLabel}` : '没有移动')
+      push(p.head.rightToRefresh, `[${p.name}] 「选择控制器」按右 → 刷新`,
+        p.head.rightLabel ? `→ ${p.head.rightLabel}` : '没有移动')
+    }
+
+    // 顶栏工具按钮（十字键专属通道）
+    if (p.bar && p.bar.count) {
+      const b = p.bar
+      push(b.listed === 0, `[${p.name}] 顶栏按钮不参与页面内导航`,
+        b.listed === 0 ? '摇杆到不了顶栏' : `导航图里出现 ${b.listed} 个顶栏按钮`)
+      push(!!b.upEnters && !!b.entered, `[${p.name}] 十字键任意方向都强制拿到顶栏`,
+        b.upEnters && b.entered
+          ? '从页面元素按上/右，焦点都进顶栏，页面焦点不动'
+          : `按上夺焦=${b.upEnters ? '是' : '否'}，按右夺焦=${b.entered ? '是' : '否'}`)
+      push(!!b.verticalStays && !!b.verticalBack, `[${p.name}] 顶栏内十字键上下不离开`,
+        b.verticalStays && b.verticalBack ? '上/下都还在这一组里' : '跑出去了')
+      push(b.covered === b.count && !!b.looped, `[${p.name}] 顶栏在组内首尾循环`,
+        b.covered === b.count && b.looped
+          ? `连按 ${b.count} 次走遍 ${b.count} 个并回到起点`
+          : `走到 ${b.covered}/${b.count} 个，回起点=${b.looped ? '是' : '否'}`)
+      push(!!b.grabbed, `[${p.name}] 摇杆把焦点从顶栏抢回页面`,
+        b.grabbed ? '顶栏 → 页面内容' : '焦点仍停在顶栏')
+      push(!!b.backToLast, `[${p.name}] 摇杆抢回时回到进顶栏前的位置`,
+        b.backToLast ? '回到原元素' : '落到了别处')
+    }
   })
   return { checks, warnings }
 }
@@ -616,6 +714,8 @@ ${pageBlocks}
       name: p.name,
       ranges: p.ranges,
       back: p.back,
+      bar: p.bar,
+      head: p.head,
       deadEnds: p.deadEnds.map((r) => ({ i: r.i, label: r.label })),
       unreachable: p.unreachable.map((r) => ({ i: r.i, label: r.label })),
       items: p.items

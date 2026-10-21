@@ -22,6 +22,10 @@
           <span v-if="focusKind === 'range'" class="gp-hint-item gp-hint-adjust">
             <GpGlyph kind="face" pos="bottom" />{{ $t('GpNav.adjustEnter') }}
           </span>
+          <!-- 焦点在顶栏工具区（主题 / 主题色 / 字号 / 语言）：只有摇杆能回页面 -->
+          <span v-if="focusKind === 'bar'" class="gp-hint-item gp-hint-bar">
+            <i class="gp-dpad arrow">◀ ▶</i>{{ $t('GpNav.barTip') }}
+          </span>
         </template>
         <span v-if="focusLabel" class="gp-hint-focus" :title="focusLabel">{{ focusLabel }}</span>
         <!-- 返回键清空选中后：明确告诉用户「现在没有任何被选中」，而不是留一片空白 -->
@@ -36,7 +40,10 @@
           <AppIcon name="gamepad" :size="13" />{{ $t('GpNav.help') }}
         </div>
         <div class="gp-help-row">
-          <span class="gp-help-keys"><i class="gp-dpad">D-PAD</i></span>{{ $t('GpNav.helpMove') }}
+          <span class="gp-help-keys"><GpGlyph kind="stick" /></span>{{ $t('GpNav.helpMove') }}
+        </div>
+        <div class="gp-help-row">
+          <span class="gp-help-keys"><i class="gp-dpad">◀ ▶</i></span>{{ $t('GpNav.helpBar') }}
         </div>
         <div class="gp-help-row">
           <span class="gp-help-keys"><GpGlyph kind="face" pos="bottom" /></span>{{ $t('GpNav.helpOk') }}

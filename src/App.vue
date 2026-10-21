@@ -29,14 +29,15 @@
         </span>
       </div>
 
+      <!-- 顶栏工具按钮：手柄用十字键左右选择，不参与页面内的空间导航（data-gp-bar） -->
       <div class="bar-actions">
-        <button class="icon-btn" :title="$t('ui.themeToggle')" @click="toggleTheme">
+        <button class="icon-btn" data-gp-bar :title="$t('ui.themeToggle')" @click="toggleTheme">
           <AppIcon :name="isDark ? 'sun' : 'moon'" :size="15" />
         </button>
 
         <!-- 主题颜色 -->
         <div class="pop-wrap">
-          <button class="icon-btn" :class="{ on: accentOpen }" :title="$t('ui.accentColor')"
+          <button class="icon-btn" data-gp-bar :class="{ on: accentOpen }" :title="$t('ui.accentColor')"
             @click.stop="togglePopover('accent')">
             <span class="accent-dot" :style="{ background: currentAccentHex }"></span>
           </button>
@@ -54,7 +55,7 @@
 
         <!-- 界面字体大小 -->
         <div class="pop-wrap">
-          <button class="icon-btn" :class="{ on: fontOpen }" :title="$t('ui.fontSize')"
+          <button class="icon-btn" data-gp-bar :class="{ on: fontOpen }" :title="$t('ui.fontSize')"
             @click.stop="togglePopover('font')">
             <AppIcon name="textSize" :size="15" />
           </button>
@@ -72,8 +73,8 @@
 
         <!-- 语言 -->
         <div class="pop-wrap">
-          <button class="icon-btn lang-btn" :class="{ on: langOpen }" :title="$t('SystemSettingsPage.language')"
-            @click.stop="togglePopover('lang')">
+          <button class="icon-btn lang-btn" data-gp-bar :class="{ on: langOpen }"
+            :title="$t('SystemSettingsPage.language')" @click.stop="togglePopover('lang')">
             {{ currentLanguage.short }}
           </button>
           <div v-if="langOpen" class="popover pop-lang" @click.stop>
@@ -1853,6 +1854,12 @@ input {
   font-weight: 600;
 }
 
+/* 焦点在顶栏工具区：提示「十字键左右组内循环、摇杆回页面」 */
+.gp-hint-bar {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .gp-dpad.arrow {
   font-size: 10px;
   letter-spacing: 1px;
@@ -1887,6 +1894,12 @@ input {
 .gp-glyph svg circle.on {
   fill: var(--accent);
   stroke: var(--accent);
+}
+
+/* 左摇杆图示：中心轴涂实，和外圈区分（颜色跟随提示条文字） */
+.gp-glyph svg circle.stick-dot {
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 .gp-glyph-pill {

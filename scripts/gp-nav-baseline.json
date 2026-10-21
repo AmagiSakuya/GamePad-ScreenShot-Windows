@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-21T07:01:53.342Z",
+  "at": "2026-10-21T07:31:45.469Z",
   "viewport": "1280x820",
   "pages": {
     "截图设置": [
@@ -16,95 +16,15 @@
           "h": 16
         },
         "dirs": {
-          "up": 5,
-          "down": 5,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 1
         },
         "uid": "当前版本 <button:submit.ver-chip>#1"
       },
       {
         "i": 1,
-        "label": "切换主题 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 993,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 1,
-          "down": 1,
-          "left": 1,
-          "right": 2
-        },
-        "uid": "切换主题 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 2,
-        "label": "主题颜色 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1029,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 2,
-          "down": 2,
-          "left": 1,
-          "right": 3
-        },
-        "uid": "主题颜色 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 3,
-        "label": "界面字体大小 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1065,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 3,
-          "down": 3,
-          "left": 2,
-          "right": 4
-        },
-        "uid": "界面字体大小 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 4,
-        "label": "语言 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1101,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 4,
-          "down": 4,
-          "left": 3,
-          "right": 4
-        },
-        "uid": "语言 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 5,
         "label": "截图设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -116,15 +36,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 6,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 2,
+          "left": 1,
+          "right": 1
         },
         "uid": "截图设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 6,
+        "i": 2,
         "label": "按键映射 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -136,15 +56,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 7,
-          "left": 6,
-          "right": 6
+          "up": 1,
+          "down": 3,
+          "left": 2,
+          "right": 2
         },
         "uid": "按键映射 <button:submit.rail-btn>#1"
       },
       {
-        "i": 7,
+        "i": 3,
         "label": "控制器调试 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -156,15 +76,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 6,
-          "down": 8,
-          "left": 7,
-          "right": 7
+          "up": 2,
+          "down": 4,
+          "left": 3,
+          "right": 3
         },
         "uid": "控制器调试 <button:submit.rail-btn>#1"
       },
       {
-        "i": 8,
+        "i": 4,
         "label": "系统设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -176,15 +96,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 7,
-          "down": 9,
-          "left": 8,
-          "right": 8
+          "up": 3,
+          "down": 5,
+          "left": 4,
+          "right": 4
         },
         "uid": "系统设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 9,
+        "i": 5,
         "label": "项目主页（GitHub） <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -196,15 +116,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 8,
-          "down": 9,
-          "left": 9,
-          "right": 9
+          "up": 4,
+          "down": 5,
+          "left": 5,
+          "right": 5
         },
         "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
       },
       {
-        "i": 10,
+        "i": 6,
         "label": "刷新 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -216,15 +136,15 @@
           "h": 28
         },
         "dirs": {
-          "up": 10,
-          "down": 11,
-          "left": 10,
-          "right": 10
+          "up": 6,
+          "down": 7,
+          "left": 7,
+          "right": 6
         },
         "uid": "刷新 <button:submit.ui-btn>#1"
       },
       {
-        "i": 11,
+        "i": 7,
         "label": "启动 <button:submit.hero-cta>",
         "tag": "BUTTON",
         "type": "submit",
@@ -236,15 +156,15 @@
           "h": 40
         },
         "dirs": {
-          "up": 10,
-          "down": 18,
-          "left": 11,
-          "right": 11
+          "up": 6,
+          "down": 14,
+          "left": 7,
+          "right": 6
         },
         "uid": "启动 <button:submit.hero-cta>#1"
       },
       {
-        "i": 12,
+        "i": 8,
         "label": "桌面捕获 OBS <select:select-one.ui-select>",
         "tag": "SELECT",
         "type": "select-one",
@@ -256,15 +176,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 12,
-          "down": 14,
-          "left": 12,
-          "right": 16
+          "up": 8,
+          "down": 10,
+          "left": 11,
+          "right": 12
         },
         "uid": "桌面捕获 OBS <select:select-one.ui-select>#1"
       },
       {
-        "i": 13,
+        "i": 9,
         "label": "屏幕 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -276,15 +196,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 12,
-          "down": 15,
-          "left": 13,
-          "right": 14
+          "up": 8,
+          "down": 11,
+          "left": 8,
+          "right": 10
         },
         "uid": "屏幕 <button:submit.on>#1"
       },
       {
-        "i": 14,
+        "i": 10,
         "label": "窗口 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -296,15 +216,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 12,
-          "down": 15,
-          "left": 13,
-          "right": 19
+          "up": 8,
+          "down": 11,
+          "left": 9,
+          "right": 15
         },
         "uid": "窗口 <button:submit>#1"
       },
       {
-        "i": 15,
+        "i": 11,
         "label": " <select:select-one.ui-select>",
         "tag": "SELECT",
         "type": "select-one",
@@ -316,15 +236,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 14,
-          "down": 37,
-          "left": 15,
-          "right": 22
+          "up": 10,
+          "down": 33,
+          "left": 11,
+          "right": 18
         },
         "uid": " <select:select-one.ui-select>#1"
       },
       {
-        "i": 16,
+        "i": 12,
         "label": "文件 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -336,15 +256,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 10,
-          "down": 19,
-          "left": 12,
-          "right": 17
+          "up": 6,
+          "down": 15,
+          "left": 8,
+          "right": 13
         },
         "uid": "文件 <button:submit.on>#1"
       },
       {
-        "i": 17,
+        "i": 13,
         "label": "剪切板 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -356,15 +276,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 11,
-          "down": 19,
-          "left": 16,
-          "right": 18
+          "up": 7,
+          "down": 15,
+          "left": 12,
+          "right": 14
         },
         "uid": "剪切板 <button:submit>#1"
       },
       {
-        "i": 18,
+        "i": 14,
         "label": "文件 + 剪切板 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -376,15 +296,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 11,
-          "down": 20,
-          "left": 17,
-          "right": 18
+          "up": 7,
+          "down": 16,
+          "left": 13,
+          "right": 16
         },
         "uid": "文件 + 剪切板 <button:submit>#1"
       },
       {
-        "i": 19,
+        "i": 15,
         "label": " <input:text.ui-input>",
         "tag": "INPUT",
         "type": "text",
@@ -396,15 +316,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 16,
-          "down": 22,
-          "left": 14,
-          "right": 20
+          "up": 12,
+          "down": 18,
+          "left": 10,
+          "right": 16
         },
         "uid": " <input:text.ui-input>#1"
       },
       {
-        "i": 20,
+        "i": 16,
         "label": "选择 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -416,15 +336,15 @@
           "h": 28
         },
         "dirs": {
-          "up": 18,
-          "down": 21,
-          "left": 19,
-          "right": 20
+          "up": 14,
+          "down": 17,
+          "left": 15,
+          "right": 17
         },
         "uid": "选择 <button:submit.ui-btn>#1"
       },
       {
-        "i": 21,
+        "i": 17,
         "label": " <button:submit.ui-switch>",
         "tag": "BUTTON",
         "type": "submit",
@@ -436,15 +356,15 @@
           "h": 20
         },
         "dirs": {
-          "up": 20,
-          "down": 24,
-          "left": 15,
-          "right": 21
+          "up": 16,
+          "down": 20,
+          "left": 11,
+          "right": 17
         },
         "uid": " <button:submit.ui-switch>#1"
       },
       {
-        "i": 22,
+        "i": 18,
         "label": "Screenshot_%timestamp% <input:text.ui-input>",
         "tag": "INPUT",
         "type": "text",
@@ -456,15 +376,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 19,
-          "down": 27,
-          "left": 15,
-          "right": 23
+          "up": 15,
+          "down": 23,
+          "left": 11,
+          "right": 19
         },
         "uid": "Screenshot_%timestamp% <input:text.ui-input>#1"
       },
       {
-        "i": 23,
+        "i": 19,
         "label": "JPG <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -476,15 +396,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 18,
-          "down": 30,
-          "left": 22,
-          "right": 24
+          "up": 14,
+          "down": 26,
+          "left": 18,
+          "right": 20
         },
         "uid": "JPG <button:submit.on>#1"
       },
       {
-        "i": 24,
+        "i": 20,
         "label": "PNG <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -496,15 +416,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 21,
-          "down": 31,
-          "left": 23,
-          "right": 24
+          "up": 17,
+          "down": 27,
+          "left": 19,
+          "right": 17
         },
         "uid": "PNG <button:submit>#1"
       },
       {
-        "i": 25,
+        "i": 21,
         "label": "%activeWinTitle% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -516,15 +436,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 22,
-          "down": 32,
-          "left": 32,
-          "right": 26
+          "up": 18,
+          "down": 28,
+          "left": 28,
+          "right": 22
         },
         "uid": "%activeWinTitle% <button:submit.ui-chip>#1"
       },
       {
-        "i": 26,
+        "i": 22,
         "label": "%activeWinOwner% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -536,15 +456,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 22,
-          "down": 36,
-          "left": 25,
-          "right": 27
+          "up": 18,
+          "down": 32,
+          "left": 21,
+          "right": 23
         },
         "uid": "%activeWinOwner% <button:submit.ui-chip>#1"
       },
       {
-        "i": 27,
+        "i": 23,
         "label": "%timestamp% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -556,15 +476,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 22,
-          "down": 41,
-          "left": 26,
-          "right": 28
+          "up": 18,
+          "down": 32,
+          "left": 22,
+          "right": 24
         },
         "uid": "%timestamp% <button:submit.ui-chip>#1"
       },
       {
-        "i": 28,
+        "i": 24,
         "label": "%datetime% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -576,15 +496,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 22,
-          "down": 41,
-          "left": 27,
-          "right": 29
+          "up": 18,
+          "down": 37,
+          "left": 23,
+          "right": 25
         },
         "uid": "%datetime% <button:submit.ui-chip>#1"
       },
       {
-        "i": 29,
+        "i": 25,
         "label": "%YYYY% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -596,15 +516,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 22,
-          "down": 40,
-          "left": 28,
-          "right": 30
+          "up": 18,
+          "down": 36,
+          "left": 24,
+          "right": 26
         },
         "uid": "%YYYY% <button:submit.ui-chip>#1"
       },
       {
-        "i": 30,
+        "i": 26,
         "label": "%MM% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -616,15 +536,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 23,
-          "down": 40,
-          "left": 29,
-          "right": 31
+          "up": 19,
+          "down": 36,
+          "left": 25,
+          "right": 27
         },
         "uid": "%MM% <button:submit.ui-chip>#1"
       },
       {
-        "i": 31,
+        "i": 27,
         "label": "%DD% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -636,15 +556,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 24,
-          "down": 40,
-          "left": 30,
-          "right": 31
+          "up": 20,
+          "down": 36,
+          "left": 26,
+          "right": 27
         },
         "uid": "%DD% <button:submit.ui-chip>#1"
       },
       {
-        "i": 32,
+        "i": 28,
         "label": "%hh% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -656,15 +576,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 25,
-          "down": 39,
-          "left": 37,
-          "right": 33
+          "up": 21,
+          "down": 33,
+          "left": 33,
+          "right": 29
         },
         "uid": "%hh% <button:submit.ui-chip>#1"
       },
       {
-        "i": 33,
+        "i": 29,
         "label": "%mm% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -676,15 +596,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 25,
-          "down": 39,
-          "left": 32,
-          "right": 34
+          "up": 21,
+          "down": 35,
+          "left": 28,
+          "right": 30
         },
         "uid": "%mm% <button:submit.ui-chip>#1"
       },
       {
-        "i": 34,
+        "i": 30,
         "label": "%ss% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -696,15 +616,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 25,
-          "down": 34,
-          "left": 33,
-          "right": 35
+          "up": 21,
+          "down": 30,
+          "left": 29,
+          "right": 31
         },
         "uid": "%ss% <button:submit.ui-chip>#1"
       },
       {
-        "i": 35,
+        "i": 31,
         "label": "%cs% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -716,15 +636,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 26,
-          "down": 35,
-          "left": 34,
-          "right": 36
+          "up": 22,
+          "down": 31,
+          "left": 30,
+          "right": 32
         },
         "uid": "%cs% <button:submit.ui-chip>#1"
       },
       {
-        "i": 36,
+        "i": 32,
         "label": "%ms% <button:submit.ui-chip>",
         "tag": "BUTTON",
         "type": "submit",
@@ -736,15 +656,15 @@
           "h": 22
         },
         "dirs": {
-          "up": 26,
-          "down": 36,
-          "left": 35,
-          "right": 27
+          "up": 22,
+          "down": 32,
+          "left": 31,
+          "right": 23
         },
         "uid": "%ms% <button:submit.ui-chip>#1"
       },
       {
-        "i": 37,
+        "i": 33,
         "label": "添加按键 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -756,15 +676,15 @@
           "h": 28
         },
         "dirs": {
-          "up": 15,
-          "down": 38,
-          "left": 37,
-          "right": 32
+          "up": 11,
+          "down": 34,
+          "left": 34,
+          "right": 28
         },
         "uid": "添加按键 <button:submit.ui-btn>#1"
       },
       {
-        "i": 38,
+        "i": 34,
         "label": " <select:select-one.ui-select>",
         "tag": "SELECT",
         "type": "select-one",
@@ -776,15 +696,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 37,
-          "down": 39,
-          "left": 38,
-          "right": 40
+          "up": 33,
+          "down": 35,
+          "left": 34,
+          "right": 36
         },
         "uid": " <select:select-one.ui-select>#2"
       },
       {
-        "i": 39,
+        "i": 35,
         "label": " <button:submit.ui-switch>",
         "tag": "BUTTON",
         "type": "submit",
@@ -796,15 +716,15 @@
           "h": 20
         },
         "dirs": {
-          "up": 38,
-          "down": 39,
-          "left": 39,
-          "right": 43
+          "up": 34,
+          "down": 35,
+          "left": 34,
+          "right": 39
         },
         "uid": " <button:submit.ui-switch>#2"
       },
       {
-        "i": 40,
+        "i": 36,
         "label": "静音 音效 1 音效 2 音效 3 音效 4 音效 5 <select:select-one.ui-select>",
         "tag": "SELECT",
         "type": "select-one",
@@ -816,15 +736,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 30,
-          "down": 42,
-          "left": 38,
-          "right": 40
+          "up": 26,
+          "down": 38,
+          "left": 34,
+          "right": 38
         },
         "uid": "静音 音效 1 音效 2 音效 3 音效 4 音效 5 <select:select-one.ui-select>#1"
       },
       {
-        "i": 41,
+        "i": 37,
         "label": "1 <input:range.ui-range>",
         "tag": "INPUT",
         "type": "range",
@@ -836,15 +756,15 @@
           "h": 4
         },
         "dirs": {
-          "up": 40,
-          "down": 41,
-          "left": 35,
-          "right": 42
+          "up": 36,
+          "down": 39,
+          "left": 34,
+          "right": 38
         },
         "uid": "1 <input:range.ui-range>#1"
       },
       {
-        "i": 42,
+        "i": 38,
         "label": "试听 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -856,15 +776,15 @@
           "h": 28
         },
         "dirs": {
-          "up": 40,
-          "down": 43,
-          "left": 41,
-          "right": 42
+          "up": 36,
+          "down": 39,
+          "left": 37,
+          "right": 38
         },
         "uid": "试听 <button:submit.ui-btn>#1"
       },
       {
-        "i": 43,
+        "i": 39,
         "label": "系统设置 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -876,10 +796,10 @@
           "h": 28
         },
         "dirs": {
-          "up": 42,
-          "down": 43,
-          "left": 39,
-          "right": 43
+          "up": 38,
+          "down": 39,
+          "left": 35,
+          "right": 38
         },
         "uid": "系统设置 <button:submit.ui-btn>#1"
       }
@@ -898,95 +818,15 @@
           "h": 16
         },
         "dirs": {
-          "up": 5,
-          "down": 5,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 1
         },
         "uid": "当前版本 <button:submit.ver-chip>#1"
       },
       {
         "i": 1,
-        "label": "切换主题 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 993,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 1,
-          "down": 1,
-          "left": 1,
-          "right": 2
-        },
-        "uid": "切换主题 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 2,
-        "label": "主题颜色 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1029,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 2,
-          "down": 2,
-          "left": 1,
-          "right": 3
-        },
-        "uid": "主题颜色 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 3,
-        "label": "界面字体大小 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1065,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 3,
-          "down": 3,
-          "left": 2,
-          "right": 4
-        },
-        "uid": "界面字体大小 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 4,
-        "label": "语言 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1101,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 4,
-          "down": 4,
-          "left": 3,
-          "right": 4
-        },
-        "uid": "语言 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 5,
         "label": "截图设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -998,15 +838,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 6,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 2,
+          "left": 1,
+          "right": 1
         },
         "uid": "截图设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 6,
+        "i": 2,
         "label": "按键映射 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1018,15 +858,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 7,
-          "left": 6,
-          "right": 6
+          "up": 1,
+          "down": 3,
+          "left": 2,
+          "right": 2
         },
         "uid": "按键映射 <button:submit.rail-btn>#1"
       },
       {
-        "i": 7,
+        "i": 3,
         "label": "控制器调试 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1038,15 +878,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 6,
-          "down": 8,
-          "left": 7,
-          "right": 7
+          "up": 2,
+          "down": 4,
+          "left": 3,
+          "right": 3
         },
         "uid": "控制器调试 <button:submit.rail-btn>#1"
       },
       {
-        "i": 8,
+        "i": 4,
         "label": "系统设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1058,15 +898,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 7,
-          "down": 9,
-          "left": 8,
-          "right": 8
+          "up": 3,
+          "down": 5,
+          "left": 4,
+          "right": 4
         },
         "uid": "系统设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 9,
+        "i": 5,
         "label": "项目主页（GitHub） <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1078,15 +918,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 8,
-          "down": 9,
-          "left": 9,
-          "right": 9
+          "up": 4,
+          "down": 5,
+          "left": 5,
+          "right": 5
         },
         "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
       },
       {
-        "i": 10,
+        "i": 6,
         "label": "刷新 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1098,15 +938,15 @@
           "h": 28
         },
         "dirs": {
-          "up": 10,
-          "down": 11,
-          "left": 10,
-          "right": 10
+          "up": 6,
+          "down": 7,
+          "left": 7,
+          "right": 6
         },
         "uid": "刷新 <button:submit.ui-btn>#1"
       },
       {
-        "i": 11,
+        "i": 7,
         "label": "启动时是否自动开启，由「系统设置 → 启动时运行键盘映射」决定 <button:submit.hero-cta>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1118,10 +958,10 @@
           "h": 40
         },
         "dirs": {
-          "up": 10,
-          "down": 11,
-          "left": 11,
-          "right": 11
+          "up": 6,
+          "down": 7,
+          "left": 7,
+          "right": 6
         },
         "uid": "启动时是否自动开启，由「系统设置 → 启动时运行键盘映射」决定 <button:submit.hero-cta>#1"
       }
@@ -1140,95 +980,15 @@
           "h": 16
         },
         "dirs": {
-          "up": 5,
-          "down": 5,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 1
         },
         "uid": "当前版本 <button:submit.ver-chip>#1"
       },
       {
         "i": 1,
-        "label": "切换主题 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 993,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 1,
-          "down": 1,
-          "left": 1,
-          "right": 2
-        },
-        "uid": "切换主题 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 2,
-        "label": "主题颜色 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1029,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 2,
-          "down": 2,
-          "left": 1,
-          "right": 3
-        },
-        "uid": "主题颜色 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 3,
-        "label": "界面字体大小 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1065,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 3,
-          "down": 3,
-          "left": 2,
-          "right": 4
-        },
-        "uid": "界面字体大小 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 4,
-        "label": "语言 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1101,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 4,
-          "down": 4,
-          "left": 3,
-          "right": 4
-        },
-        "uid": "语言 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 5,
         "label": "截图设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1240,15 +1000,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 6,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 2,
+          "left": 1,
+          "right": 1
         },
         "uid": "截图设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 6,
+        "i": 2,
         "label": "按键映射 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1260,15 +1020,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 7,
-          "left": 6,
-          "right": 11
+          "up": 1,
+          "down": 3,
+          "left": 2,
+          "right": 7
         },
         "uid": "按键映射 <button:submit.rail-btn>#1"
       },
       {
-        "i": 7,
+        "i": 3,
         "label": "控制器调试 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1280,15 +1040,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 6,
-          "down": 8,
-          "left": 7,
-          "right": 11
+          "up": 2,
+          "down": 4,
+          "left": 3,
+          "right": 7
         },
         "uid": "控制器调试 <button:submit.rail-btn>#1"
       },
       {
-        "i": 8,
+        "i": 4,
         "label": "系统设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1300,15 +1060,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 7,
-          "down": 9,
-          "left": 8,
-          "right": 8
+          "up": 3,
+          "down": 5,
+          "left": 4,
+          "right": 4
         },
         "uid": "系统设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 9,
+        "i": 5,
         "label": "项目主页（GitHub） <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1320,15 +1080,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 8,
-          "down": 9,
-          "left": 9,
-          "right": 9
+          "up": 4,
+          "down": 5,
+          "left": 5,
+          "right": 5
         },
         "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
       },
       {
-        "i": 10,
+        "i": 6,
         "label": "刷新 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1340,15 +1100,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 4,
-          "down": 4,
-          "left": 4,
-          "right": 4
+          "up": 6,
+          "down": 6,
+          "left": 7,
+          "right": 6
         },
         "uid": "刷新 <button:submit.ui-btn>#1"
       },
       {
-        "i": 11,
+        "i": 7,
         "label": " <select:select-one.ui-select>",
         "tag": "SELECT",
         "type": "select-one",
@@ -1360,10 +1120,10 @@
           "h": 32
         },
         "dirs": {
-          "up": 11,
-          "down": 11,
-          "left": 6,
-          "right": 11
+          "up": 7,
+          "down": 7,
+          "left": 2,
+          "right": 6
         },
         "uid": " <select:select-one.ui-select>#1"
       }
@@ -1382,95 +1142,15 @@
           "h": 16
         },
         "dirs": {
-          "up": 5,
-          "down": 5,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 1
         },
         "uid": "当前版本 <button:submit.ver-chip>#1"
       },
       {
         "i": 1,
-        "label": "切换主题 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 993,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 1,
-          "down": 1,
-          "left": 1,
-          "right": 2
-        },
-        "uid": "切换主题 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 2,
-        "label": "主题颜色 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1029,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 2,
-          "down": 2,
-          "left": 1,
-          "right": 3
-        },
-        "uid": "主题颜色 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 3,
-        "label": "界面字体大小 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1065,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 3,
-          "down": 3,
-          "left": 2,
-          "right": 4
-        },
-        "uid": "界面字体大小 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 4,
-        "label": "语言 <button:submit.icon-btn>",
-        "tag": "BUTTON",
-        "type": "submit",
-        "inHeader": true,
-        "rect": {
-          "x": 1101,
-          "y": 9,
-          "w": 30,
-          "h": 30
-        },
-        "dirs": {
-          "up": 4,
-          "down": 4,
-          "left": 3,
-          "right": 4
-        },
-        "uid": "语言 <button:submit.icon-btn>#1"
-      },
-      {
-        "i": 5,
         "label": "截图设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1482,15 +1162,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 6,
-          "left": 5,
-          "right": 5
+          "up": 1,
+          "down": 2,
+          "left": 1,
+          "right": 1
         },
         "uid": "截图设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 6,
+        "i": 2,
         "label": "按键映射 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1502,15 +1182,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 5,
-          "down": 7,
-          "left": 6,
-          "right": 10
+          "up": 1,
+          "down": 3,
+          "left": 2,
+          "right": 6
         },
         "uid": "按键映射 <button:submit.rail-btn>#1"
       },
       {
-        "i": 7,
+        "i": 3,
         "label": "控制器调试 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1522,15 +1202,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 6,
-          "down": 8,
-          "left": 7,
-          "right": 7
+          "up": 2,
+          "down": 4,
+          "left": 3,
+          "right": 3
         },
         "uid": "控制器调试 <button:submit.rail-btn>#1"
       },
       {
-        "i": 8,
+        "i": 4,
         "label": "系统设置 <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1542,15 +1222,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 7,
-          "down": 9,
-          "left": 8,
-          "right": 8
+          "up": 3,
+          "down": 5,
+          "left": 4,
+          "right": 4
         },
         "uid": "系统设置 <button:submit.rail-btn>#1"
       },
       {
-        "i": 9,
+        "i": 5,
         "label": "项目主页（GitHub） <button:submit.rail-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1562,15 +1242,15 @@
           "h": 54
         },
         "dirs": {
-          "up": 8,
-          "down": 9,
-          "left": 9,
-          "right": 9
+          "up": 4,
+          "down": 5,
+          "left": 5,
+          "right": 5
         },
         "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
       },
       {
-        "i": 10,
+        "i": 6,
         "label": "基础设置 <div.ui-card-head>",
         "tag": "DIV",
         "type": "",
@@ -1582,15 +1262,15 @@
           "h": 24
         },
         "dirs": {
-          "up": 10,
-          "down": 11,
-          "left": 6,
-          "right": 10
+          "up": 6,
+          "down": 7,
+          "left": 2,
+          "right": 7
         },
         "uid": "基础设置 <div.ui-card-head>#1"
       },
       {
-        "i": 11,
+        "i": 7,
         "label": "覆盖 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1602,15 +1282,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 10,
-          "down": 13,
-          "left": 11,
-          "right": 12
+          "up": 6,
+          "down": 9,
+          "left": 6,
+          "right": 8
         },
         "uid": "覆盖 <button:submit.on>#1"
       },
       {
-        "i": 12,
+        "i": 8,
         "label": "追加时间戳 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1622,15 +1302,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 10,
-          "down": 14,
-          "left": 11,
-          "right": 12
+          "up": 6,
+          "down": 10,
+          "left": 7,
+          "right": 8
         },
         "uid": "追加时间戳 <button:submit>#1"
       },
       {
-        "i": 13,
+        "i": 9,
         "label": "退出软件 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1642,15 +1322,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 11,
-          "down": 15,
-          "left": 13,
-          "right": 14
+          "up": 7,
+          "down": 11,
+          "left": 6,
+          "right": 10
         },
         "uid": "退出软件 <button:submit.on>#1"
       },
       {
-        "i": 14,
+        "i": 10,
         "label": "隐藏到托盘 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1662,15 +1342,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 12,
-          "down": 16,
-          "left": 13,
-          "right": 14
+          "up": 8,
+          "down": 12,
+          "left": 9,
+          "right": 12
         },
         "uid": "隐藏到托盘 <button:submit>#1"
       },
       {
-        "i": 15,
+        "i": 11,
         "label": "启用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1682,15 +1362,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 14,
-          "down": 17,
-          "left": 15,
-          "right": 16
+          "up": 10,
+          "down": 13,
+          "left": 9,
+          "right": 12
         },
         "uid": "启用 <button:submit.on>#1"
       },
       {
-        "i": 16,
+        "i": 12,
         "label": "禁用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1702,15 +1382,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 14,
-          "down": 18,
-          "left": 15,
-          "right": 16
+          "up": 10,
+          "down": 14,
+          "left": 11,
+          "right": 12
         },
         "uid": "禁用 <button:submit>#1"
       },
       {
-        "i": 17,
+        "i": 13,
         "label": "启用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1722,15 +1402,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 15,
-          "down": 19,
-          "left": 17,
-          "right": 18
+          "up": 11,
+          "down": 15,
+          "left": 13,
+          "right": 14
         },
         "uid": "启用 <button:submit>#1"
       },
       {
-        "i": 18,
+        "i": 14,
         "label": "禁用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1742,15 +1422,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 16,
-          "down": 20,
-          "left": 17,
-          "right": 18
+          "up": 12,
+          "down": 16,
+          "left": 13,
+          "right": 14
         },
         "uid": "禁用 <button:submit.on>#1"
       },
       {
-        "i": 19,
+        "i": 15,
         "label": "启用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1762,15 +1442,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 17,
-          "down": 22,
-          "left": 19,
-          "right": 20
+          "up": 13,
+          "down": 18,
+          "left": 17,
+          "right": 16
         },
         "uid": "启用 <button:submit>#2"
       },
       {
-        "i": 20,
+        "i": 16,
         "label": "禁用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1782,15 +1462,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 18,
-          "down": 23,
-          "left": 19,
-          "right": 20
+          "up": 14,
+          "down": 19,
+          "left": 15,
+          "right": 16
         },
         "uid": "禁用 <button:submit.on>#2"
       },
       {
-        "i": 21,
+        "i": 17,
         "label": "覆层通知 <div.ui-card-head>",
         "tag": "DIV",
         "type": "",
@@ -1802,15 +1482,15 @@
           "h": 24
         },
         "dirs": {
-          "up": 10,
-          "down": 23,
-          "left": 21,
-          "right": 21
+          "up": 6,
+          "down": 19,
+          "left": 17,
+          "right": 18
         },
         "uid": "覆层通知 <div.ui-card-head>#1"
       },
       {
-        "i": 22,
+        "i": 18,
         "label": "启用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1822,15 +1502,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 19,
-          "down": 24,
-          "left": 22,
-          "right": 23
+          "up": 15,
+          "down": 20,
+          "left": 17,
+          "right": 19
         },
         "uid": "启用 <button:submit.on>#2"
       },
       {
-        "i": 23,
+        "i": 19,
         "label": "禁用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1842,15 +1522,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 20,
-          "down": 25,
-          "left": 22,
-          "right": 23
+          "up": 16,
+          "down": 21,
+          "left": 18,
+          "right": 19
         },
         "uid": "禁用 <button:submit>#2"
       },
       {
-        "i": 24,
+        "i": 20,
         "label": "左上角 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1862,15 +1542,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 22,
-          "down": 30,
-          "left": 24,
-          "right": 25
+          "up": 18,
+          "down": 26,
+          "left": 22,
+          "right": 21
         },
         "uid": "左上角 <button:submit.on>#1"
       },
       {
-        "i": 25,
+        "i": 21,
         "label": "右上角 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -1882,15 +1562,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 23,
-          "down": 32,
-          "left": 24,
-          "right": 25
+          "up": 19,
+          "down": 28,
+          "left": 20,
+          "right": 19
         },
         "uid": "右上角 <button:submit>#1"
       },
       {
-        "i": 26,
+        "i": 22,
         "label": "1 <input:range.ui-range>",
         "tag": "INPUT",
         "type": "range",
@@ -1902,15 +1582,15 @@
           "h": 4
         },
         "dirs": {
-          "up": 24,
-          "down": 28,
-          "left": 26,
-          "right": 26
+          "up": 20,
+          "down": 24,
+          "left": 23,
+          "right": 20
         },
         "uid": "1 <input:range.ui-range>#1"
       },
       {
-        "i": 27,
+        "i": 23,
         "label": " <button:button.ui-progress-step>",
         "tag": "BUTTON",
         "type": "button",
@@ -1922,15 +1602,15 @@
           "h": 8
         },
         "dirs": {
-          "up": 26,
-          "down": 33,
-          "left": 27,
-          "right": 28
+          "up": 22,
+          "down": 29,
+          "left": 23,
+          "right": 24
         },
         "uid": " <button:button.ui-progress-step>#1"
       },
       {
-        "i": 28,
+        "i": 24,
         "label": " <button:button.ui-progress-step>",
         "tag": "BUTTON",
         "type": "button",
@@ -1942,15 +1622,15 @@
           "h": 8
         },
         "dirs": {
-          "up": 26,
-          "down": 36,
-          "left": 27,
-          "right": 29
+          "up": 22,
+          "down": 32,
+          "left": 23,
+          "right": 25
         },
         "uid": " <button:button.ui-progress-step>#2"
       },
       {
-        "i": 29,
+        "i": 25,
         "label": " <button:button.ui-progress-step>",
         "tag": "BUTTON",
         "type": "button",
@@ -1962,15 +1642,15 @@
           "h": 8
         },
         "dirs": {
-          "up": 26,
-          "down": 32,
-          "left": 28,
-          "right": 30
+          "up": 22,
+          "down": 28,
+          "left": 24,
+          "right": 26
         },
         "uid": " <button:button.ui-progress-step>#3"
       },
       {
-        "i": 30,
+        "i": 26,
         "label": " <button:button.ui-progress-step>",
         "tag": "BUTTON",
         "type": "button",
@@ -1982,15 +1662,15 @@
           "h": 8
         },
         "dirs": {
-          "up": 26,
-          "down": 32,
-          "left": 29,
-          "right": 31
+          "up": 22,
+          "down": 28,
+          "left": 25,
+          "right": 27
         },
         "uid": " <button:button.ui-progress-step>#4"
       },
       {
-        "i": 31,
+        "i": 27,
         "label": " <button:button.ui-progress-step>",
         "tag": "BUTTON",
         "type": "button",
@@ -2002,15 +1682,15 @@
           "h": 8
         },
         "dirs": {
-          "up": 22,
-          "down": 32,
-          "left": 30,
-          "right": 31
+          "up": 18,
+          "down": 28,
+          "left": 26,
+          "right": 28
         },
         "uid": " <button:button.ui-progress-step>#5"
       },
       {
-        "i": 32,
+        "i": 28,
         "label": "测试覆层通知 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2022,15 +1702,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 31,
-          "down": 35,
-          "left": 27,
-          "right": 32
+          "up": 27,
+          "down": 31,
+          "left": 25,
+          "right": 28
         },
         "uid": "测试覆层通知 <button:submit.ui-btn>#1"
       },
       {
-        "i": 33,
+        "i": 29,
         "label": "更新设置 <div.ui-card-head>",
         "tag": "DIV",
         "type": "",
@@ -2042,15 +1722,15 @@
           "h": 24
         },
         "dirs": {
-          "up": 21,
-          "down": 35,
-          "left": 33,
-          "right": 33
+          "up": 17,
+          "down": 31,
+          "left": 29,
+          "right": 30
         },
         "uid": "更新设置 <div.ui-card-head>#1"
       },
       {
-        "i": 34,
+        "i": 30,
         "label": "启用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2062,15 +1742,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 33,
-          "down": 36,
-          "left": 34,
-          "right": 35
+          "up": 29,
+          "down": 32,
+          "left": 29,
+          "right": 31
         },
         "uid": "启用 <button:submit.on>#3"
       },
       {
-        "i": 35,
+        "i": 31,
         "label": "禁用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2082,15 +1762,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 32,
-          "down": 36,
-          "left": 34,
-          "right": 35
+          "up": 28,
+          "down": 32,
+          "left": 30,
+          "right": 31
         },
         "uid": "禁用 <button:submit>#3"
       },
       {
-        "i": 36,
+        "i": 32,
         "label": " <input:text.ui-input>",
         "tag": "INPUT",
         "type": "text",
@@ -2102,15 +1782,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 35,
-          "down": 37,
-          "left": 36,
-          "right": 36
+          "up": 31,
+          "down": 33,
+          "left": 29,
+          "right": 33
         },
         "uid": " <input:text.ui-input>#1"
       },
       {
-        "i": 37,
+        "i": 33,
         "label": "检测更新 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2122,15 +1802,15 @@
           "h": 32
         },
         "dirs": {
-          "up": 36,
-          "down": 40,
-          "left": 37,
-          "right": 37
+          "up": 32,
+          "down": 36,
+          "left": 32,
+          "right": 33
         },
         "uid": "检测更新 <button:submit.ui-btn>#1"
       },
       {
-        "i": 38,
+        "i": 34,
         "label": "实验性功能 <div.ui-card-head>",
         "tag": "DIV",
         "type": "",
@@ -2142,15 +1822,15 @@
           "h": 24
         },
         "dirs": {
-          "up": 33,
-          "down": 40,
-          "left": 38,
-          "right": 38
+          "up": 29,
+          "down": 36,
+          "left": 34,
+          "right": 35
         },
         "uid": "实验性功能 <div.ui-card-head>#1"
       },
       {
-        "i": 39,
+        "i": 35,
         "label": "启用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2162,15 +1842,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 37,
-          "down": 41,
-          "left": 39,
-          "right": 40
+          "up": 33,
+          "down": 37,
+          "left": 34,
+          "right": 36
         },
         "uid": "启用 <button:submit>#3"
       },
       {
-        "i": 40,
+        "i": 36,
         "label": "禁用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2182,15 +1862,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 37,
-          "down": 42,
-          "left": 39,
-          "right": 40
+          "up": 33,
+          "down": 38,
+          "left": 35,
+          "right": 36
         },
         "uid": "禁用 <button:submit.on>#3"
       },
       {
-        "i": 41,
+        "i": 37,
         "label": "启用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2202,15 +1882,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 39,
-          "down": 43,
-          "left": 41,
-          "right": 42
+          "up": 35,
+          "down": 39,
+          "left": 34,
+          "right": 38
         },
         "uid": "启用 <button:submit>#4"
       },
       {
-        "i": 42,
+        "i": 38,
         "label": "禁用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2222,15 +1902,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 40,
-          "down": 44,
-          "left": 41,
-          "right": 42
+          "up": 36,
+          "down": 40,
+          "left": 37,
+          "right": 38
         },
         "uid": "禁用 <button:submit.on>#4"
       },
       {
-        "i": 43,
+        "i": 39,
         "label": "启用 <button:submit.on>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2242,15 +1922,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 41,
-          "down": 45,
-          "left": 43,
-          "right": 44
+          "up": 37,
+          "down": 41,
+          "left": 41,
+          "right": 40
         },
         "uid": "启用 <button:submit.on>#4"
       },
       {
-        "i": 44,
+        "i": 40,
         "label": "禁用 <button:submit>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2262,15 +1942,15 @@
           "h": 26
         },
         "dirs": {
-          "up": 42,
-          "down": 46,
-          "left": 43,
-          "right": 44
+          "up": 38,
+          "down": 42,
+          "left": 39,
+          "right": 40
         },
         "uid": "禁用 <button:submit>#4"
       },
       {
-        "i": 45,
+        "i": 41,
         "label": "数据 v2.1.0 <div.ui-card-head>",
         "tag": "DIV",
         "type": "",
@@ -2282,15 +1962,15 @@
           "h": 24
         },
         "dirs": {
-          "up": 38,
-          "down": 46,
-          "left": 45,
-          "right": 45
+          "up": 34,
+          "down": 42,
+          "left": 41,
+          "right": 42
         },
         "uid": "数据 v2.1.0 <div.ui-card-head>#1"
       },
       {
-        "i": 46,
+        "i": 42,
         "label": "打开 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2302,15 +1982,15 @@
           "h": 28
         },
         "dirs": {
-          "up": 44,
-          "down": 47,
-          "left": 46,
-          "right": 46
+          "up": 40,
+          "down": 43,
+          "left": 41,
+          "right": 42
         },
         "uid": "打开 <button:submit.ui-btn>#1"
       },
       {
-        "i": 47,
+        "i": 43,
         "label": "清空 <button:submit.ui-btn>",
         "tag": "BUTTON",
         "type": "submit",
@@ -2322,10 +2002,10 @@
           "h": 28
         },
         "dirs": {
-          "up": 46,
-          "down": 47,
-          "left": 47,
-          "right": 47
+          "up": 42,
+          "down": 43,
+          "left": 43,
+          "right": 43
         },
         "uid": "清空 <button:submit.ui-btn>#1"
       }

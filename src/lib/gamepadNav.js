@@ -53,6 +53,16 @@ const FOCUSABLE_SELECTOR = [
   '[data-gp]'
 ].join(',')
 
+/**
+ * 顶栏工具按钮（主题 / 主题色 / 字号 / 语言）的标记。
+ *
+ * 这一组是「专属通道」，不参与页面内的空间导航：
+ *  - 十字键左右按下 = 强制把焦点拿到这一组，并在组内首尾循环；
+ *  - 摇杆 = 页面内导航，一旦发现焦点还停在顶栏，就把它抢回页面内容。
+ * 所以它们必须从 collect() 里排除，否则摇杆会把焦点导航上去。
+ */
+const BAR_ATTR = 'data-gp-bar'
+
 /** 供界面读取的响应式状态 */
 export const gpNav = reactive({
   // 默认关闭（实验功能）
@@ -87,6 +97,10 @@ let currentEl = null
 let anchorEl = null
 let prevPressed = []
 let holdDir = null
+/** 「输入来源:方向」，例如 hat:left / stick:up —— 来源变了要立刻响应，不等重复间隔 */
+let holdKey = ''
+/** 上一次停在页面内的焦点元素：从顶栏用摇杆抢回时优先后到它 */
+let lastStageEl = null
 let nextRepeatAt = 0
 /** 最近一次手柄输入时间：提示条据此自动隐藏 */
 let lastInputAt = 0
@@ -151,10 +165,33 @@ function collect() {
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i]
     if (el.getAttribute('tabindex') === '-1') continue
+    // 顶栏工具按钮走十字键专属通道，不参与页面内导航
+    if (el.hasAttribute(BAR_ATTR)) continue
     if (!isVisible(el)) continue
     list.push(el)
   }
   return list
+}
+
+/** 顶栏工具按钮（按 DOM 顺序，即可见的 4 个） */
+function barButtons() {
+  const nodes = document.querySelectorAll(`[${BAR_ATTR}]`)
+  const list = []
+  for (let i = 0; i < nodes.length; i++) {
+    if (!isVisible(nodes[i])) continue
+    list.push(nodes[i])
+  }
+  return list
+}
+
+function isBarFocused() {
+  return !!currentEl && typeof currentEl.hasAttribute === 'function'
+    && currentEl.hasAttribute(BAR_ATTR)
+}
+
+/** 顶栏浮层（主题色 / 字号 / 语言）展开时，方向键交给浮层自己用 */
+function popoverOpen() {
+  return !!document.querySelector('.popover')
 }
 
 /**
@@ -194,20 +231,30 @@ function initialFocusTarget(list) {
  */
 function fieldLabel(el) {
   if (!el) return ''
-  const row = el.closest('.ui-row, .set-row, .obs-field, .data-item')
-  if (!row) return ''
-  const label = row.querySelector('.ui-label, .set-label, .obs-field > span, .data-title')
-  if (!label) return ''
-  const text = (label.textContent || '').replace(/\s+/g, ' ').trim()
-  return text
+  // 从最近的行容器一路往上找标题：行容器里没有标题时（调试页的选择控制器
+  // 标题在卡片头部）继续退到卡片
+  const scopes = ['.ui-row', '.set-row', '.obs-field', '.data-item', '.device-row', '.ui-card']
+  for (let i = 0; i < scopes.length; i++) {
+    const row = el.closest(scopes[i])
+    if (!row) continue
+    const label = row.querySelector('.ui-label, .set-label, .obs-field > span, .data-title, .ui-card-title')
+    if (!label) continue
+    const text = (label.textContent || '').replace(/\s+/g, ' ').trim()
+    if (text) return text
+  }
+  return ''
 }
 
 function labelOf(el) {
   if (!el) return ''
   const explicit = el.getAttribute('aria-label') || el.getAttribute('title')
   if (explicit) return explicit.trim()
-  if (el.tagName === 'SELECT' && el.selectedIndex >= 0 && el.options[el.selectedIndex]) {
-    return el.options[el.selectedIndex].textContent.trim()
+  if (el.tagName === 'SELECT') {
+    const option = el.selectedIndex >= 0 ? el.options[el.selectedIndex] : null
+    const text = option ? option.textContent.trim() : ''
+    // 列表为空（还没插上手柄）时退回标题，别让提示条显示成「未选择」
+    if (text) return text
+    return fieldLabel(el) || gpT('GpNav.selectOption')
   }
   // 滑条显示「行标题 + 当前值」，调节时提示条上能直接看到数值变化
   if (el.tagName === 'INPUT' && el.type === 'range') {
@@ -247,6 +294,7 @@ function clearFocus() {
   gpNav.focusLabel = ''
   gpNav.focusKind = ''
   holdDir = null
+  holdKey = ''
 }
 
 function setFocus(el, options) {
@@ -260,7 +308,11 @@ function setFocus(el, options) {
   currentEl = el
   el.classList.add('gp-focus')
   gpNav.focusLabel = labelOf(el)
-  gpNav.focusKind = el.tagName === 'INPUT' && el.type === 'range' ? 'range' : ''
+  gpNav.focusKind = el.hasAttribute(BAR_ATTR)
+    ? 'bar'
+    : (el.tagName === 'INPUT' && el.type === 'range' ? 'range' : '')
+  // 记住页面内（非顶栏工具组）的落点，摇杆从顶栏抢回时回到这里
+  if (!el.hasAttribute(BAR_ATTR)) lastStageEl = el
 
   const tag = el.tagName
   if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'A') {
@@ -327,6 +379,16 @@ function hopLimit(horizontal) {
 const ADJACENT_GAP = 64
 
 /**
+ * 「准同行」容差：两块在正交轴上没有重叠、只隔一条缝时，只要缝隙小于这个值，
+ * 仍然算同一条视觉行带。
+ *
+ * 典型例子（调试页）：右上角的「刷新」按钮和它正下方的「选择控制器」下拉框，
+ * 左右方向完全没有重叠，纵向只隔 54px。按以前的规则它们永远不是邻居，
+ * 刷新按左会一直「原地不动」甚至被孤立元素兜底甩到顶栏去。
+ */
+const NEAR_MISS_GAP = 64
+
+/**
  * 在指定方向上找下一个元素。
  *
  * 判定顺序（按「几何直觉」而不是单纯的中心距离）：
@@ -380,14 +442,22 @@ function findNext(list, cur, dir) {
       overlap = overlapLen(cr.left, cr.right, r.left, r.right)
       crossSize = Math.min(cr.width, r.width)
     }
-    if (gap > maxHop && !(curGroup && groupOf(el) === curGroup)) continue
-
     const sameZone = zoneOf(el) === curZone
     const sameGroup = !!curGroup && groupOf(el) === curGroup
     const adjacent = gap <= ADJACENT_GAP
     // 3) 跨区域（顶栏 / 左导航 / 内容区）只能走「贴边的正交邻居」，
     //    否则宁可不动 —— 这是「按一下上就飞到左上角版本号」的根因。
     if (!sameZone && (!adjacent || overlap <= 0)) continue
+
+    // 正交轴上的「缝隙」：两块不重叠时它们之间的空白距离。
+    // 缝隙很小 = 上下相邻的两条行带（刷新 ↔ 选择控制器），左右走得远一点也符合直觉。
+    const perpGap = horizontal
+      ? Math.max(0, r.top - cr.bottom, cr.top - r.bottom)
+      : Math.max(0, r.left - cr.right, cr.left - r.right)
+    const nearMiss = overlap <= 0 && sameZone && perpGap <= NEAR_MISS_GAP
+
+    // 同一容器内不受跳跃上限限制（卡片内部本来就近）；跨容器必须够近
+    if (!nearMiss && !sameGroup && gap > maxHop) continue
 
     // 4) 评分
     let bonus = 0
@@ -404,6 +474,11 @@ function findNext(list, cur, dir) {
     if (overlap > 0) {
       // 行内 / 列内：间隙为主，正交偏移微调，重叠越完整越像「同一行」
       aligned.push({ el, score: gap + perp * 0.5 - ratio * 200 + bonus })
+    } else if (nearMiss) {
+      // 准同行：正交缝隙越小越像同一条行带；主轴距离超过跳跃上限时略作惩罚，
+      // 这样近处的斜向候选仍然有机会赢过远端的行带邻居
+      const far = gap > maxHop ? 200 : 0
+      diagonal.push({ el, score: gap + perpGap * 2 + 260 + far + bonus })
     } else {
       // 斜向：只在同一区域内、且距离够近时兜底，且正交偏移不能超过主轴间隙太多
       if (!sameZone) continue
@@ -425,8 +500,8 @@ function findNext(list, cur, dir) {
   return best
 }
 
-/** 中心距离最近的可聚焦元素（兜底用） */
-function nearestOf(list, cur) {
+/** 中心距离最近的可聚焦元素（兜底用）；超过 maxDist 视为没有邻居 */
+function nearestOf(list, cur, maxDist) {
   const cr = cur.getBoundingClientRect()
   const ccx = cr.left + cr.width / 2
   const ccy = cr.top + cr.height / 2
@@ -444,14 +519,36 @@ function nearestOf(list, cur) {
       best = el
     }
   }
+  if (best && typeof maxDist === 'number' && bestDist > maxDist * maxDist) return null
   return best
 }
 
-function move(dir) {
-  const list = collect()
-  if (!list.length) return
+/**
+ * 顶栏工具按钮的循环（十字键专属）。
+ *
+ * 这一组按钮只有横排一行，所以「上/下」没有真实目标：把上/左当「上一个」、
+ * 下/右当「下一个」，保证十字键任意方向都有响应，而且永远不离开这一组。
+ * 焦点不在顶栏时，按左/上进最后一个、按右/下进第一个。
+ */
+function barStep(dir) {
+  const list = barButtons()
+  if (!list.length) return false
+  const back = dir === 'left' || dir === 'up'
+  const index = isBarFocused() ? list.indexOf(currentEl) : -1
+  if (index < 0) {
+    setFocus(list[back ? list.length - 1 : 0], { instant: true })
+    return true
+  }
+  const step = back ? -1 : 1
+  const next = (index + step + list.length) % list.length
+  if (next !== index) setFocus(list[next], { instant: true })
+  return true
+}
 
-  // 数值调节模式：左右改值，上下/其它方向先退出调节再正常导航
+function move(dir, source) {
+  const from = source || 'stick'
+
+  // 数值调节模式：左右改值，其它方向先退出调节
   if (gpNav.adjusting) {
     if (currentEl && currentEl.tagName === 'INPUT' && currentEl.type === 'range'
       && (dir === 'left' || dir === 'right')) {
@@ -459,6 +556,31 @@ function move(dir) {
       return
     }
     exitAdjust()
+  }
+
+  /*
+   * 两条互不干扰的通道：
+   *  - 十字键（hat）  = 顶栏 4 个工具按钮独占，任意方向都只在这一组里消化，
+   *                     绝不参与页面内的焦点移动；
+   *  - 左摇杆（stick）= 页面内导航，永远到不了顶栏。
+   * 只有「覆盖层」（下拉列表 / 软键盘 / 选文件夹 / 确认框）和「顶栏浮层」
+   * 这两种自己要用方向键的场合，才把十字键交还出去。
+   */
+  if (from === 'hat' && !gpNav.overlay && !popoverOpen()) {
+    if (barStep(dir)) return
+  }
+
+  const list = collect()
+  if (!list.length) return
+
+  // 焦点还在顶栏（此时只可能是摇杆）：把焦点抢回页面内容。
+  // 优先回到上一次停留的元素，找不到才退回页面初焦点 —— 改完主题按一下摇杆
+  // 就回到刚才那一行，而不是被扔回页面顶部。
+  if (isBarFocused()) {
+    const back = lastStageEl && lastStageEl.isConnected && list.indexOf(lastStageEl) !== -1
+    const target = back ? lastStageEl : initialFocusTarget(list)
+    if (target) setFocus(target)
+    return
   }
 
   if (!currentEl || !list.includes(currentEl)) {
@@ -471,13 +593,14 @@ function move(dir) {
     return
   }
   // 兜底：只有「四个方向都走不通」的孤立元素（如顶栏版本号）才允许跳最近邻，
-  // 避免焦点落在上面之后彻底出不来。正常的边界「按了不动」保持原样。
+  // 避免焦点落在上面之后彻底出不来。正常的边界「按了不动」保持原样；
+  // 最近的邻居也太远（> 420px）时宁可不动，否则会「按一下跳到半个屏幕外」。
   const stuck = !findNext(list, currentEl, 'up')
     && !findNext(list, currentEl, 'down')
     && !findNext(list, currentEl, 'left')
     && !findNext(list, currentEl, 'right')
   if (stuck) {
-    const fallback = nearestOf(list, currentEl)
+    const fallback = nearestOf(list, currentEl, 420)
     if (fallback) setFocus(fallback)
   }
 }
@@ -749,26 +872,24 @@ function toggleHelp() {
    输入轮询
    ========================================================= */
 
-function dirsFromState(state) {
+function inputFromState(state) {
   const hats = state.hats || []
-  const axes = state.axes || []
-  let up = !!hats[0]
-  let right = !!hats[1]
-  let down = !!hats[2]
-  let left = !!hats[3]
+  // 十字键（hat）优先：它的左右被顶栏独占，所以必须和摇杆区分开
+  let dir = null
+  if (hats[2]) dir = 'down'
+  else if (hats[0]) dir = 'up'
+  else if (hats[1]) dir = 'right'
+  else if (hats[3]) dir = 'left'
+  if (dir) return { dir, source: 'hat' }
 
+  const axes = state.axes || []
   const ax = Number(axes[0]) || 0
   const ay = Number(axes[1]) || 0
-  if (ay <= -AXIS_THRESHOLD) up = true
-  if (ay >= AXIS_THRESHOLD) down = true
-  if (ax <= -AXIS_THRESHOLD) left = true
-  if (ax >= AXIS_THRESHOLD) right = true
-
   // 斜向时只认一个方向，避免焦点在列表里乱跳
-  if (down) return 'down'
-  if (up) return 'up'
-  if (right) return 'right'
-  if (left) return 'left'
+  if (ay >= AXIS_THRESHOLD) return { dir: 'down', source: 'stick' }
+  if (ay <= -AXIS_THRESHOLD) return { dir: 'up', source: 'stick' }
+  if (ax >= AXIS_THRESHOLD) return { dir: 'right', source: 'stick' }
+  if (ax <= -AXIS_THRESHOLD) return { dir: 'left', source: 'stick' }
   return null
 }
 
@@ -810,22 +931,23 @@ async function runTick() {
   missingTicks = 0
 
   const pressed = (state.buttons || []).map((value) => !!value)
-  const direction = dirsFromState(state)
+  const input = inputFromState(state)
 
   // 提示条：有输入时亮出来，静置 6 秒后自动收起，避免长期挡住界面
-  if (pressed.some(Boolean) || direction) lastInputAt = Date.now()
+  if (pressed.some(Boolean) || input) lastInputAt = Date.now()
   if (gpNav.padMode) gpNav.hintVisible = Date.now() - lastInputAt < 6000
 
   // 正在录制组合键：按键全部交给录制逻辑，导航只同步基线状态
   if (isPaused()) {
     prevPressed = pressed
     holdDir = null
+    holdKey = ''
     return
   }
 
   if (!gpNav.padMode) {
     // 第一次输入只负责「点亮」手柄模式，不触发操作，避免误点
-    if (direction || pressed.some(Boolean)) enterPadMode()
+    if (input || pressed.some(Boolean)) enterPadMode()
     prevPressed = pressed
     return
   }
@@ -835,18 +957,22 @@ async function runTick() {
   }
   prevPressed = pressed
 
-  if (!direction) {
+  if (!input) {
     holdDir = null
+    holdKey = ''
     return
   }
+  // 输入来源也算进「同一个方向」的判定：摇杆推着的时候按十字键要立刻响应
+  const key = input.source + ':' + input.dir
   const now = Date.now()
-  if (direction !== holdDir) {
-    holdDir = direction
+  if (key !== holdKey) {
+    holdKey = key
+    holdDir = input.dir
     nextRepeatAt = now + REPEAT_DELAY_MS
-    move(direction)
+    move(input.dir, input.source)
   } else if (now >= nextRepeatAt) {
     nextRepeatAt = now + REPEAT_INTERVAL_MS
-    move(direction)
+    move(input.dir, input.source)
   }
 }
 
@@ -890,6 +1016,7 @@ export function exitPadMode(reason) {
   gpNav.hintVisible = false
   gpNav.focusKind = ''
   holdDir = null
+  holdKey = ''
 }
 
 function onMouseMove(event) {
@@ -1017,6 +1144,9 @@ function installDebugBridge() {
     button: (index) => handleButton(index),
     stats: () => ({ missingTicks, now: Date.now() }),
     adjust: () => (gpNav.adjusting ? exitAdjust() : enterAdjust(currentEl)),
+    /** 顶栏工具按钮组（十字键左右专属通道） */
+    bar: () => barButtons(),
+    barFocus: () => isBarFocused(),
     chooser: (props) => openOverlay('chooser', props || {}),
     keyboard: (props) => openOverlay('keyboard', props || {}),
     folder: (props) => openOverlay('folder', props || {}),
