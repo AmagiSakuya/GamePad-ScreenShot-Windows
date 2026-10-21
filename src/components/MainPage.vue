@@ -723,6 +723,9 @@ export default {
         // 否则就会出现「录了半天没有声音」却毫无提示的情况
         if (result.meta && result.meta.audioError) {
           this.showError(this.$t('Recording.audioFailed', { reason: result.meta.audioError }));
+        } else if (result.meta && result.meta.fallbackFrom) {
+          // 窗口抓不动、自动换成录它所在的屏幕：不说明白，用户会以为「选错来源了」
+          this.showError(this.$t('Recording.testFallback'));
         }
         return true;
       }

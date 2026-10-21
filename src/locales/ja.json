@@ -348,6 +348,7 @@
         "overloadRuntime": "エンコードが追いつかずフレームが落ちています（速度 {speed}x、{dropped} フレーム）— 1920×1080 か NVENC を検討してください",
         "overloadLive": "エンコード過負荷：速度 {speed}x、ドロップ {dropped} — 解像度を下げるかエンコーダーを変更してください",
         "lastTestNever": "このエンコード設定はまだテストしていません",
-        "lastTest": "前回のテスト：{time} · {speed}x · ドロップ {dropped}"
+        "lastTest": "前回のテスト：{time} · {speed}x · ドロップ {dropped}",
+        "testFallback": "このウィンドウは直接キャプチャできないため、表示中のディスプレイを録画します"
     }
 }

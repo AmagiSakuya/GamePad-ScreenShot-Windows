@@ -472,6 +472,15 @@ export default {
           }
         }
 
+        // 该窗口抓不动、已经自动换成录它所在的屏幕 —— 必须说出来，
+        // 否则用户会以为「明明选的是窗口，怎么录了整个桌面」
+        if (result && result.fallbackFrom && this.testResult) {
+          this.testResult = {
+            ...this.testResult,
+            text: `${this.$t('Recording.testFallback')} · ${this.testResult.text}`
+          };
+        }
+
         // 把「这套设置测过了」记进配置：截图页在开始监听前会读它决定要不要提醒。
         // 硬失败（引擎跑不起来 / 一帧没出）不记录，免得把「没测过」伪装成「测过」。
         if (result && (result.ok || result.measured)) {

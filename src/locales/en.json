@@ -414,6 +414,7 @@
         "bufferMaxMB": "Max memory",
         "testTight": "{size} at {fps}fps works, no dropped frames measured ({speed}x — slightly tight under sustained full frame rate)",
         "testIdle": "Screen is static, no load measured — play a video or move a window, then test again",
+        "testFallback": "This window can't be captured directly — recording its display instead",
         "switchOn": "On",
         "switchOff": "Off",
         "stateStarting": "Recording… (first segment almost ready)",

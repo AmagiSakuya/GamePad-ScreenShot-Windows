@@ -348,6 +348,7 @@
         "overloadRuntime": "Codificador sobrecargado, se están perdiendo fotogramas ({speed}x, {dropped} perdidos) — considera 1920×1080 o NVENC",
         "overloadLive": "Codificador sobrecargado: {speed}x, {dropped} fotogramas perdidos — baja la resolución o cambia de codificador",
         "lastTestNever": "Estos ajustes de codificación aún no se han probado",
-        "lastTest": "Última prueba: {time} · {speed}x · {dropped} fotogramas perdidos"
+        "lastTest": "Última prueba: {time} · {speed}x · {dropped} fotogramas perdidos",
+        "testFallback": "Esta ventana no se puede capturar directamente: se grabará su pantalla"
     }
 }

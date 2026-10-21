@@ -67,6 +67,9 @@ async function main() {
     console.log(`默认引擎  ${chosen.id}`)
     console.log('')
 
+    // 硬失败计数：分辨率组合这类「必须出帧」的检查失败时让脚本以非 0 退出，方便接 CI
+    let failures = 0
+
     if (!QUICK) {
         console.log(line('='))
         console.log('逐个编码器端到端压测（真实采集 → 编码 1.5 秒）')
@@ -83,6 +86,46 @@ async function main() {
             console.log(`  ${enc.id.padEnd(14)} ${verdict}`)
         }
         console.log('')
+    }
+
+    // ===== 分辨率组合 =====
+    //
+    // 这一节是 2026-10-21 那次「NVENC 测试失败：speed=N/A」的回归闸门：
+    // 用户在 4K 屏上选「3840×2160」——和桌面一样大——旧实现照样挂了 scale，
+    // d3d11 硬件帧协商不出 CPU 像素格式，filtergraph 直接 0 帧退出。
+    // 所以「同尺寸」和「真缩放」两条都必须能出帧。
+    {
+        const { probeSourceSize } = require('../src/lib/recorder/ffmpeg')
+        const source = await probeSourceSize(recorder.ffmpegPath(), { displayIndex: 0 })
+        if (!source.width) {
+            console.log('分辨率组合：探测不到采集源尺寸，跳过')
+        } else {
+            console.log(line('='))
+            console.log(`分辨率组合（源 ${source.width}×${source.height}，引擎 ${chosen.id}）`)
+            console.log(line('-'))
+            const combos = [
+                ['同尺寸（不挂滤镜）', { width: source.width, height: source.height }],
+                ['缩放到 1920×1080', { width: 1920, height: 1080 }]
+            ]
+            for (const [label, size] of combos) {
+                const result = await recorder.selfTest({
+                    target: { type: 'screen', displayIndex: 0 },
+                    encoderId: chosen.id,
+                    fps: 60,
+                    sourceWidth: source.width,
+                    sourceHeight: source.height,
+                    ...size
+                })
+                // 判据是「有没有出帧」：静止桌面帧数少只是测不出负载，不算失败
+                const ok = result.frames > 0
+                if (!ok) failures++
+                const detail = ok
+                    ? `${String(result.frames).padStart(4)} 帧  speed=${result.speed.toFixed(2)}x${result.measured ? '' : '（静止画面，负载未测出）'}`
+                    : (result.error || '没出帧')
+                console.log(`  ${label.padEnd(18)} ${ok ? 'OK  ' : 'FAIL'} ${detail}`)
+            }
+            console.log('')
+        }
     }
 
     // ===== 真实录制到文件 =====
@@ -176,7 +219,8 @@ async function main() {
 
     console.log('')
     console.log(line('='))
-    console.log('完成')
+    console.log(failures > 0 ? `完成，但有 ${failures} 项失败` : '完成')
+    if (failures > 0) process.exitCode = 1
 }
 
 main().catch((error) => {

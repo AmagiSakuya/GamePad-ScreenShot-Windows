@@ -348,6 +348,7 @@
         "overloadRuntime": "Encoder überlastet, Frames gehen verloren (Geschwindigkeit {speed}x, {dropped} verworfen) — 1920×1080 oder NVENC erwägen",
         "overloadLive": "Encoder überlastet: {speed}x, {dropped} Frames verworfen — Auflösung senken oder Encoder wechseln",
         "lastTestNever": "Diese Encoder-Einstellungen wurden noch nicht getestet",
-        "lastTest": "Letzter Test: {time} · {speed}x · {dropped} Frames verworfen"
+        "lastTest": "Letzter Test: {time} · {speed}x · {dropped} Frames verworfen",
+        "testFallback": "Dieses Fenster kann nicht direkt aufgezeichnet werden – stattdessen wird der zugehörige Bildschirm aufgenommen"
     }
 }

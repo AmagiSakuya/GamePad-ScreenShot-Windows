@@ -12,12 +12,17 @@
  * 上层（background.js / IPC）不需要知道 ffmpeg 参数长什么样。
  */
 
-const { resolveFfmpegPath, probeCapabilities, testEncoder, testBackend, selfTestPipeline } = require('./ffmpeg')
+const { resolveFfmpegPath, probeCapabilities, testEncoder, testBackend, selfTestPipeline, probeCaptureOpen } = require('./ffmpeg')
 const { ENCODERS } = require('./encoders')
 const { buildRecordCommand } = require('./command')
+const { buildCaptureInput } = require('./sources')
 const { createSession } = require('./session')
 const { Fmp4RingBuffer } = require('./fmp4')
 const { createAudioCapture } = require('./audioCapture')
+
+// 窗口录制后端探测结果缓存：同一个 hwnd 不必每次开始录制都探一遍。
+// 5 分钟过期 —— 游戏从窗口模式切到独占全屏时后端会变，不能永久缓存。
+const WINDOW_BACKEND_TTL = 5 * 60 * 1000
 
 function createRecorder(deps = {}) {
     const { isPackaged = false, resourcesPath = '', appPath = process.cwd(), log = console, app = null } = deps
@@ -29,6 +34,7 @@ function createRecorder(deps = {}) {
     let activeConfig = null
     let activeAudio = null
     let capabilitiesCache = null
+    const windowBackendCache = new Map()
 
     // 回放缓存（长按保存最近 N 秒）的独立状态
     let replayBuffer = null
@@ -37,6 +43,77 @@ function createRecorder(deps = {}) {
 
     function ffmpegPath() {
         return resolveFfmpegPath({ isPackaged, resourcesPath, appPath })
+    }
+
+    /**
+     * 决定「这次要用哪个采集后端、抓谁」。
+     *
+     * 屏幕录制直接交给 ddagrab，不做探测（它就是最快的那条路，打不开会自己报错）。
+     * 窗口录制必须先探一次，因为 gfxcapture（Windows.Graphics.Capture）并不是所有窗口都能抓：
+     * 实测独占全屏的游戏直接 "Error opening input ... Generic error in an external library"。
+     * 这时候有两级兜底：
+     *   1. 窗口尺寸刚好等于某块屏的物理尺寸（就是全屏游戏）→ 改录那块屏（ddagrab，独占全屏也抓得到）
+     *   2. 还不行 → gdigrab 直接抓窗口 DC（抓不到 GPU 内容，但普通窗口能出画面）
+     *
+     * 探测成本约 0.3~1 秒，且按 hwnd 缓存，所以只有「第一次录某个窗口」会等。
+     *
+     * @returns {{ target: object, backend: string|undefined, fallbackFrom: string }}
+     */
+    async function resolveCapturePlan(config = {}) {
+        const target = config.target || { type: 'screen', displayIndex: 0 }
+        if (target.type !== 'window' || config.backend) {
+            return { target, backend: config.backend, fallbackFrom: '' }
+        }
+
+        const hwnd = Number(target.hwnd)
+        const cached = windowBackendCache.get(hwnd)
+        if (cached && Date.now() - cached.at < WINDOW_BACKEND_TTL) {
+            return planFor(cached.backend)
+        }
+
+        const exe = ffmpegPath()
+        const probeFps = 30
+
+        // 1) 首选 Windows.Graphics.Capture：能按窗口抓，窗口被挡住也是真实帧
+        const gfxArgs = buildCaptureInput(target, { fps: probeFps, backend: 'gfxcapture' }).args
+        const gfx = await probeCaptureOpen(exe, gfxArgs)
+        if (gfx.ok) return remember('gfxcapture')
+
+        // 2) 窗口铺满某块屏 → 录那块屏。独占全屏的游戏只有 ddagrab 抓得到
+        const displayIndex = Number(config.fallbackDisplayIndex)
+        if (Number.isInteger(displayIndex) && displayIndex >= 0) {
+            const ddaArgs = buildCaptureInput({ type: 'screen', displayIndex }, { fps: probeFps, backend: 'ddagrab' }).args
+            const dda = await probeCaptureOpen(exe, ddaArgs)
+            if (dda.ok) {
+                warn('window capture unsupported by gfxcapture, recording its display instead', {
+                    hwnd, displayIndex, reason: gfx.reason
+                })
+                return remember('ddagrab')
+            }
+        }
+
+        // 3) 最后兜底：GDI。抓不到 GPU 内容，但普通窗口能出画面，总比 0 帧退出强
+        warn('window capture falls back to gdigrab (GPU content may be black)', { hwnd, reason: gfx.reason })
+        return remember('gdigrab')
+
+        function remember(backend) {
+            windowBackendCache.set(hwnd, { backend, at: Date.now() })
+            return planFor(backend)
+        }
+
+        function planFor(backend) {
+            const fallbackFrom = backend === 'gfxcapture' ? '' : 'gfxcapture'
+            if (backend === 'ddagrab') {
+                // ddagrab 没有「窗口」概念，目标要换成那块屏
+                const index = Number(config.fallbackDisplayIndex)
+                return { target: { type: 'screen', displayIndex: Number.isInteger(index) ? index : 0 }, backend, fallbackFrom }
+            }
+            return { target, backend, fallbackFrom }
+        }
+
+        function warn(message, detail) {
+            if (log && typeof log.warn === 'function') log.warn('[recorder] ' + message, detail)
+        }
     }
 
     /**
@@ -112,8 +189,12 @@ function createRecorder(deps = {}) {
      */
     async function selfTest(config = {}) {
         const exe = ffmpegPath()
+        // 探测出来的后端要跟真正录制时一致，否则测的是另一条链路
+        const plan = await resolveCapturePlan(config)
         const { parts, meta } = buildRecordCommand({
             ...config,
+            target: plan.target,
+            backend: plan.backend,
             output: { type: 'pipe' }
         })
 
@@ -133,6 +214,8 @@ function createRecorder(deps = {}) {
             testWidth: Number(config.testWidth) || Number(config.width) || 0,
             testHeight: Number(config.testHeight) || Number(config.height) || 0,
             backend: meta.backend,
+            // 非空说明这个窗口抓不动，已经自动换后端了（UI 可以提示一句）
+            fallbackFrom: plan.fallbackFrom,
             zeroCopy: meta.zeroCopy
         }
     }
@@ -149,6 +232,11 @@ function createRecorder(deps = {}) {
         if (activeSession) throw new Error('A recording session is already running')
 
         const exe = ffmpegPath()
+
+        // 先定后端：窗口录制可能要探测/兜底（会花几百毫秒，只在第一次录某个窗口时）。
+        // 必须在起音频采集之前做 —— 音频那边一建管道就是阻塞等待 ffmpeg 连接，
+        // 中间再插一次探测会让采集进程干等。
+        const plan = await resolveCapturePlan(config)
 
         let audioHandle = null
         let audioError = ''
@@ -171,6 +259,8 @@ function createRecorder(deps = {}) {
         try {
             const built = buildRecordCommand({
                 ...config,
+                target: plan.target,
+                backend: plan.backend,
                 audio: audioHandle
                     ? {
                         pipePath: audioHandle.pipePath,
@@ -188,6 +278,7 @@ function createRecorder(deps = {}) {
             throw error
         }
         if (audioError) meta.audioError = audioError
+        if (plan.fallbackFrom) meta.fallbackFrom = plan.fallbackFrom
 
         const session = createSession({
             exe,

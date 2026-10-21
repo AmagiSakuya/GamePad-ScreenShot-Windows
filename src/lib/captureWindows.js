@@ -15,12 +15,35 @@
  */
 
 const log = require('electron-log')
-const { Window: ScreenshotWindow } = require('node-screenshots')
+const { Window: ScreenshotWindow, Monitor: ScreenshotMonitor } = require('node-screenshots')
 
 // node-screenshots 的字段是原型上的 getter（个别版本暴露成方法），统一读一次
 function readWindowField(item, key) {
     const value = item ? item[key] : undefined
     return typeof value === 'function' ? value.call(item) : value
+}
+
+/**
+ * 显示器列表（像素尺寸是物理像素，不是 DIP）。
+ *
+ * 用它而不是 Electron 的 `screen`：窗口对象的 `currentMonitor` 就是同一套对象，
+ * 所以「窗口落在哪块屏、这块屏的 scaleFactor 是多少」能一次问清楚，
+ * 不用在两套 API 之间换算 DIP 坐标。
+ *
+ * @returns {Array<{index:number,id:number,name:string,width:number,height:number,
+ *                  scaleFactor:number,primary:boolean}>}
+ */
+function listCaptureMonitors() {
+    if (!ScreenshotMonitor || typeof ScreenshotMonitor.all !== 'function') return []
+    return (ScreenshotMonitor.all() || []).map((item, index) => ({
+        index,
+        id: readWindowField(item, 'id'),
+        name: String(readWindowField(item, 'name') || ''),
+        width: Number(readWindowField(item, 'width')) || 0,
+        height: Number(readWindowField(item, 'height')) || 0,
+        scaleFactor: Number(readWindowField(item, 'scaleFactor')) || 1,
+        primary: !!readWindowField(item, 'isPrimary')
+    }))
 }
 
 /**
@@ -50,7 +73,13 @@ function listCaptureWindows() {
                     width: Number(readWindowField(item, 'width')) || 0,
                     height: Number(readWindowField(item, 'height')) || 0
                 },
-                minimized: !!readWindowField(item, 'isMinimized')
+                minimized: !!readWindowField(item, 'isMinimized'),
+                // 窗口矩形是 DIP，WGC（gfxcapture）抓出来的是物理像素，
+                // 两者差一个系统缩放（150% 时 1684×1092 → 2526×1638）
+                scaleFactor: (() => {
+                    const monitor = readWindowField(item, 'currentMonitor')
+                    return Number(monitor && readWindowField(monitor, 'scaleFactor')) || 1
+                })()
             }
         })
         .filter((item) => item.id && item.title)
@@ -100,5 +129,6 @@ async function enumerateCaptureWindows() {
 module.exports = {
     listCaptureWindows,
     listCaptureWindowsFallback,
+    listCaptureMonitors,
     enumerateCaptureWindows
 }

@@ -348,6 +348,7 @@
         "overloadRuntime": "編碼過載，正在掉格（速度 {speed}x，丟 {dropped} 格）——建議降到 1920×1080 或改用 NVENC",
         "overloadLive": "編碼過載：速度 {speed}x，掉格 {dropped} —— 降低解析度或換編碼器可緩解",
         "lastTestNever": "還沒測試過這套編碼設定",
-        "lastTest": "上次測試：{time} · 速度 {speed}x · 掉格 {dropped}"
+        "lastTest": "上次測試：{time} · 速度 {speed}x · 掉格 {dropped}",
+        "testFallback": "該視窗無法直接擷取，已改為錄製它所在的螢幕"
     }
 }

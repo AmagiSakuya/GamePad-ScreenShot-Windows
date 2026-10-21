@@ -19,6 +19,8 @@ const { buildVideoArgs, isZeroCopy } = require('./encoders')
  *   encoderId   — encoders.js 里的 id
  *   fps         — 目标帧率
  *   width/height— 输出分辨率，0 表示保持原始
+ *   sourceWidth/sourceHeight — 采集源的原始像素尺寸，用来判断「到底要不要缩放」
+ *                  （和输出一样大时不挂 scale，否则硬件帧的滤镜链会 0 帧退出）
  *   mode        — 'quality' | 'bitrate'
  *   qualityPercent — 0~100
  *   bitrate     — 码率模式下的目标码率（bps）
@@ -37,6 +39,10 @@ function buildRecordCommand(options = {}) {
         fps = 60,
         width = 0,
         height = 0,
+        // 采集源原始像素尺寸（屏幕的物理分辨率 / 窗口的实际尺寸）。
+        // 用来跳过「和源一样大」的 scale —— 那种滤镜会让硬件帧的滤镜链直接 0 帧。
+        sourceWidth = 0,
+        sourceHeight = 0,
         mode = 'quality',
         // 质量优先模式：quality 是 0~51 的实际值，qualityPercent 兼容旧配置
         quality,
@@ -55,13 +61,18 @@ function buildRecordCommand(options = {}) {
 
     const capture = buildCaptureInput(target, { fps, cursor, backend })
     const zeroCopy = isZeroCopy(encoderId)
-    const filters = buildVideoFilters({
+    const filterPlan = buildVideoFilters({
         hardwareFrames: capture.hardwareFrames,
         zeroCopy,
         width,
         height,
-        encoderId
+        encoderId,
+        sourceWidth,
+        sourceHeight
     })
+    const filters = filterPlan.filters
+    // 滤镜跑完帧还在不在 GPU 上：只有「硬件帧 + 零拷贝 + 不用缩放」才留得住
+    const gpuFrames = filterPlan.hardwareFrames
 
     const videoArgs = buildVideoArgs(encoderId, {
         mode,
@@ -73,8 +84,8 @@ function buildRecordCommand(options = {}) {
         preset,
         profile,
         bf,
-        // 硬件帧且编码器能零拷贝 → 别碰像素格式；否则帧已经落到 CPU 了，可以指定
-        softwareFrames: !(capture.hardwareFrames && zeroCopy)
+        // 帧已经落到 CPU 内存时才可以指定像素格式
+        softwareFrames: !gpuFrames
     })
 
     // 各段分开拼，最后再合成一条完整命令。
@@ -147,7 +158,11 @@ function buildRecordCommand(options = {}) {
             backend: capture.backend,
             zeroCopy,
             filters,
-            hardwareFrames: capture.hardwareFrames,
+            // 滤镜之后帧是否仍在 GPU 上（这才是「有没有走零拷贝」的真实答案）
+            hardwareFrames: gpuFrames,
+            // 采集源的原始尺寸，日志里用它解释「为什么这次挂了 scale」
+            sourceWidth: Math.round(Number(sourceWidth) || 0),
+            sourceHeight: Math.round(Number(sourceHeight) || 0),
             gopFrames: Math.max(1, Math.round(fps)),
             audio: audioInput
                 ? {

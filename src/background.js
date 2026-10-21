@@ -804,6 +804,59 @@ function clampNumber(value, min, max, fallback) {
 }
 
 /**
+ * 采集源的原始像素尺寸，以及「这个窗口是不是正好铺满某块屏」。
+ *
+ * 尺寸的用途有两个：
+ *   1. 判断用户选的分辨率是不是「和源一样大」——一样大就不能挂 scale，
+ *      否则 d3d11 硬件帧协商不出 CPU 像素格式，整条命令 0 帧退出。
+ *   2. 给压测报一个真实分辨率。
+ *
+ * 全部按物理像素算：显示器信息来自 node-screenshots（本来就是物理像素），
+ * 窗口的 bounds 是 DIP，要乘它所在显示器的 scaleFactor。
+ *
+ * fallbackDisplayIndex 只在「窗口尺寸刚好等于某块屏的物理尺寸」且唯一匹配时给出 ——
+ * 这就是独占全屏游戏的情形：gfxcapture 打不开这种窗口，但直接录那块屏效果一样。
+ */
+function resolveSourceInfo(target) {
+  try {
+    const { listCaptureMonitors, listCaptureWindows } = require('@/lib/captureWindows')
+    const monitors = listCaptureMonitors()
+
+    if (target.type === 'window') {
+      const hwnd = Number(target.hwnd)
+      const win = captureWindowCache.find((item) => Number(item.id) === hwnd)
+        // 缓存里没有（用户没打开过窗口下拉框）就现枚举一次
+        || listCaptureWindows().find((item) => Number(item.id) === hwnd)
+      const bounds = win && win.bounds
+      if (!bounds || !(bounds.width > 0) || !(bounds.height > 0)) {
+        return { width: 0, height: 0, displayIndex: undefined }
+      }
+      const factor = Number(win.scaleFactor) || 1
+      const width = Math.round(bounds.width * factor)
+      const height = Math.round(bounds.height * factor)
+      const matching = monitors.filter(
+        (m) => Math.abs(m.width - width) <= 2 && Math.abs(m.height - height) <= 2
+      )
+      return {
+        width,
+        height,
+        // 多块同分辨率屏时无法判断是哪一块，宁可不给（走 gdigrab 兜底）
+        displayIndex: matching.length === 1 ? matching[0].index : undefined
+      }
+    }
+
+    const monitor = monitors[Number(target.displayIndex) || 0]
+      || monitors.find((m) => m.primary)
+      || null
+    if (monitor) return { width: monitor.width, height: monitor.height, displayIndex: monitor.index }
+    return { width: 0, height: 0, displayIndex: undefined }
+  } catch (error) {
+    log.warn('[recorder] resolve source size failed:', error)
+    return { width: 0, height: 0, displayIndex: undefined }
+  }
+}
+
+/**
  * 把设置页存的录像配置 + 本次调用的覆盖项，合成引擎参数。
  *
  * 窗口模式必须拿到有效 HWND（active-win 返回的 id 就是 HWND），
@@ -822,25 +875,23 @@ function buildRecorderOptions(overrides = {}) {
   const width = clampNumber(merged.width, 0, 7680, 0)
   const height = clampNumber(merged.height, 0, 4320, 0)
 
-  // 压测用的分辨率：没指定缩放时按主显示器的物理像素算。
-  // ddagrab 抓的是物理像素，而 Electron 的 display.size 是 DIP，
-  // 150% 缩放下两者差一倍，不乘 scaleFactor 会把 4K 屏当 1440p 测。
+  // 源的原始像素尺寸：决定「要不要真的缩放」，也用来给压测报一个真实分辨率
+  const sourceInfo = resolveSourceInfo(target)
+
+  // 压测用的分辨率：没指定缩放时按采集源的物理像素算。
   let testWidth = width
   let testHeight = height
   if (!testWidth || !testHeight) {
-    try {
-      const display = screen.getPrimaryDisplay()
-      const factor = display.scaleFactor || 1
-      testWidth = width || Math.round(display.size.width * factor)
-      testHeight = height || Math.round(display.size.height * factor)
-    } catch (error) {
-      testWidth = width || 1920
-      testHeight = height || 1080
-    }
+    testWidth = width || sourceInfo.width || 1920
+    testHeight = height || sourceInfo.height || 1080
   }
 
   return {
     target,
+    sourceWidth: sourceInfo.width,
+    sourceHeight: sourceInfo.height,
+    // 窗口铺满某块屏时（独占全屏游戏），gfxcapture 抓不动就改录这块屏
+    fallbackDisplayIndex: sourceInfo.displayIndex,
     encoderId: typeof merged.encoderId === 'string' && merged.encoderId ? merged.encoderId : 'h264_nvenc',
     fps: clampNumber(merged.fps, 15, 240, 60),
     mode: merged.mode === 'bitrate' ? 'bitrate' : 'quality',

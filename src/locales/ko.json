@@ -348,6 +348,7 @@
         "overloadRuntime": "인코딩 과부하로 프레임이 떨어지고 있습니다(속도 {speed}x, {dropped}프레임) — 1920×1080 또는 NVENC를 권장합니다",
         "overloadLive": "인코딩 과부하: 속도 {speed}x, 드롭 {dropped} — 해상도를 낮추거나 인코더를 바꾸세요",
         "lastTestNever": "이 인코딩 설정은 아직 테스트하지 않았습니다",
-        "lastTest": "지난 테스트: {time} · {speed}x · 드롭 {dropped}"
+        "lastTest": "지난 테스트: {time} · {speed}x · 드롭 {dropped}",
+        "testFallback": "이 창은 직접 캡처할 수 없어 해당 디스플레이를 녹화합니다"
     }
 }

@@ -414,6 +414,7 @@
         "bufferMaxMB": "最大内存",
         "testTight": "{size} · {fps}fps 可用，实测不丢帧（编码速度 {speed}x，连续满帧输入时会略紧）",
         "testIdle": "画面静止，没测出实际负载 —— 播放一段视频或拖动窗口让画面动起来，再测一次",
+        "testFallback": "该窗口无法直接捕获，已改为录制它所在的屏幕",
         "switchOn": "开启",
         "switchOff": "关闭",
         "stateStarting": "录制中…（第一段马上就好）",

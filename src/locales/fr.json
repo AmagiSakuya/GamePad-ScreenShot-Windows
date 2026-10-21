@@ -348,6 +348,7 @@
         "overloadRuntime": "Encodeur surchargé, des images sont perdues (vitesse {speed}x, {dropped} perdues) — envisagez 1920×1080 ou NVENC",
         "overloadLive": "Encodeur surchargé : {speed}x, {dropped} images perdues — réduisez la résolution ou changez d'encodeur",
         "lastTestNever": "Ces réglages d'encodage n'ont pas encore été testés",
-        "lastTest": "Dernier test : {time} · {speed}x · {dropped} images perdues"
+        "lastTest": "Dernier test : {time} · {speed}x · {dropped} images perdues",
+        "testFallback": "Cette fenêtre ne peut pas être capturée directement — enregistrement de son écran à la place"
     }
 }

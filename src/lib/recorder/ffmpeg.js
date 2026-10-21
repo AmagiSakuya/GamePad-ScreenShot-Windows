@@ -83,6 +83,25 @@ function hasFilter(text, name) {
     return new RegExp(`^\\s*\\S+\\s+${name}\\s`, 'm').test(String(text))
 }
 
+// `-progress pipe:2` 的采样也写在 stderr 里（frame= / fps= / speed= / progress=…），
+// 直接取「最后两行」拿到的全是进度信息 —— 用户看到的就是
+// 「失败：drop_frames=0 speed=N/A progress=end」，真正的报错被埋在几百行上面。
+const PROGRESS_LINE = /^[a-z_]+=/
+
+/**
+ * 从 ffmpeg 的 stderr 里提炼人话级的失败原因。
+ * 去掉进度采样行、把超长行（filtergraph 会把上百种像素格式一次列出来）截断。
+ */
+function errorTail(stderr, message, limit = 3) {
+    const lines = String(stderr || '')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line && !PROGRESS_LINE.test(line))
+        .map((line) => (line.length > 200 ? `${line.slice(0, 200)}…` : line))
+    if (lines.length === 0) return String(message || '').slice(0, 300)
+    return lines.slice(-limit).join(' ').slice(0, 400)
+}
+
 /**
  * 探测一次：版本、可用视频编码器、关键采集滤镜。
  * 结果缓存，force = true 可强制重测。
@@ -127,8 +146,7 @@ async function testEncoder(exe, encoderId) {
     ], 15000)
 
     if (result.ok) return { ok: true, reason: '' }
-    const detail = (result.stderr || result.message || '').split(/\r?\n/).filter(Boolean).slice(-2).join(' ')
-    return { ok: false, reason: detail.slice(0, 300) }
+    return { ok: false, reason: errorTail(result.stderr, result.message) }
 }
 
 /**
@@ -156,8 +174,7 @@ async function testBackend(exe, backend, { displayIndex = 0, hwnd = 0 } = {}) {
     ], 15000)
 
     if (result.ok) return { ok: true, reason: '' }
-    const detail = (result.stderr || result.message || '').split(/\r?\n/).filter(Boolean).slice(-2).join(' ')
-    return { ok: false, reason: detail.slice(0, 300) }
+    return { ok: false, reason: errorTail(result.stderr, result.message) }
 }
 
 /**
@@ -186,8 +203,7 @@ async function selfTestPipeline(exe, { inputArgs, videoArgs, filters, durationSe
     const speed = pickNumber(result.stderr, 'speed')
 
     if (!result.ok && frames === 0) {
-        const detail = (result.stderr || result.message || '').split(/\r?\n/).filter(Boolean).slice(-3).join(' ')
-        return { ok: false, frames: 0, dropFrames: 0, speed: 0, error: detail.slice(0, 400) }
+        return { ok: false, frames: 0, dropFrames: 0, speed: 0, error: errorTail(result.stderr, result.message) }
     }
 
     return {
@@ -197,6 +213,30 @@ async function selfTestPipeline(exe, { inputArgs, videoArgs, filters, durationSe
         speed,
         error: frames > 0 ? '' : 'no frame produced'
     }
+}
+
+/**
+ * 采集源能不能「打开」——只看打开这一步，不判帧数。
+ *
+ * 判据是 stderr 里有没有 "Error opening input" 这类硬错误：
+ * 静止画面 0 帧是正常的（采集源「画面变化才出帧」），不能当失败。
+ *
+ * 用在窗口录制的后端选择上：Windows.Graphics.Capture 打不开某些窗口
+ * （实测独占全屏的 Falcom 引擎游戏会直接 "Generic error in an external library"），
+ * 那种情况要先探一下再决定换哪个后端，免得整段录制 0 帧退出。
+ */
+async function probeCaptureOpen(exe, inputArgs, { timeout = 8000 } = {}) {
+    const result = await run(exe, [
+        '-hide_banner',
+        ...inputArgs,
+        '-t', '1',
+        '-frames:v', '1',
+        '-f', 'null', '-'
+    ], timeout)
+
+    const text = `${result.stderr || ''}\n${result.message || ''}`
+    const failed = /Error opening input|Error opening (file|device)|Could not open|Function not implemented/i.test(text)
+    return { ok: !failed, reason: failed ? errorTail(result.stderr, result.message) : '' }
 }
 
 /**
@@ -236,8 +276,7 @@ async function testEncoderThroughput(exe, { videoArgs, width, height, fps, durat
     }
 
     if (!result.ok && frames === 0) {
-        const detail = (result.stderr || result.message || '').split(/\r?\n/).filter(Boolean).slice(-3).join(' ');
-        return { ok: false, frames: 0, fps: 0, speed: 0, dropFrames: 0, error: detail.slice(0, 400) };
+        return { ok: false, frames: 0, fps: 0, speed: 0, dropFrames: 0, error: errorTail(result.stderr, result.message) };
     }
 
     return {
@@ -268,8 +307,36 @@ async function testCaptureChain(exe, { inputArgs, durationSeconds = 1 }) {
     // 静止桌面可能一帧都不出，ffmpeg 会一直等到 -t 结束，这属于正常；
     // 只有明确报错（设备打不开 / 参数不支持）才算失败
     if (result.ok || result.timedOut) return { ok: true, error: '' };
-    const detail = (result.stderr || result.message || '').split(/\r?\n/).filter(Boolean).slice(-3).join(' ');
-    return { ok: false, error: detail.slice(0, 400) };
+    return { ok: false, error: errorTail(result.stderr, result.message) };
+}
+
+/**
+ * 抓一帧问出采集源的真实像素尺寸（ddagrab / gfxcapture 都有「画面变化才出帧」，
+ * 但启动时一定会先给一帧，所以 -frames:v 1 能拿到 Stream 行）。
+ *
+ * 生产路径不靠它：主进程直接用 Electron 的显示器信息，
+ * 省一次 ffmpeg 启动。这里给回归脚本和「元数据拿不到」的场景兜底。
+ */
+async function probeSourceSize(exe, { backend = 'ddagrab', displayIndex = 0, hwnd = 0 } = {}) {
+    let inputArgs
+    if (backend === 'gfxcapture') {
+        inputArgs = hwnd
+            ? ['-f', 'lavfi', '-i', `gfxcapture=hwnd=${hwnd}:max_framerate=30`]
+            : ['-f', 'lavfi', '-i', `gfxcapture=monitor_idx=${displayIndex}:max_framerate=30`]
+    } else {
+        inputArgs = ['-f', 'lavfi', '-i', `ddagrab=output_idx=${displayIndex}:framerate=30`]
+    }
+
+    const result = await run(exe, [
+        '-hide_banner',
+        ...inputArgs,
+        '-frames:v', '1',
+        '-f', 'null', '-'
+    ], 12000)
+
+    const match = String(result.stderr).match(/Video: [^,]+, (?:\w+, )?(\d{2,5})x(\d{2,5})/)
+    if (!match || !result.ok) return { width: 0, height: 0 }
+    return { width: Number(match[1]) || 0, height: Number(match[2]) || 0 }
 }
 
 /** 从 -progress 输出里取最后一个 key=value */
@@ -291,5 +358,8 @@ module.exports = {
     selfTestPipeline,
     testEncoderThroughput,
     testCaptureChain,
+    probeCaptureOpen,
+    probeSourceSize,
+    errorTail,
     pickNumber
 }
