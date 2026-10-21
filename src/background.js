@@ -347,6 +347,9 @@ app.on('will-quit', () => {
   // 释放映射引擎与常驻的键盘发送进程
   if (mappingEngine) mappingEngine.dispose()
   if (mappingKeySender) mappingKeySender.dispose()
+  // 录制进程必须强杀：Windows 上父进程退出不会带走子进程，
+  // 留着会让 ffmpeg 继续占着编码器（下次启动就抢不到硬件了）
+  if (recorderEngine) recorderEngine.killNow()
 })
 
 // Quit when all windows are closed.
@@ -780,6 +783,205 @@ function toPlainDevice(device) {
     player: device.player
   };
 }
+
+//#region 内置录制引擎（FFmpeg 子进程）
+//
+// 这整套是为了替掉「必须装 OBS 才能存最近 N 秒」的依赖。
+// 采集、编码、内存环形缓冲全在自己进程里，配置项与 OBS 对等：
+// 采集源（全屏/窗口）、编码引擎（NVENC / QSV / AMF / x264）、
+// 分辨率帧率码率、以及编码过载自检。
+
+const { createRecorder } = require('@/lib/recorder')
+
+const RECORDING_CONFIG_KEY = 'recordingConfig'
+
+const recorderEngine = createRecorder({
+  isPackaged: app.isPackaged,
+  resourcesPath: process.resourcesPath,
+  appPath: app.getAppPath(),
+  log
+})
+
+// 缓冲进度推送的节流时间戳（主进程侧，避免每个采样都过一遍 IPC）
+let lastReplayPush = 0
+
+function clampNumber(value, min, max, fallback) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return fallback
+  return Math.min(max, Math.max(min, Math.round(n)))
+}
+
+/**
+ * 把设置页存的录像配置 + 本次调用的覆盖项，合成引擎参数。
+ *
+ * 窗口模式必须拿到有效 HWND（active-win 返回的 id 就是 HWND），
+ * 拿不到就静默退回全屏 —— 总比抛错让长按没反应好。
+ */
+function buildRecorderOptions(overrides = {}) {
+  const saved = configStore.get(RECORDING_CONFIG_KEY, {}) || {}
+  const merged = { ...saved, ...overrides }
+
+  const isWindow = merged.targetType === 'window'
+  const hwnd = Number(merged.windowSourceId)
+  const target = isWindow && Number.isFinite(hwnd) && hwnd > 0
+    ? { type: 'window', hwnd }
+    : { type: 'screen', displayIndex: clampNumber(merged.displayIndex, 0, 16, 0) }
+
+  const width = clampNumber(merged.width, 0, 7680, 0)
+  const height = clampNumber(merged.height, 0, 4320, 0)
+
+  // 压测用的分辨率：没指定缩放时按主显示器的物理像素算。
+  // ddagrab 抓的是物理像素，而 Electron 的 display.size 是 DIP，
+  // 150% 缩放下两者差一倍，不乘 scaleFactor 会把 4K 屏当 1440p 测。
+  let testWidth = width
+  let testHeight = height
+  if (!testWidth || !testHeight) {
+    try {
+      const display = screen.getPrimaryDisplay()
+      const factor = display.scaleFactor || 1
+      testWidth = width || Math.round(display.size.width * factor)
+      testHeight = height || Math.round(display.size.height * factor)
+    } catch (error) {
+      testWidth = width || 1920
+      testHeight = height || 1080
+    }
+  }
+
+  return {
+    target,
+    encoderId: typeof merged.encoderId === 'string' && merged.encoderId ? merged.encoderId : 'h264_nvenc',
+    fps: clampNumber(merged.fps, 15, 240, 60),
+    mode: merged.mode === 'bitrate' ? 'bitrate' : 'quality',
+    // 质量值 0~51（OBS 的 ICQ/CQ/CRF 同一套刻度），老配置里是 0~100 的百分比
+    quality: Number.isFinite(Number(merged.quality))
+      ? clampNumber(merged.quality, 0, 51, 23)
+      : undefined,
+    qualityPercent: clampNumber(merged.qualityPercent, 0, 100, 55),
+    bitrate: clampNumber(merged.bitrate, 500000, 200000000, 12000000),
+    // 对齐 OBS 编码器面板的细项
+    preset: ['speed', 'balanced', 'quality'].includes(merged.preset) ? merged.preset : 'balanced',
+    profile: merged.profile === 'high' ? 'high' : 'main',
+    // B 帧固定关闭：它会让 fMP4 的 DTS/PTS 顺序错开，
+    // 回放缓存按关键帧切片时容易切出无法解码的片段，收益不值这个风险
+    bf: 0,
+    // 关键帧间隔：回放缓存里由 startReplayBuffer 强制 1 秒，这里只作默认值
+    gopSeconds: 1,
+    bufferSeconds: clampNumber(merged.bufferSeconds, 5, 300, 30),
+    // 回放缓存的内存上限（OBS 里叫「最大内存」）
+    bufferMaxMB: clampNumber(merged.bufferMaxMB, 64, 8192, 2048),
+    cursor: merged.cursor !== false,
+    width,
+    height,
+    testWidth,
+    testHeight
+  }
+}
+
+ipcMain.handle('recorder:capabilities', async (_, options) => {
+  try {
+    return await recorderEngine.getCapabilities({ force: !!(options && options.force) })
+  } catch (error) {
+    log.error('[recorder] capabilities failed:', error)
+    return { error: error.message || String(error) }
+  }
+})
+
+ipcMain.handle('recorder:selftest', async (_, config) => {
+  try {
+    return await recorderEngine.selfTest(buildRecorderOptions(config || {}))
+  } catch (error) {
+    log.error('[recorder] selftest failed:', error)
+    return { ok: false, frames: 0, error: error.message || String(error) }
+  }
+})
+
+ipcMain.handle('recorder:config-get', () => configStore.get(RECORDING_CONFIG_KEY, {}) || {})
+
+ipcMain.handle('recorder:config-set', (_, config) => {
+  if (!config || typeof config !== 'object') return false
+  configStore.set(RECORDING_CONFIG_KEY, config)
+  return true
+})
+
+/**
+ * 启动回放缓存。上层应该在「开始监听手柄」时调它、停止监听时关它 ——
+ * 缓存期间编码器是持续工作的，不适合开机常驻。
+ */
+ipcMain.handle('recorder:replay-start', async (_, overrides) => {
+  try {
+    const options = buildRecorderOptions(overrides || {})
+    const started = await recorderEngine.startReplayBuffer(options, {
+      onProgress: (sample) => {
+        // 前端只关心「缓冲了多少秒」，完整采样太吵，按 500ms 节流推送
+        const now = Date.now()
+        if (now - lastReplayPush < 500) return
+        lastReplayPush = now
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('recorder:replay-progress', {
+            buffer: sample.buffer,
+            speed: sample.speed,
+            fps: sample.fps,
+            dropFrames: sample.dropFrames,
+            overloaded: sample.speed > 0 && sample.speed < 0.95
+          })
+        }
+      },
+      onLog: (line) => log.warn('[ffmpeg] ' + line),
+      onExit: (result) => {
+        if (result && !result.stopped) {
+          log.warn('[recorder] replay buffer exited unexpectedly:', result)
+        }
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('recorder:replay-exit', {
+            code: result ? result.code : null,
+            stopped: !!(result && result.stopped)
+          })
+        }
+      }
+    })
+    return { ok: true, ...started, state: recorderEngine.getReplayState() }
+  } catch (error) {
+    log.error('[recorder] replay start failed:', error)
+    return { ok: false, error: error.message || String(error) }
+  }
+})
+
+ipcMain.handle('recorder:replay-stop', async () => {
+  try {
+    await recorderEngine.stopReplayBuffer()
+    return true
+  } catch (error) {
+    log.error('[recorder] replay stop failed:', error)
+    return false
+  }
+})
+
+ipcMain.handle('recorder:replay-state', () => recorderEngine.getReplayState())
+
+/**
+ * 保存最近 N 秒。
+ * 文件名走和截图一样的模板与冲突策略，扩展名固定 mp4。
+ */
+ipcMain.handle('recorder:replay-save', async (_, config) => {
+  try {
+    const request = config || {}
+    const filePath = await resolveScreenshotFilePath({
+      path: request.path,
+      calcedFileName: request.calcedFileName,
+      imageFormat: 'mp4'
+    })
+    if (!filePath) return { ok: false, cancelled: true }
+
+    const saved = await recorderEngine.saveReplay(filePath)
+    log.info('[recorder] replay saved:', filePath, saved)
+    return { ok: true, path: filePath, ...saved }
+  } catch (error) {
+    log.error('[recorder] replay save failed:', error)
+    return { ok: false, error: error.message || String(error) }
+  }
+})
+
+//#endregion
 
 ipcMain.handle('get-all-gamepad', () => {
   return (sdl.joystick.devices || []).map(toPlainDevice);

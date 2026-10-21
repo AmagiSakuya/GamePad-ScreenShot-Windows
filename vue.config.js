@@ -49,6 +49,15 @@ module.exports = defineConfig({
             from: "src/screenshot-notification.html",
             to: "./html/screenshot-notification.html" 
           },
+          // 内置录制引擎：ffmpeg 必须作为「真实文件」放在 resources 下，
+          // 不能打进 asar（子进程要从文件系统启动它）。
+          // 体积约 160MB，用户装完即用，不需要另外下载。
+          // 注意：热更新只替换 app.asar，这个目录动不到 ——
+          // 所以升级版本号不受它影响，也不会让补丁包变大。
+          {
+            from: "vendor/ffmpeg/ffmpeg.exe",
+            to: "./ffmpeg/ffmpeg.exe"
+          },
           // 热更新助手：必须以「真实文件」的形式落在 resources 下，
           // 主进程会用它以 ELECTRON_RUN_AS_NODE 启动一个独立进程来替换 app.asar
           {

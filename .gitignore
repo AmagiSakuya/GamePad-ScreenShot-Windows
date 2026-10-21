@@ -36,3 +36,6 @@ package-lock.json
 # 本地 Vue DevTools 扩展（由 npm run devtools:fetch 生成）
 /devtools-extension
 *.crx
+
+# 内置 ffmpeg（160MB，不进仓库；构建前用 scripts/fetch-ffmpeg.js 拉取）
+/vendor/ffmpeg/

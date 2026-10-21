@@ -14,6 +14,9 @@
     "devtools:fetch": "node scripts/fetch-devtools.js",
     "gp:nav": "node scripts/gp-nav-check.js",
     "gp:nav:shots": "node scripts/gp-nav-check.js --shots",
+    "ffmpeg:fetch": "node scripts/fetch-ffmpeg.js",
+    "rec:smoke": "node scripts/recorder-smoke.js",
+    "rec:replay": "node scripts/replay-smoke.js",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
@@ -61,7 +64,8 @@
     },
     "rules": {
       "no-unused-vars": "off",
-      "vue/no-unused-components": "off"
+      "vue/no-unused-components": "off",
+      "vue/no-mutating-props": "off"
     }
   },
   "browserslist": [

@@ -138,6 +138,25 @@
             </div>
             <OBSConnectPage ref="obsConnectPageRef" :windowsNotify="windowsNotify" />
           </div>
+
+          <!-- 回放缓存：长按保存最近 N 秒。来源直接跟随上面的截图来源，
+               所以这里只留一个开关 + 设置入口，不重复配置采集目标 -->
+          <div class="ui-row">
+            <span class="ui-label"><AppIcon name="camera" :size="13" />{{ $t('ui.sectionRecording') }}</span>
+            <div class="ui-ctl">
+              <!-- 和「截图目标」同样的分段样式：开 / 关，不再额外显示状态文字
+                   （缓冲进度在设置弹窗里看，这里保持和其他行一样的克制） -->
+              <div class="ui-seg">
+                <button :class="{ on: !recordingConfig.enabled }"
+                  @click="setRecordingEnabled(false)">{{ $t('Recording.switchOff') }}</button>
+                <button :class="{ on: recordingConfig.enabled }"
+                  @click="setRecordingEnabled(true)">{{ $t('Recording.switchOn') }}</button>
+              </div>
+              <button class="ui-btn sm" data-gp @click="openRecordingDialog">
+                <AppIcon name="sliders" :size="12" />{{ $t('Recording.settings') }}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -311,6 +330,28 @@
         </div>
       </div>
     </div>
+
+    <!-- 录像设置弹窗：来源跟随截图来源，所以这里只配引擎/分辨率/帧率/缓冲。
+         必须留在 .page 内部 —— MainPage 是 v-show 常驻的，多根节点会让 v-show 失效，
+         整个页面永远可见，其他页面的手柄导航会被它的元素污染。 -->
+    <div class="rec-mask" v-if="showRecordingDialog" @click.self="closeRecordingDialog">
+      <div class="rec-dialog" data-gp-scope="overlay">
+        <div class="rec-dialog-head">
+          <div class="ui-card-head-left">
+            <div class="ui-card-ico warn"><AppIcon name="camera" :size="13" /></div>
+            <span class="ui-card-title">{{ $t('ui.sectionRecording') }}</span>
+          </div>
+        </div>
+        <RecordingSettings :config="recordingConfig" :state="replayState" :target="recordingTarget"
+          :source-label="recordingSourceLabel" :source-icon="recordingSourceIcon" @change="onRecordingConfigChange" />
+        <!-- 关闭按钮放在 DOM 末尾：手柄进弹窗时第一个焦点应该是配置项，
+             而不是这个一按就把窗口关掉的东西 -->
+        <button class="ui-btn sm icon-only rec-dialog-close" data-gp :title="$t('Recording.close')"
+          @click="closeRecordingDialog">
+          <AppIcon name="close" :size="12" />
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -321,6 +362,7 @@ import { hasCaptureSound, setCaptureSound, playCaptureSound as playSound } from 
 import { toPlain } from '@/lib/ipcSafe'
 import { isPadMode, pickFolder } from '@/lib/gamepadNav'
 import OBSConnectPage from '@/components/OBSConnectPage.vue'
+import RecordingSettings from '@/components/RecordingSettings.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import PageHero from '@/components/PageHero.vue'
 
@@ -334,7 +376,7 @@ let errorFlashTimer;
 
 export default {
   name: 'MainPage',
-  components: { OBSConnectPage, AppIcon, PageHero },
+  components: { OBSConnectPage, RecordingSettings, AppIcon, PageHero },
   props: {
     windowsNotify: {
       type: Function,
@@ -388,7 +430,29 @@ export default {
       comboLongPressHandled: false,
       physicalButtonCount: 0,
       hatCount: 0,
-      obsConnected: false
+      obsConnected: false,
+      // 内置录像引擎配置（与截图配置分开存，互不影响）
+      recordingConfig: {
+        enabled: false,
+        encoderId: '',
+        fps: 60,
+        mode: 'quality',
+        quality: 23,
+        bitrate: 12000000,
+        preset: 'balanced',
+        profile: 'main',
+        bf: 0,
+        gopSeconds: 1,
+        bufferSeconds: 30,
+        bufferMaxMB: 2048,
+        width: 1920,
+        height: 1080,
+        cursor: true
+      },
+      // 回放缓存的实时状态（主进程主动推送）
+      replayState: { active: false, ready: false, duration: 0, targetSeconds: 0, bytes: 0 },
+      // 录像设置弹窗
+      showRecordingDialog: false
     }
   },
   watch: {
@@ -431,6 +495,30 @@ export default {
       const ticker = this.formatPreviewTicker
       const name = this.formatFileName(this.config.fileNameTemplate, ticker)
       return name ? `${name}.${this.config.imageFormat}` : ''
+    },
+    /** 录像卡片右上角的徽标：关 / 未启动 / 准备中 / 已缓冲 12s / 30s */
+    replayBadge() {
+      if (!this.recordingConfig.enabled) return this.$t('Recording.disabledShort')
+      if (!this.replayState.active) return this.$t('Recording.stateIdle')
+      if (!this.replayState.ready) return this.$t('Recording.stateWarming')
+      return `${this.replayState.duration.toFixed(0)}s / ${this.replayState.targetSeconds}s`
+    },
+    /** 录制目标直接由截图配置推导，不另外存一份 */
+    recordingTarget() {
+      const isWindow = this.config.captureTargetType === CaptureTargetTypeEnum.Window
+      if (isWindow) {
+        const hwnd = Number(this.config.windowSourceId)
+        return hwnd > 0 ? { type: 'window', hwnd } : { type: 'screen', displayIndex: 0 }
+      }
+      const index = this.screenSources.findIndex(s => String(s.id) === String(this.config.screenSourceId))
+      return { type: 'screen', displayIndex: index >= 0 ? index : 0 }
+    },
+    recordingSourceLabel() {
+      // targetSummary 已经按截图配置算好了显示文案，直接复用
+      return this.targetSummary
+    },
+    recordingSourceIcon() {
+      return this.config.captureTargetType === CaptureTargetTypeEnum.Window ? 'appWindow' : 'monitor'
     }
   },
   async mounted() {
@@ -463,6 +551,31 @@ export default {
 
     //按键选项初始化
     this.initComboKeyOptions();
+
+    // 录像配置与缓冲状态
+    await this.loadRecordingConfig();
+    // 主动拉一次当前状态：渲染进程重载（或热更新）后缓冲可能还在跑，
+    // 只靠推送会一直显示「未启动」直到下一次进度回调
+    try {
+      const initialState = await window.electronAPI.getReplayState();
+      if (initialState && initialState.active) this.replayState = initialState;
+    } catch (error) { /* 状态读不到就按未启动显示 */ }
+    window.electronAPI.onReplayProgress((state) => {
+      if (state && state.buffer) {
+        this.replayState = { ...state.buffer };
+      }
+    });
+    window.electronAPI.onReplayExit(() => {
+      this.replayState = { active: false, ready: false, duration: 0, targetSeconds: this.replayState.targetSeconds, bytes: 0 };
+    });
+
+    // ESC 关录像弹窗（鼠标/键盘用户的主要退出方式）
+    this._escHandler = (event) => {
+      if (event.key === 'Escape' && this.showRecordingDialog) {
+        this.closeRecordingDialog();
+      }
+    };
+    window.addEventListener('keydown', this._escHandler);
   },
   async   beforeUnmount() {
     if (this.listening) {
@@ -470,11 +583,162 @@ export default {
     }
     await window.electronAPI.offDeviceChanged('main')
     await window.electronAPI.removeSdl2DeviceInstanceAllListeners()
+    await window.electronAPI.offReplayProgress()
+    await window.electronAPI.offReplayExit()
+    if (this._escHandler) window.removeEventListener('keydown', this._escHandler)
     clearInterval(timer)
     clearInterval(active_info_getter_timer)
     this.saveCurrentConfig()
   },
   methods: {
+    // ===== 内置录像 =====
+
+    async loadRecordingConfig() {
+      try {
+        const saved = await window.electronAPI.getRecordingConfig();
+        if (saved && typeof saved === 'object' && Object.keys(saved).length > 0) {
+          // 只覆盖已知字段：老版本存下的配置可能缺 key，直接整体替换会让下拉框空掉
+          this.recordingConfig = { ...this.recordingConfig, ...saved };
+        }
+      } catch (error) {
+        // 读不到就用默认值，不该影响截图功能
+      }
+    },
+
+    onRecordingConfigChange(config) {
+      // 滑条和输入框每动一下都会触发，防抖后再落盘
+      clearTimeout(this._recSaveTimer);
+      this._recSaveTimer = setTimeout(() => {
+        try {
+          window.electronAPI.saveRecordingConfig(JSON.parse(JSON.stringify(config)));
+        } catch (error) { /* 配置存不下不影响当前会话 */ }
+      }, 400);
+
+      // 已经在缓冲时改参数，必须重启 ffmpeg 才生效。
+      // 这里也用防抖 —— 拖画质滑条会连续触发十几次，不防抖会疯狂重启进程。
+      clearTimeout(this._recRestartTimer);
+      if (this.listening && this.recordingConfig.enabled) {
+        this._recRestartTimer = setTimeout(() => this.restartReplayBuffer(), 800);
+      }
+    },
+
+    /** 按当前配置启动缓冲，成功时同步状态 */
+    async startReplayWithCurrentConfig() {
+      const c = this.recordingConfig;
+      const result = await window.electronAPI.startReplayBuffer({
+        // 采集目标来自截图配置（recordingTarget），不在这里重复维护
+        targetType: this.recordingTarget.type,
+        windowSourceId: this.recordingTarget.hwnd || '',
+        displayIndex: this.recordingTarget.displayIndex || 0,
+        encoderId: c.encoderId,
+        fps: c.fps,
+        mode: c.mode,
+        quality: c.quality,
+        bitrate: c.bitrate,
+        preset: c.preset,
+        profile: c.profile,
+        bf: c.bf,
+        gopSeconds: c.gopSeconds,
+        bufferSeconds: c.bufferSeconds,
+        bufferMaxMB: c.bufferMaxMB,
+        width: c.width,
+        height: c.height
+      });
+      if (result && result.ok) {
+        this.replayState = result.state;
+        return true;
+      }
+      if (result && result.error) {
+        this.showError(this.$t('Recording.testFail', { reason: result.error }));
+      }
+      return false;
+    },
+
+    openRecordingDialog() {
+      this.showRecordingDialog = true;
+    },
+
+    closeRecordingDialog() {
+      this.showRecordingDialog = false;
+    },
+
+    /** 开关回放缓存：立即落盘并同步缓冲进程 */
+    async setRecordingEnabled(enabled) {
+      if (this.recordingConfig.enabled === enabled) return;
+      this.recordingConfig.enabled = enabled;
+      try {
+        window.electronAPI.saveRecordingConfig(JSON.parse(JSON.stringify(this.recordingConfig)));
+      } catch (error) { /* 存不下不影响本次 */ }
+      await this.syncReplayBuffer();
+    },
+
+    async stopReplayBufferSilently() {
+      try {
+        await window.electronAPI.stopReplayBuffer();
+      } catch (error) { /* 进程可能已经自己退出 */ }
+      this.replayState = { active: false, ready: false, duration: 0, targetSeconds: 0, bytes: 0 };
+    },
+
+    async restartReplayBuffer() {
+      await this.stopReplayBufferSilently();
+      if (this.listening && this.recordingConfig.enabled) {
+        await this.startReplayWithCurrentConfig();
+      }
+    },
+
+    /**
+     * 让缓冲状态跟上「是否在监听」。
+     *
+     * 缓冲 = 编码器持续工作，所以只在监听期间跑：
+     * 开始监听才启动、停止监听立刻关掉，待机时一点 GPU 都不占。
+     */
+    async syncReplayBuffer() {
+      if (!window.electronAPI.startReplayBuffer) return;
+      const shouldRun = this.listening && this.recordingConfig.enabled;
+
+      let state = null;
+      try {
+        state = await window.electronAPI.getReplayState();
+      } catch (error) {
+        return;
+      }
+      const running = !!(state && state.active);
+
+      if (shouldRun && !running) {
+        await this.startReplayWithCurrentConfig();
+      } else if (!shouldRun && running) {
+        await this.stopReplayBufferSilently();
+      }
+    },
+
+    /** 长按保存最近 N 秒（内置引擎） */
+    async saveReplayByBuiltin() {
+      const state = await window.electronAPI.getReplayState();
+      if (!state || !state.ready) {
+        // 「刚启动还没攒够第一段」和「画面完全没变化」都会走到这里，
+        // 具体原因不重要，给一句能指导下一步动作的话就行
+        this.showError(this.$t('Recording.emptyBuffer'));
+        return;
+      }
+
+      const replayConfig = await this.prepareCaptureConfig();
+      const result = await window.electronAPI.saveReplay({
+        path: replayConfig.path,
+        calcedFileName: replayConfig.calcedFileName
+      });
+
+      if (result && result.ok) {
+        await this.playCaptureSound();
+        await this.showCaptureNotification({
+          title: this.$t('overlayNotify.replayBufferSaved'),
+          desc: this.$t('overlayNotify.replayBufferSavedDesc'),
+          type: 'text'
+        });
+      } else if (result && result.error) {
+        this.showError(result.error);
+      }
+    },
+
     async loadScreenSources() {
       const screenSources = await window.electronAPI.getScreenSources();
       this.screenSources = screenSources;
@@ -930,6 +1194,12 @@ export default {
       this.saveCurrentConfig();
       this.listening = true;
 
+      // 开了「长按保存最近一段」的话，监听一开始就把回放缓存跑起来 ——
+      // 缓冲需要提前积累，等按下长按再启动就来不及了
+      if (this.recordingConfig.enabled) {
+        await this.syncReplayBuffer();
+      }
+
       let listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
       if (listenNotifyPolicy === 'all' || listenNotifyPolicy === 'start') {
         this.windowsNotify(this.$t('alertMsg.listeningStarted'));
@@ -1076,6 +1346,16 @@ export default {
         this.config.obsReplayBufferOnLongPress &&
         !this.comboLongPressHandled &&
         Date.now() - this.comboPressedAt >= 1000;
+
+      // 内置引擎优先：用户显式打开了「长按保存最近一段」，就以它为准，
+      // 不再看 OBS 那套开关（两条路同时开时只会有一个生效，避免存两份）
+      if (this.recordingConfig.enabled && !this.comboLongPressHandled &&
+        Date.now() - this.comboPressedAt >= 1000) {
+        this.comboLongPressHandled = true;
+        await this.saveReplayByBuiltin();
+        return;
+      }
+
       if (isLongPressReplay) {
         this.comboLongPressHandled = true;
         const obsPage = this.$refs.obsConnectPageRef
@@ -1103,6 +1383,8 @@ export default {
     },
     async stopListen() {
       this.listening = false;
+      // 停止监听就关掉回放缓存，不让编码器在待机时白占 GPU
+      await this.syncReplayBuffer();
       let listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
       if (listenNotifyPolicy === 'all' || listenNotifyPolicy === 'stop') {
         this.windowsNotify(this.$t('alertMsg.listeningStopped'));
@@ -1254,6 +1536,48 @@ export default {
 </script>
 
 <style scoped>
+/* ---------- 录像设置弹窗 ---------- */
+/* 不做成独立页面：配置项不多，弹窗能保留「来源跟随截图」的上下文 */
+.rec-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.52);
+}
+
+.rec-dialog {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: min(86vh, 700px);
+  overflow-y: auto;
+  padding: 14px 16px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  /* 两层背景：--surface 是半透明高光渐变，必须垫在实色 --bg 上，
+     否则弹窗是透的，后面的卡片会透上来（第一版就踩了这个） */
+  background: var(--surface), var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.rec-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* 视觉上在右上角，DOM 上在最后 —— 保证手柄进弹窗时不会一按就关 */
+.rec-dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
 /* ---------- 报错提示：出现时闪一下，配合自动滚回顶部 ---------- */
 .ui-alert.is-flash {
   animation: alertFlash 1s ease;

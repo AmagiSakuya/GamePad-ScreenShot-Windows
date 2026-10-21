@@ -145,4 +145,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
     offMappingLog: () => {
       ipcRenderer.removeAllListeners('mapping:log')
     },
+    // ===== 内置录制引擎（FFmpeg）=====
+    /** 探测本机可用的采集后端与编码器（真跑一遍，结果含不可用原因） */
+    getRecorderCapabilities: (options) => ipcRenderer.invoke('recorder:capabilities', options),
+    /** 用指定配置真录一小段，回答「会不会编码过载」 */
+    recorderSelfTest: (config) => ipcRenderer.invoke('recorder:selftest', config),
+    getRecordingConfig: () => ipcRenderer.invoke('recorder:config-get'),
+    saveRecordingConfig: (config) => ipcRenderer.invoke('recorder:config-set', config),
+    /** 启动回放缓存（最近 N 秒常驻在内存里） */
+    startReplayBuffer: (overrides) => ipcRenderer.invoke('recorder:replay-start', overrides),
+    stopReplayBuffer: () => ipcRenderer.invoke('recorder:replay-stop'),
+    getReplayState: () => ipcRenderer.invoke('recorder:replay-state'),
+    /** 把最近 N 秒写成 mp4 */
+    saveReplay: (config) => ipcRenderer.invoke('recorder:replay-save', config),
+    onReplayProgress: (callback) => {
+      const listener = (_event, state) => callback(state)
+      ipcRenderer.removeAllListeners('recorder:replay-progress')
+      ipcRenderer.on('recorder:replay-progress', listener)
+    },
+    offReplayProgress: () => {
+      ipcRenderer.removeAllListeners('recorder:replay-progress')
+    },
+    onReplayExit: (callback) => {
+      const listener = (_event, state) => callback(state)
+      ipcRenderer.removeAllListeners('recorder:replay-exit')
+      ipcRenderer.on('recorder:replay-exit', listener)
+    },
+    offReplayExit: () => {
+      ipcRenderer.removeAllListeners('recorder:replay-exit')
+    },
 })
