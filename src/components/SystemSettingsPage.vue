@@ -9,20 +9,25 @@
     </div>
 
     <div class="set-layout">
-      <!-- 左列：基础设置 + 数据 -->
+      <!-- 单列布局：无论窗口多宽，模块都只有一列，顺序从上到下 -->
       <div class="set-col">
-        <SettingsCard v-for="group in groupsLeft" :key="group.key" :group="group" :config="config"
+        <SettingsCard v-for="group in groups" :key="group.key" :group="group" :config="config"
           @change="applySetting" @action="runAction" @toggle="group.collapsed = !group.collapsed" />
 
         <div class="ui-card data-card">
-          <div class="ui-card-head">
+          <!-- data-gp：让手柄导航也能聚焦并折叠这张卡片（和其他模块一致） -->
+          <div class="ui-card-head set-head" data-gp @click="dataCollapsed = !dataCollapsed">
             <div class="ui-card-head-left">
               <div class="ui-card-ico warn"><AppIcon name="database" :size="13" /></div>
               <span class="ui-card-title">{{ $t('ui.data') }}</span>
             </div>
-            <span class="ui-badge">v{{ version }}</span>
+            <div class="data-head-right">
+              <span class="ui-badge">v{{ version }}</span>
+              <AppIcon name="chevronDown" :size="14" class="chev"
+                :style="{ transform: dataCollapsed ? 'rotate(-90deg)' : 'none' }" />
+            </div>
           </div>
-          <div class="data-list">
+          <div class="data-list" v-show="!dataCollapsed">
             <div class="data-item" v-for="action in dataActions" :key="action.key">
               <div class="data-main">
                 <div class="data-title-row">
@@ -40,12 +45,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 右列：覆层通知 + 更新设置 -->
-      <div class="set-col">
-        <SettingsCard v-for="group in groupsRight" :key="group.key" :group="group" :config="config"
-          @change="applySetting" @action="runAction" @toggle="group.collapsed = !group.collapsed" />
       </div>
     </div>
   </div>
@@ -94,6 +93,8 @@ export default {
   data() {
     return {
       version: pkg.version,
+      // 「数据」卡片也支持折叠，和其他模块保持同一套交互
+      dataCollapsed: false,
       config: {
         closeType: 'exit',
         filenameConflictResolution: 'overwrite',
@@ -120,7 +121,9 @@ export default {
         { key: 'openLogFolder', icon: 'folder', handler: this.openLogFolder },
         { key: 'clearLogs', icon: 'trash', danger: true, handler: this.clearLogs }
       ],
-      groupsLeft: [
+      // 模块顺序即界面从上到下的顺序：基础设置 → 覆层设置 → 更新设置 → 实验性功能
+      // （「数据」卡片在模板里固定排在这四组之后）
+      groups: [
         {
           key: 'groupBasic',
           icon: 'settings',
@@ -163,17 +166,6 @@ export default {
               ]
             },
             {
-              key: 'autoStart',
-              icon: 'power',
-              type: 'seg',
-              configKey: 'autoStart',
-              handler: this.onAutoStartChanged,
-              options: [
-                { value: true, label: 'SystemSettingsPage.enabled' },
-                { value: false, label: 'SystemSettingsPage.disabled' }
-              ]
-            },
-            {
               key: 'autoListenResolution',
               icon: 'play',
               type: 'seg',
@@ -194,36 +186,9 @@ export default {
                 { value: true, label: 'SystemSettingsPage.enabled' },
                 { value: false, label: 'SystemSettingsPage.disabled' }
               ]
-            },
-            {
-              key: 'minimizeOnStartup',
-              icon: 'appWindow',
-              type: 'seg',
-              configKey: 'minimizeOnStartup',
-              handler: this.onMinimizeOnStartupChanged,
-              options: [
-                { value: true, label: 'SystemSettingsPage.enabled' },
-                { value: false, label: 'SystemSettingsPage.disabled' }
-              ]
-            },
-            {
-              // 手柄控制软件（实验性）：方向导航 + 软键盘 + 文件夹选择器
-              key: 'gamepadUiNav',
-              icon: 'gamepad',
-              type: 'seg',
-              configKey: 'gamepadUiNav',
-              badge: 'SystemSettingsPage.experimental',
-              desc: 'SystemSettingsPage.gamepadUiNavDesc',
-              handler: this.onGamepadUiNavChanged,
-              options: [
-                { value: true, label: 'SystemSettingsPage.enabled' },
-                { value: false, label: 'SystemSettingsPage.disabled' }
-              ]
             }
           ]
-        }
-      ],
-      groupsRight: [
+        },
         {
           key: 'groupOverlayNotify',
           icon: 'bell',
@@ -319,6 +284,51 @@ export default {
               type: 'button',
               buttonIcon: 'download',
               handler: this.openUpdateDialog
+            }
+          ]
+        },
+        {
+          // 实验性功能：开机自启 / 静默启动 属于「非常规启动方式」，
+          // 手柄控制软件还是实验阶段，统一收在这一组里，避免污染基础设置
+          key: 'groupExperimental',
+          icon: 'bulb',
+          tone: 'cyan',
+          collapsed: false,
+          settings: [
+            {
+              key: 'autoStart',
+              icon: 'power',
+              type: 'seg',
+              configKey: 'autoStart',
+              handler: this.onAutoStartChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
+              ]
+            },
+            {
+              key: 'minimizeOnStartup',
+              icon: 'appWindow',
+              type: 'seg',
+              configKey: 'minimizeOnStartup',
+              handler: this.onMinimizeOnStartupChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
+              ]
+            },
+            {
+              // 手柄控制软件：方向导航 + 软键盘 + 文件夹选择器
+              key: 'gamepadUiNav',
+              icon: 'gamepad',
+              type: 'seg',
+              configKey: 'gamepadUiNav',
+              desc: 'SystemSettingsPage.gamepadUiNavDesc',
+              handler: this.onGamepadUiNavChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
+              ]
             }
           ]
         }
@@ -501,24 +511,36 @@ export default {
 </script>
 
 <style scoped>
-/* 两列瀑布流：用 flex 列容器而不是 grid 行，避免同一行卡片高度不同时留出空洞 */
+/* 单列布局：始终一列，不随窗口宽度变成两列 */
 .set-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.set-col {
-  flex: 1 1 0;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.set-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 /* ---------- 「数据」卡片 ---------- */
 .data-card {
   padding: 11px 14px 4px;
+}
+
+/* 头部右侧：版本号 + 折叠箭头（和 SettingsCard 的 .set-head 一致） */
+.data-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.data-card .chev {
+  color: var(--ink-3);
+  transition: transform 0.18s ease;
 }
 
 .data-list {
@@ -583,15 +605,5 @@ export default {
 
 .data-ctl {
   flex: 0 0 auto;
-}
-
-@media (max-width: 1080px) {
-  .set-layout {
-    flex-direction: column;
-  }
-
-  .set-col {
-    width: 100%;
-  }
 }
 </style>

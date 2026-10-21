@@ -3,12 +3,26 @@
     <!-- 手柄模式的按键提示条（不参与焦点导航） -->
     <transition name="gp-fade">
       <div v-if="padMode && hintVisible && !overlay" class="gp-hintbar" data-gp-skip>
-        <span class="gp-hint-item"><GpGlyph kind="face" pos="bottom" />{{ $t('GpNav.hintOk') }}</span>
-        <span class="gp-hint-item"><GpGlyph kind="face" pos="right" />{{ $t('GpNav.hintCancel') }}</span>
-        <span class="gp-hint-item">
-          <GpGlyph kind="shoulder" label="L" /><GpGlyph kind="shoulder" label="R" />{{ $t('GpNav.hintPage') }}
-        </span>
-        <span class="gp-hint-item"><GpGlyph kind="face" pos="left" />{{ $t('GpNav.hintHelp') }}</span>
+        <!-- 数值调节模式：只提示调节相关的键，避免和导航提示混淆 -->
+        <template v-if="adjusting">
+          <span class="gp-hint-item">
+            <i class="gp-dpad arrow">◀ ▶</i>{{ $t('GpNav.adjustTip') }}
+          </span>
+          <span class="gp-hint-item"><GpGlyph kind="face" pos="bottom" />{{ $t('GpNav.adjustDone') }}</span>
+          <span class="gp-hint-item"><GpGlyph kind="face" pos="right" />{{ $t('GpNav.adjustCancel') }}</span>
+        </template>
+        <template v-else>
+          <span class="gp-hint-item"><GpGlyph kind="face" pos="bottom" />{{ $t('GpNav.hintOk') }}</span>
+          <span class="gp-hint-item"><GpGlyph kind="face" pos="right" />{{ $t('GpNav.hintCancel') }}</span>
+          <span class="gp-hint-item">
+            <GpGlyph kind="shoulder" label="L" /><GpGlyph kind="shoulder" label="R" />{{ $t('GpNav.hintPage') }}
+          </span>
+          <span class="gp-hint-item"><GpGlyph kind="face" pos="left" />{{ $t('GpNav.hintHelp') }}</span>
+          <!-- 焦点落在滑条上时，提示「确定 = 进入调节」 -->
+          <span v-if="focusKind === 'range'" class="gp-hint-item gp-hint-adjust">
+            <GpGlyph kind="face" pos="bottom" />{{ $t('GpNav.adjustEnter') }}
+          </span>
+        </template>
         <span v-if="focusLabel" class="gp-hint-focus" :title="focusLabel">{{ focusLabel }}</span>
       </div>
     </transition>
@@ -80,6 +94,12 @@ export default {
     },
     focusLabel() {
       return gpNav.focusLabel
+    },
+    focusKind() {
+      return gpNav.focusKind
+    },
+    adjusting() {
+      return gpNav.adjusting
     },
     hintVisible() {
       return gpNav.hintVisible

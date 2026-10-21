@@ -1,0 +1,2334 @@
+{
+  "at": "2026-10-21T07:01:53.342Z",
+  "viewport": "1280x820",
+  "pages": {
+    "截图设置": [
+      {
+        "i": 0,
+        "label": "当前版本 <button:submit.ver-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 160,
+          "y": 10,
+          "w": 45,
+          "h": 16
+        },
+        "dirs": {
+          "up": 5,
+          "down": 5,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "当前版本 <button:submit.ver-chip>#1"
+      },
+      {
+        "i": 1,
+        "label": "切换主题 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 993,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 2
+        },
+        "uid": "切换主题 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 2,
+        "label": "主题颜色 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1029,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 2,
+          "down": 2,
+          "left": 1,
+          "right": 3
+        },
+        "uid": "主题颜色 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 3,
+        "label": "界面字体大小 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1065,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 3,
+          "down": 3,
+          "left": 2,
+          "right": 4
+        },
+        "uid": "界面字体大小 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 4,
+        "label": "语言 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1101,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 4,
+          "down": 4,
+          "left": 3,
+          "right": 4
+        },
+        "uid": "语言 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 5,
+        "label": "截图设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 63,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 6,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "截图设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 6,
+        "label": "按键映射 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 125,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 7,
+          "left": 6,
+          "right": 6
+        },
+        "uid": "按键映射 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 7,
+        "label": "控制器调试 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 187,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 6,
+          "down": 8,
+          "left": 7,
+          "right": 7
+        },
+        "uid": "控制器调试 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 8,
+        "label": "系统设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 249,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 7,
+          "down": 9,
+          "left": 8,
+          "right": 8
+        },
+        "uid": "系统设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 9,
+        "label": "项目主页（GitHub） <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 749,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 8,
+          "down": 9,
+          "left": 9,
+          "right": 9
+        },
+        "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 10,
+        "label": "刷新 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1198,
+          "y": 77,
+          "w": 63,
+          "h": 28
+        },
+        "dirs": {
+          "up": 10,
+          "down": 11,
+          "left": 10,
+          "right": 10
+        },
+        "uid": "刷新 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 11,
+        "label": "启动 <button:submit.hero-cta>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1157,
+          "y": 147,
+          "w": 87,
+          "h": 40
+        },
+        "dirs": {
+          "up": 10,
+          "down": 18,
+          "left": 11,
+          "right": 11
+        },
+        "uid": "启动 <button:submit.hero-cta>#1"
+      },
+      {
+        "i": 12,
+        "label": "桌面捕获 OBS <select:select-one.ui-select>",
+        "tag": "SELECT",
+        "type": "select-one",
+        "inHeader": false,
+        "rect": {
+          "x": 504,
+          "y": 299,
+          "w": 158,
+          "h": 32
+        },
+        "dirs": {
+          "up": 12,
+          "down": 14,
+          "left": 12,
+          "right": 16
+        },
+        "uid": "桌面捕获 OBS <select:select-one.ui-select>#1"
+      },
+      {
+        "i": 13,
+        "label": "屏幕 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 569,
+          "y": 343,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 12,
+          "down": 15,
+          "left": 13,
+          "right": 14
+        },
+        "uid": "屏幕 <button:submit.on>#1"
+      },
+      {
+        "i": 14,
+        "label": "窗口 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 615,
+          "y": 343,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 12,
+          "down": 15,
+          "left": 13,
+          "right": 19
+        },
+        "uid": "窗口 <button:submit>#1"
+      },
+      {
+        "i": 15,
+        "label": " <select:select-one.ui-select>",
+        "tag": "SELECT",
+        "type": "select-one",
+        "inHeader": false,
+        "rect": {
+          "x": 486,
+          "y": 381,
+          "w": 176,
+          "h": 32
+        },
+        "dirs": {
+          "up": 14,
+          "down": 37,
+          "left": 15,
+          "right": 22
+        },
+        "uid": " <select:select-one.ui-select>#1"
+      },
+      {
+        "i": 16,
+        "label": "文件 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1048,
+          "y": 302,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 10,
+          "down": 19,
+          "left": 12,
+          "right": 17
+        },
+        "uid": "文件 <button:submit.on>#1"
+      },
+      {
+        "i": 17,
+        "label": "剪切板 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1094,
+          "y": 302,
+          "w": 55,
+          "h": 26
+        },
+        "dirs": {
+          "up": 11,
+          "down": 19,
+          "left": 16,
+          "right": 18
+        },
+        "uid": "剪切板 <button:submit>#1"
+      },
+      {
+        "i": 18,
+        "label": "文件 + 剪切板 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1151,
+          "y": 302,
+          "w": 91,
+          "h": 26
+        },
+        "dirs": {
+          "up": 11,
+          "down": 20,
+          "left": 17,
+          "right": 18
+        },
+        "uid": "文件 + 剪切板 <button:submit>#1"
+      },
+      {
+        "i": 19,
+        "label": " <input:text.ui-input>",
+        "tag": "INPUT",
+        "type": "text",
+        "inHeader": false,
+        "rect": {
+          "x": 783,
+          "y": 340,
+          "w": 412,
+          "h": 32
+        },
+        "dirs": {
+          "up": 16,
+          "down": 22,
+          "left": 14,
+          "right": 20
+        },
+        "uid": " <input:text.ui-input>#1"
+      },
+      {
+        "i": 20,
+        "label": "选择 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1201,
+          "y": 342,
+          "w": 44,
+          "h": 28
+        },
+        "dirs": {
+          "up": 18,
+          "down": 21,
+          "left": 19,
+          "right": 20
+        },
+        "uid": "选择 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 21,
+        "label": " <button:submit.ui-switch>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1209,
+          "y": 381,
+          "w": 36,
+          "h": 20
+        },
+        "dirs": {
+          "up": 20,
+          "down": 24,
+          "left": 15,
+          "right": 21
+        },
+        "uid": " <button:submit.ui-switch>#1"
+      },
+      {
+        "i": 22,
+        "label": "Screenshot_%timestamp% <input:text.ui-input>",
+        "tag": "INPUT",
+        "type": "text",
+        "inHeader": false,
+        "rect": {
+          "x": 795,
+          "y": 410,
+          "w": 352,
+          "h": 32
+        },
+        "dirs": {
+          "up": 19,
+          "down": 27,
+          "left": 15,
+          "right": 23
+        },
+        "uid": "Screenshot_%timestamp% <input:text.ui-input>#1"
+      },
+      {
+        "i": 23,
+        "label": "JPG <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1156,
+          "y": 413,
+          "w": 40,
+          "h": 26
+        },
+        "dirs": {
+          "up": 18,
+          "down": 30,
+          "left": 22,
+          "right": 24
+        },
+        "uid": "JPG <button:submit.on>#1"
+      },
+      {
+        "i": 24,
+        "label": "PNG <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1198,
+          "y": 413,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 21,
+          "down": 31,
+          "left": 23,
+          "right": 24
+        },
+        "uid": "PNG <button:submit>#1"
+      },
+      {
+        "i": 25,
+        "label": "%activeWinTitle% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 703,
+          "y": 509,
+          "w": 105,
+          "h": 22
+        },
+        "dirs": {
+          "up": 22,
+          "down": 32,
+          "left": 32,
+          "right": 26
+        },
+        "uid": "%activeWinTitle% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 26,
+        "label": "%activeWinOwner% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 814,
+          "y": 509,
+          "w": 105,
+          "h": 22
+        },
+        "dirs": {
+          "up": 22,
+          "down": 36,
+          "left": 25,
+          "right": 27
+        },
+        "uid": "%activeWinOwner% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 27,
+        "label": "%timestamp% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 925,
+          "y": 509,
+          "w": 77,
+          "h": 22
+        },
+        "dirs": {
+          "up": 22,
+          "down": 41,
+          "left": 26,
+          "right": 28
+        },
+        "uid": "%timestamp% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 28,
+        "label": "%datetime% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1008,
+          "y": 509,
+          "w": 72,
+          "h": 22
+        },
+        "dirs": {
+          "up": 22,
+          "down": 41,
+          "left": 27,
+          "right": 29
+        },
+        "uid": "%datetime% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 29,
+        "label": "%YYYY% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1086,
+          "y": 509,
+          "w": 49,
+          "h": 22
+        },
+        "dirs": {
+          "up": 22,
+          "down": 40,
+          "left": 28,
+          "right": 30
+        },
+        "uid": "%YYYY% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 30,
+        "label": "%MM% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1141,
+          "y": 509,
+          "w": 38,
+          "h": 22
+        },
+        "dirs": {
+          "up": 23,
+          "down": 40,
+          "left": 29,
+          "right": 31
+        },
+        "uid": "%MM% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 31,
+        "label": "%DD% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1185,
+          "y": 509,
+          "w": 38,
+          "h": 22
+        },
+        "dirs": {
+          "up": 24,
+          "down": 40,
+          "left": 30,
+          "right": 31
+        },
+        "uid": "%DD% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 32,
+        "label": "%hh% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 703,
+          "y": 537,
+          "w": 38,
+          "h": 22
+        },
+        "dirs": {
+          "up": 25,
+          "down": 39,
+          "left": 37,
+          "right": 33
+        },
+        "uid": "%hh% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 33,
+        "label": "%mm% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 747,
+          "y": 537,
+          "w": 38,
+          "h": 22
+        },
+        "dirs": {
+          "up": 25,
+          "down": 39,
+          "left": 32,
+          "right": 34
+        },
+        "uid": "%mm% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 34,
+        "label": "%ss% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 791,
+          "y": 537,
+          "w": 38,
+          "h": 22
+        },
+        "dirs": {
+          "up": 25,
+          "down": 34,
+          "left": 33,
+          "right": 35
+        },
+        "uid": "%ss% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 35,
+        "label": "%cs% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 835,
+          "y": 537,
+          "w": 38,
+          "h": 22
+        },
+        "dirs": {
+          "up": 26,
+          "down": 35,
+          "left": 34,
+          "right": 36
+        },
+        "uid": "%cs% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 36,
+        "label": "%ms% <button:submit.ui-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 880,
+          "y": 537,
+          "w": 38,
+          "h": 22
+        },
+        "dirs": {
+          "up": 26,
+          "down": 36,
+          "left": 35,
+          "right": 27
+        },
+        "uid": "%ms% <button:submit.ui-chip>#1"
+      },
+      {
+        "i": 37,
+        "label": "添加按键 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 577,
+          "y": 594,
+          "w": 85,
+          "h": 28
+        },
+        "dirs": {
+          "up": 15,
+          "down": 38,
+          "left": 37,
+          "right": 32
+        },
+        "uid": "添加按键 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 38,
+        "label": " <select:select-one.ui-select>",
+        "tag": "SELECT",
+        "type": "select-one",
+        "inHeader": false,
+        "rect": {
+          "x": 482,
+          "y": 629,
+          "w": 180,
+          "h": 32
+        },
+        "dirs": {
+          "up": 37,
+          "down": 39,
+          "left": 38,
+          "right": 40
+        },
+        "uid": " <select:select-one.ui-select>#2"
+      },
+      {
+        "i": 39,
+        "label": " <button:submit.ui-switch>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 626,
+          "y": 712,
+          "w": 36,
+          "h": 20
+        },
+        "dirs": {
+          "up": 38,
+          "down": 39,
+          "left": 39,
+          "right": 43
+        },
+        "uid": " <button:submit.ui-switch>#2"
+      },
+      {
+        "i": 40,
+        "label": "静音 音效 1 音效 2 音效 3 音效 4 音效 5 <select:select-one.ui-select>",
+        "tag": "SELECT",
+        "type": "select-one",
+        "inHeader": false,
+        "rect": {
+          "x": 1077,
+          "y": 625,
+          "w": 168,
+          "h": 32
+        },
+        "dirs": {
+          "up": 30,
+          "down": 42,
+          "left": 38,
+          "right": 40
+        },
+        "uid": "静音 音效 1 音效 2 音效 3 音效 4 音效 5 <select:select-one.ui-select>#1"
+      },
+      {
+        "i": 41,
+        "label": "1 <input:range.ui-range>",
+        "tag": "INPUT",
+        "type": "range",
+        "inHeader": false,
+        "rect": {
+          "x": 1039,
+          "y": 678,
+          "w": 110,
+          "h": 4
+        },
+        "dirs": {
+          "up": 40,
+          "down": 41,
+          "left": 35,
+          "right": 42
+        },
+        "uid": "1 <input:range.ui-range>#1"
+      },
+      {
+        "i": 42,
+        "label": "试听 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1201,
+          "y": 666,
+          "w": 44,
+          "h": 28
+        },
+        "dirs": {
+          "up": 40,
+          "down": 43,
+          "left": 41,
+          "right": 42
+        },
+        "uid": "试听 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 43,
+        "label": "系统设置 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1160,
+          "y": 703,
+          "w": 85,
+          "h": 28
+        },
+        "dirs": {
+          "up": 42,
+          "down": 43,
+          "left": 39,
+          "right": 43
+        },
+        "uid": "系统设置 <button:submit.ui-btn>#1"
+      }
+    ],
+    "按键映射": [
+      {
+        "i": 0,
+        "label": "当前版本 <button:submit.ver-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 160,
+          "y": 10,
+          "w": 45,
+          "h": 16
+        },
+        "dirs": {
+          "up": 5,
+          "down": 5,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "当前版本 <button:submit.ver-chip>#1"
+      },
+      {
+        "i": 1,
+        "label": "切换主题 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 993,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 2
+        },
+        "uid": "切换主题 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 2,
+        "label": "主题颜色 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1029,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 2,
+          "down": 2,
+          "left": 1,
+          "right": 3
+        },
+        "uid": "主题颜色 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 3,
+        "label": "界面字体大小 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1065,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 3,
+          "down": 3,
+          "left": 2,
+          "right": 4
+        },
+        "uid": "界面字体大小 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 4,
+        "label": "语言 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1101,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 4,
+          "down": 4,
+          "left": 3,
+          "right": 4
+        },
+        "uid": "语言 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 5,
+        "label": "截图设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 63,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 6,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "截图设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 6,
+        "label": "按键映射 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 125,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 7,
+          "left": 6,
+          "right": 6
+        },
+        "uid": "按键映射 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 7,
+        "label": "控制器调试 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 187,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 6,
+          "down": 8,
+          "left": 7,
+          "right": 7
+        },
+        "uid": "控制器调试 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 8,
+        "label": "系统设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 249,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 7,
+          "down": 9,
+          "left": 8,
+          "right": 8
+        },
+        "uid": "系统设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 9,
+        "label": "项目主页（GitHub） <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 749,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 8,
+          "down": 9,
+          "left": 9,
+          "right": 9
+        },
+        "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 10,
+        "label": "刷新 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1198,
+          "y": 77,
+          "w": 63,
+          "h": 28
+        },
+        "dirs": {
+          "up": 10,
+          "down": 11,
+          "left": 10,
+          "right": 10
+        },
+        "uid": "刷新 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 11,
+        "label": "启动时是否自动开启，由「系统设置 → 启动时运行键盘映射」决定 <button:submit.hero-cta>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1157,
+          "y": 129,
+          "w": 87,
+          "h": 40
+        },
+        "dirs": {
+          "up": 10,
+          "down": 11,
+          "left": 11,
+          "right": 11
+        },
+        "uid": "启动时是否自动开启，由「系统设置 → 启动时运行键盘映射」决定 <button:submit.hero-cta>#1"
+      }
+    ],
+    "控制器调试": [
+      {
+        "i": 0,
+        "label": "当前版本 <button:submit.ver-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 160,
+          "y": 10,
+          "w": 45,
+          "h": 16
+        },
+        "dirs": {
+          "up": 5,
+          "down": 5,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "当前版本 <button:submit.ver-chip>#1"
+      },
+      {
+        "i": 1,
+        "label": "切换主题 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 993,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 2
+        },
+        "uid": "切换主题 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 2,
+        "label": "主题颜色 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1029,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 2,
+          "down": 2,
+          "left": 1,
+          "right": 3
+        },
+        "uid": "主题颜色 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 3,
+        "label": "界面字体大小 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1065,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 3,
+          "down": 3,
+          "left": 2,
+          "right": 4
+        },
+        "uid": "界面字体大小 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 4,
+        "label": "语言 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1101,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 4,
+          "down": 4,
+          "left": 3,
+          "right": 4
+        },
+        "uid": "语言 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 5,
+        "label": "截图设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 63,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 6,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "截图设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 6,
+        "label": "按键映射 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 125,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 7,
+          "left": 6,
+          "right": 11
+        },
+        "uid": "按键映射 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 7,
+        "label": "控制器调试 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 187,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 6,
+          "down": 8,
+          "left": 7,
+          "right": 11
+        },
+        "uid": "控制器调试 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 8,
+        "label": "系统设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 249,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 7,
+          "down": 9,
+          "left": 8,
+          "right": 8
+        },
+        "uid": "系统设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 9,
+        "label": "项目主页（GitHub） <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 749,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 8,
+          "down": 9,
+          "left": 9,
+          "right": 9
+        },
+        "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 10,
+        "label": "刷新 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1190,
+          "y": 73,
+          "w": 71,
+          "h": 32
+        },
+        "dirs": {
+          "up": 4,
+          "down": 4,
+          "left": 4,
+          "right": 4
+        },
+        "uid": "刷新 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 11,
+        "label": " <select:select-one.ui-select>",
+        "tag": "SELECT",
+        "type": "select-one",
+        "inHeader": false,
+        "rect": {
+          "x": 119,
+          "y": 159,
+          "w": 280,
+          "h": 32
+        },
+        "dirs": {
+          "up": 11,
+          "down": 11,
+          "left": 6,
+          "right": 11
+        },
+        "uid": " <select:select-one.ui-select>#1"
+      }
+    ],
+    "系统设置": [
+      {
+        "i": 0,
+        "label": "当前版本 <button:submit.ver-chip>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 160,
+          "y": 10,
+          "w": 45,
+          "h": 16
+        },
+        "dirs": {
+          "up": 5,
+          "down": 5,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "当前版本 <button:submit.ver-chip>#1"
+      },
+      {
+        "i": 1,
+        "label": "切换主题 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 993,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 1,
+          "down": 1,
+          "left": 1,
+          "right": 2
+        },
+        "uid": "切换主题 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 2,
+        "label": "主题颜色 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1029,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 2,
+          "down": 2,
+          "left": 1,
+          "right": 3
+        },
+        "uid": "主题颜色 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 3,
+        "label": "界面字体大小 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1065,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 3,
+          "down": 3,
+          "left": 2,
+          "right": 4
+        },
+        "uid": "界面字体大小 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 4,
+        "label": "语言 <button:submit.icon-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": true,
+        "rect": {
+          "x": 1101,
+          "y": 9,
+          "w": 30,
+          "h": 30
+        },
+        "dirs": {
+          "up": 4,
+          "down": 4,
+          "left": 3,
+          "right": 4
+        },
+        "uid": "语言 <button:submit.icon-btn>#1"
+      },
+      {
+        "i": 5,
+        "label": "截图设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 63,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 6,
+          "left": 5,
+          "right": 5
+        },
+        "uid": "截图设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 6,
+        "label": "按键映射 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 125,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 5,
+          "down": 7,
+          "left": 6,
+          "right": 10
+        },
+        "uid": "按键映射 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 7,
+        "label": "控制器调试 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 187,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 6,
+          "down": 8,
+          "left": 7,
+          "right": 7
+        },
+        "uid": "控制器调试 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 8,
+        "label": "系统设置 <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 249,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 7,
+          "down": 9,
+          "left": 8,
+          "right": 8
+        },
+        "uid": "系统设置 <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 9,
+        "label": "项目主页（GitHub） <button:submit.rail-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 14,
+          "y": 749,
+          "w": 58,
+          "h": 54
+        },
+        "dirs": {
+          "up": 8,
+          "down": 9,
+          "left": 9,
+          "right": 9
+        },
+        "uid": "项目主页（GitHub） <button:submit.rail-btn>#1"
+      },
+      {
+        "i": 10,
+        "label": "基础设置 <div.ui-card-head>",
+        "tag": "DIV",
+        "type": "",
+        "inHeader": false,
+        "rect": {
+          "x": 118,
+          "y": 127,
+          "w": 1128,
+          "h": 24
+        },
+        "dirs": {
+          "up": 10,
+          "down": 11,
+          "left": 6,
+          "right": 10
+        },
+        "uid": "基础设置 <div.ui-card-head>#1"
+      },
+      {
+        "i": 11,
+        "label": "覆盖 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1120,
+          "y": 166,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 10,
+          "down": 13,
+          "left": 11,
+          "right": 12
+        },
+        "uid": "覆盖 <button:submit.on>#1"
+      },
+      {
+        "i": 12,
+        "label": "追加时间戳 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1166,
+          "y": 166,
+          "w": 77,
+          "h": 26
+        },
+        "dirs": {
+          "up": 10,
+          "down": 14,
+          "left": 11,
+          "right": 12
+        },
+        "uid": "追加时间戳 <button:submit>#1"
+      },
+      {
+        "i": 13,
+        "label": "退出软件 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1098,
+          "y": 215,
+          "w": 66,
+          "h": 26
+        },
+        "dirs": {
+          "up": 11,
+          "down": 15,
+          "left": 13,
+          "right": 14
+        },
+        "uid": "退出软件 <button:submit.on>#1"
+      },
+      {
+        "i": 14,
+        "label": "隐藏到托盘 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1166,
+          "y": 215,
+          "w": 77,
+          "h": 26
+        },
+        "dirs": {
+          "up": 12,
+          "down": 16,
+          "left": 13,
+          "right": 14
+        },
+        "uid": "隐藏到托盘 <button:submit>#1"
+      },
+      {
+        "i": 15,
+        "label": "启用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 264,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 14,
+          "down": 17,
+          "left": 15,
+          "right": 16
+        },
+        "uid": "启用 <button:submit.on>#1"
+      },
+      {
+        "i": 16,
+        "label": "禁用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 264,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 14,
+          "down": 18,
+          "left": 15,
+          "right": 16
+        },
+        "uid": "禁用 <button:submit>#1"
+      },
+      {
+        "i": 17,
+        "label": "启用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 313,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 15,
+          "down": 19,
+          "left": 17,
+          "right": 18
+        },
+        "uid": "启用 <button:submit>#1"
+      },
+      {
+        "i": 18,
+        "label": "禁用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 313,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 16,
+          "down": 20,
+          "left": 17,
+          "right": 18
+        },
+        "uid": "禁用 <button:submit.on>#1"
+      },
+      {
+        "i": 19,
+        "label": "启用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 362,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 17,
+          "down": 22,
+          "left": 19,
+          "right": 20
+        },
+        "uid": "启用 <button:submit>#2"
+      },
+      {
+        "i": 20,
+        "label": "禁用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 362,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 18,
+          "down": 23,
+          "left": 19,
+          "right": 20
+        },
+        "uid": "禁用 <button:submit.on>#2"
+      },
+      {
+        "i": 21,
+        "label": "覆层通知 <div.ui-card-head>",
+        "tag": "DIV",
+        "type": "",
+        "inHeader": false,
+        "rect": {
+          "x": 118,
+          "y": 428,
+          "w": 1128,
+          "h": 24
+        },
+        "dirs": {
+          "up": 10,
+          "down": 23,
+          "left": 21,
+          "right": 21
+        },
+        "uid": "覆层通知 <div.ui-card-head>#1"
+      },
+      {
+        "i": 22,
+        "label": "启用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 467,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 19,
+          "down": 24,
+          "left": 22,
+          "right": 23
+        },
+        "uid": "启用 <button:submit.on>#2"
+      },
+      {
+        "i": 23,
+        "label": "禁用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 467,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 20,
+          "down": 25,
+          "left": 22,
+          "right": 23
+        },
+        "uid": "禁用 <button:submit>#2"
+      },
+      {
+        "i": 24,
+        "label": "左上角 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1131,
+          "y": 516,
+          "w": 55,
+          "h": 26
+        },
+        "dirs": {
+          "up": 22,
+          "down": 30,
+          "left": 24,
+          "right": 25
+        },
+        "uid": "左上角 <button:submit.on>#1"
+      },
+      {
+        "i": 25,
+        "label": "右上角 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1188,
+          "y": 516,
+          "w": 55,
+          "h": 26
+        },
+        "dirs": {
+          "up": 23,
+          "down": 32,
+          "left": 24,
+          "right": 25
+        },
+        "uid": "右上角 <button:submit>#1"
+      },
+      {
+        "i": 26,
+        "label": "1 <input:range.ui-range>",
+        "tag": "INPUT",
+        "type": "range",
+        "inHeader": false,
+        "rect": {
+          "x": 1055,
+          "y": 574,
+          "w": 120,
+          "h": 4
+        },
+        "dirs": {
+          "up": 24,
+          "down": 28,
+          "left": 26,
+          "right": 26
+        },
+        "uid": "1 <input:range.ui-range>#1"
+      },
+      {
+        "i": 27,
+        "label": " <button:button.ui-progress-step>",
+        "tag": "BUTTON",
+        "type": "button",
+        "inHeader": false,
+        "rect": {
+          "x": 1070,
+          "y": 616,
+          "w": 23,
+          "h": 8
+        },
+        "dirs": {
+          "up": 26,
+          "down": 33,
+          "left": 27,
+          "right": 28
+        },
+        "uid": " <button:button.ui-progress-step>#1"
+      },
+      {
+        "i": 28,
+        "label": " <button:button.ui-progress-step>",
+        "tag": "BUTTON",
+        "type": "button",
+        "inHeader": false,
+        "rect": {
+          "x": 1096,
+          "y": 616,
+          "w": 23,
+          "h": 8
+        },
+        "dirs": {
+          "up": 26,
+          "down": 36,
+          "left": 27,
+          "right": 29
+        },
+        "uid": " <button:button.ui-progress-step>#2"
+      },
+      {
+        "i": 29,
+        "label": " <button:button.ui-progress-step>",
+        "tag": "BUTTON",
+        "type": "button",
+        "inHeader": false,
+        "rect": {
+          "x": 1122,
+          "y": 616,
+          "w": 23,
+          "h": 8
+        },
+        "dirs": {
+          "up": 26,
+          "down": 32,
+          "left": 28,
+          "right": 30
+        },
+        "uid": " <button:button.ui-progress-step>#3"
+      },
+      {
+        "i": 30,
+        "label": " <button:button.ui-progress-step>",
+        "tag": "BUTTON",
+        "type": "button",
+        "inHeader": false,
+        "rect": {
+          "x": 1147,
+          "y": 616,
+          "w": 23,
+          "h": 8
+        },
+        "dirs": {
+          "up": 26,
+          "down": 32,
+          "left": 29,
+          "right": 31
+        },
+        "uid": " <button:button.ui-progress-step>#4"
+      },
+      {
+        "i": 31,
+        "label": " <button:button.ui-progress-step>",
+        "tag": "BUTTON",
+        "type": "button",
+        "inHeader": false,
+        "rect": {
+          "x": 1173,
+          "y": 616,
+          "w": 23,
+          "h": 8
+        },
+        "dirs": {
+          "up": 22,
+          "down": 32,
+          "left": 30,
+          "right": 31
+        },
+        "uid": " <button:button.ui-progress-step>#5"
+      },
+      {
+        "i": 32,
+        "label": "测试覆层通知 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1129,
+          "y": 650,
+          "w": 117,
+          "h": 32
+        },
+        "dirs": {
+          "up": 31,
+          "down": 35,
+          "left": 27,
+          "right": 32
+        },
+        "uid": "测试覆层通知 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 33,
+        "label": "更新设置 <div.ui-card-head>",
+        "tag": "DIV",
+        "type": "",
+        "inHeader": false,
+        "rect": {
+          "x": 118,
+          "y": 719,
+          "w": 1128,
+          "h": 24
+        },
+        "dirs": {
+          "up": 21,
+          "down": 35,
+          "left": 33,
+          "right": 33
+        },
+        "uid": "更新设置 <div.ui-card-head>#1"
+      },
+      {
+        "i": 34,
+        "label": "启用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 758,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 33,
+          "down": 36,
+          "left": 34,
+          "right": 35
+        },
+        "uid": "启用 <button:submit.on>#3"
+      },
+      {
+        "i": 35,
+        "label": "禁用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 758,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 32,
+          "down": 36,
+          "left": 34,
+          "right": 35
+        },
+        "uid": "禁用 <button:submit>#3"
+      },
+      {
+        "i": 36,
+        "label": " <input:text.ui-input>",
+        "tag": "INPUT",
+        "type": "text",
+        "inHeader": false,
+        "rect": {
+          "x": 1086,
+          "y": 804,
+          "w": 160,
+          "h": 32
+        },
+        "dirs": {
+          "up": 35,
+          "down": 37,
+          "left": 36,
+          "right": 36
+        },
+        "uid": " <input:text.ui-input>#1"
+      },
+      {
+        "i": 37,
+        "label": "检测更新 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1152,
+          "y": 853,
+          "w": 94,
+          "h": 32
+        },
+        "dirs": {
+          "up": 36,
+          "down": 40,
+          "left": 37,
+          "right": 37
+        },
+        "uid": "检测更新 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 38,
+        "label": "实验性功能 <div.ui-card-head>",
+        "tag": "DIV",
+        "type": "",
+        "inHeader": false,
+        "rect": {
+          "x": 118,
+          "y": 922,
+          "w": 1128,
+          "h": 24
+        },
+        "dirs": {
+          "up": 33,
+          "down": 40,
+          "left": 38,
+          "right": 38
+        },
+        "uid": "实验性功能 <div.ui-card-head>#1"
+      },
+      {
+        "i": 39,
+        "label": "启用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 961,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 37,
+          "down": 41,
+          "left": 39,
+          "right": 40
+        },
+        "uid": "启用 <button:submit>#3"
+      },
+      {
+        "i": 40,
+        "label": "禁用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 961,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 37,
+          "down": 42,
+          "left": 39,
+          "right": 40
+        },
+        "uid": "禁用 <button:submit.on>#3"
+      },
+      {
+        "i": 41,
+        "label": "启用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 1010,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 39,
+          "down": 43,
+          "left": 41,
+          "right": 42
+        },
+        "uid": "启用 <button:submit>#4"
+      },
+      {
+        "i": 42,
+        "label": "禁用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 1010,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 40,
+          "down": 44,
+          "left": 41,
+          "right": 42
+        },
+        "uid": "禁用 <button:submit.on>#4"
+      },
+      {
+        "i": 43,
+        "label": "启用 <button:submit.on>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1153,
+          "y": 1060,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 41,
+          "down": 45,
+          "left": 43,
+          "right": 44
+        },
+        "uid": "启用 <button:submit.on>#4"
+      },
+      {
+        "i": 44,
+        "label": "禁用 <button:submit>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1199,
+          "y": 1060,
+          "w": 44,
+          "h": 26
+        },
+        "dirs": {
+          "up": 42,
+          "down": 46,
+          "left": 43,
+          "right": 44
+        },
+        "uid": "禁用 <button:submit>#4"
+      },
+      {
+        "i": 45,
+        "label": "数据 v2.1.0 <div.ui-card-head>",
+        "tag": "DIV",
+        "type": "",
+        "inHeader": false,
+        "rect": {
+          "x": 118,
+          "y": 1126,
+          "w": 1128,
+          "h": 24
+        },
+        "dirs": {
+          "up": 38,
+          "down": 46,
+          "left": 45,
+          "right": 45
+        },
+        "uid": "数据 v2.1.0 <div.ui-card-head>#1"
+      },
+      {
+        "i": 46,
+        "label": "打开 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1202,
+          "y": 1167,
+          "w": 44,
+          "h": 28
+        },
+        "dirs": {
+          "up": 44,
+          "down": 47,
+          "left": 46,
+          "right": 46
+        },
+        "uid": "打开 <button:submit.ui-btn>#1"
+      },
+      {
+        "i": 47,
+        "label": "清空 <button:submit.ui-btn>",
+        "tag": "BUTTON",
+        "type": "submit",
+        "inHeader": false,
+        "rect": {
+          "x": 1202,
+          "y": 1217,
+          "w": 44,
+          "h": 28
+        },
+        "dirs": {
+          "up": 46,
+          "down": 47,
+          "left": 47,
+          "right": 47
+        },
+        "uid": "清空 <button:submit.ui-btn>#1"
+      }
+    ]
+  }
+}

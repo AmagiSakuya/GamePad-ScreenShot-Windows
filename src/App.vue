@@ -1770,6 +1770,32 @@ input {
   z-index: 2;
 }
 
+/* 滑条本体只有几像素高，而且组件样式里写了 outline:none，
+   这里用更高优先级把焦点环补回来，并往外撑一点才看得清 */
+.gp-focus.gp-focus[type="range"] {
+  outline: 2px solid var(--ink);
+  outline-offset: 7px;
+  border-radius: 99px;
+}
+
+/* 数值调节模式：焦点环换成主题色脉冲，明确「左右键现在改的是数值」 */
+.gp-focus.gp-adjust {
+  animation: gp-adjust-pulse 1.5s ease-in-out infinite;
+}
+
+.gp-focus.gp-focus.gp-adjust[type="range"] {
+  outline-color: var(--accent);
+}
+
+@keyframes gp-adjust-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 5px var(--accent-soft), 0 0 20px -6px var(--accent);
+  }
+  50% {
+    box-shadow: 0 0 0 9px var(--accent-soft), 0 0 30px -2px var(--accent);
+  }
+}
+
 .gp-root {
   position: fixed;
   inset: 0;
@@ -1813,6 +1839,18 @@ input {
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 滑条上的「确定 = 调节数值」提示：比普通提示更显眼一点 */
+.gp-hint-adjust {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.gp-dpad.arrow {
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 0 6px;
 }
 
 /* 通用手柄按键图示：只表达「位置」，不出现 A/B/X/Y（适配所有品牌） */

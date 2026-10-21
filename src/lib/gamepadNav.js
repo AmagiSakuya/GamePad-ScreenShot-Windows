@@ -64,6 +64,13 @@ export const gpNav = reactive({
   overlay: null,
   /** 当前焦点元素的文字说明（提示条右侧显示） */
   focusLabel: '',
+  /** 当前焦点元素的类型（range 时界面提示「按确定调节」） */
+  focusKind: '',
+  /**
+   * 数值调节模式：滑条必须先按「确认」进入，进入后左右才改值。
+   * 否则焦点停在滑条上时左右键会被吃掉，走不出这一行。
+   */
+  adjusting: false,
   /** 按键提示条是否显示（长时间无输入自动隐藏，再按一下手柄又出来） */
   hintVisible: false,
   /** 按键说明面板 */
@@ -153,11 +160,23 @@ function collect() {
 /**
  * 进入手柄模式时的起点：页面主操作（data-gp-autofocus，如「启动」）优先，
  * 其次内容区第一个可操作项，最后才退回左侧导航按钮。
+ *
+ * 注意：必须只用「当前导航列表里」的标记元素。MainPage 是 v-show 常驻的，
+ * 直接 querySelector 会拿到别的页面里隐藏着的启动按钮（宽高为 0），
+ * 导致映射/调试/设置页永远聚焦不到自己的主操作。
  */
+function markedIn(list) {
+  const nodes = Array.from(scopeRoot().querySelectorAll('[data-gp-autofocus]'))
+  for (let i = 0; i < nodes.length; i++) {
+    if (list.indexOf(nodes[i]) !== -1) return nodes[i]
+  }
+  return null
+}
+
 function initialFocusTarget(list) {
   if (!list.length) return null
-  const marked = scopeRoot().querySelector('[data-gp-autofocus]')
-  if (marked && list.indexOf(marked) !== -1) return marked
+  const marked = markedIn(list)
+  if (marked) return marked
   const stage = document.querySelector('.stage')
   if (stage) {
     for (let i = 0; i < list.length; i++) {
@@ -190,18 +209,44 @@ function labelOf(el) {
   if (el.tagName === 'SELECT' && el.selectedIndex >= 0 && el.options[el.selectedIndex]) {
     return el.options[el.selectedIndex].textContent.trim()
   }
+  // 滑条显示「行标题 + 当前值」，调节时提示条上能直接看到数值变化
+  if (el.tagName === 'INPUT' && el.type === 'range') {
+    const row = fieldLabel(el)
+    return (row ? row + ' ' : '') + el.value
+  }
   if (el.tagName === 'INPUT') return (el.value || el.placeholder || '').trim()
   const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim()
   return text.slice(0, 48)
 }
 
+/** 滑条：进入 / 退出「数值调节」模式 */
+function enterAdjust(el) {
+  if (!el || el.tagName !== 'INPUT' || el.type !== 'range') return
+  gpNav.adjusting = true
+  currentEl = el
+  el.classList.add('gp-adjust')
+  gpNav.hintVisible = true
+  lastInputAt = Date.now()
+}
+
+function exitAdjust() {
+  if (!gpNav.adjusting) return
+  gpNav.adjusting = false
+  if (currentEl) currentEl.classList.remove('gp-adjust')
+}
+
 function setFocus(el, options) {
   if (!el) return
   const instant = !!(options && options.instant)
-  if (currentEl && currentEl !== el) currentEl.classList.remove('gp-focus')
+  if (currentEl && currentEl !== el) {
+    currentEl.classList.remove('gp-focus')
+    // 焦点换到别的控件时，滑条自动结束调节，回到导航状态
+    exitAdjust()
+  }
   currentEl = el
   el.classList.add('gp-focus')
   gpNav.focusLabel = labelOf(el)
+  gpNav.focusKind = el.tagName === 'INPUT' && el.type === 'range' ? 'range' : ''
 
   const tag = el.tagName
   if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'A') {
@@ -219,16 +264,80 @@ function setFocus(el, options) {
   }
 }
 
+/** 两个区间（一维）的重叠长度 */
+function overlapLen(a1, a2, b1, b2) {
+  return Math.max(0, Math.min(a2, b2) - Math.max(a1, b1))
+}
+
 /**
- * 在指定方向上找「最近且方向合理」的下一个元素。
- * 评分 = 主方向距离 + 正交偏移（同一行/列内的元素正交偏移几乎为 0，优先命中）。
+ * 元素所属的「区域」。界面是三条互不相同的带状结构：
+ *  顶栏（只有横向）、左导航（只有纵向）、内容区（二维）。
+ * 方向键跨区域时收紧到「紧邻」才允许，避免从内容区按上直接飞到左上角版本号。
+ */
+function zoneOf(el) {
+  if (!el || !el.closest) return 'stage'
+  if (el.closest('header')) return 'top'
+  if (el.closest('.rail')) return 'rail'
+  return 'stage'
+}
+
+/**
+ * 元素所属的「视觉容器」。方向键优先在同一容器内解决，
+ * 避免从左侧卡片按一下右就飞到右边卡片里完全不同的一行。
+ */
+const GROUP_SELECTOR = [
+  '.rail',
+  '.ui-card',
+  '.hero',
+  '.popover',
+  '.upd-card',
+  '.gp-sheet',
+  '.gp-path-bar'
+].join(',')
+
+function groupOf(el) {
+  if (!el || !el.closest) return null
+  return el.closest(GROUP_SELECTOR)
+}
+
+/**
+ * 相邻距离上限：超过这个距离就不认为是「邻居」，
+ * 宁可按了没反应也不要乱跳（用户能靠上下/切页找到目标）。
+ */
+function hopLimit(horizontal) {
+  const size = horizontal ? window.innerWidth : window.innerHeight
+  return Math.max(horizontal ? 300 : 260, size * 0.55)
+}
+
+/** 跨区域 / 跨容器之间只接受「贴在一起」的邻居 */
+const ADJACENT_GAP = 64
+
+/**
+ * 在指定方向上找下一个元素。
+ *
+ * 判定顺序（按「几何直觉」而不是单纯的中心距离）：
+ *  1. 目标中心必须真的落在那一侧；
+ *  2. 优先「正交轴有重叠」的候选（同一行 / 同一列），只有在不存在这类候选时
+ *     才考虑斜向，并且斜向要落在 45° 左右的锥形内；
+ *  3. 跨区域（顶栏 / 左导航 / 内容区）、跨容器的移动必须是紧邻（gap ≤ 64），
+ *     否则宁可不动 —— 这是「按一下上就飞到左上角版本号」的根因；
+ *  4. 同容器、边缘对齐、正交重叠比例高的候选依次减分。
+ *
+ * 主轴距离用「间隙」（两块之间的空白）而不是中心距，这样紧挨着的邻居一定赢过
+ * 虽然中心更近但面积巨大的卡片。
  */
 function findNext(list, cur, dir) {
   const cr = cur.getBoundingClientRect()
   const ccx = cr.left + cr.width / 2
   const ccy = cr.top + cr.height / 2
-  let best = null
-  let bestScore = Infinity
+  const horizontal = dir === 'right' || dir === 'left'
+  const forward = dir === 'right' || dir === 'down'
+  const curGroup = groupOf(cur)
+  const curZone = zoneOf(cur)
+  const maxHop = hopLimit(horizontal)
+
+  const aligned = []
+  const diagonal = []
 
   for (let i = 0; i < list.length; i++) {
     const el = list[i]
@@ -237,26 +346,87 @@ function findNext(list, cur, dir) {
     const cx = r.left + r.width / 2
     const cy = r.top + r.height / 2
 
-    let primary = 0
-    let perp = 0
-    let sameBand = false
+    // 1) 中心必须在方向侧（1px 容差，避免边界抖动）
+    const delta = horizontal ? cx - ccx : cy - ccy
+    if (forward ? delta <= 1 : delta >= -1) continue
 
-    if (dir === 'right' || dir === 'left') {
-      primary = dir === 'right' ? cx - ccx : ccx - cx
+    // 2) 主轴间隙 / 正交偏移 / 正交重叠
+    let gap
+    let perp
+    let overlap
+    let crossSize
+    if (horizontal) {
+      gap = forward ? Math.max(0, r.left - cr.right) : Math.max(0, cr.left - r.right)
       perp = Math.abs(cy - ccy)
-      sameBand = r.top < cr.bottom && r.bottom > cr.top
+      overlap = overlapLen(cr.top, cr.bottom, r.top, r.bottom)
+      crossSize = Math.min(cr.height, r.height)
     } else {
-      primary = dir === 'down' ? cy - ccy : ccy - cy
+      gap = forward ? Math.max(0, r.top - cr.bottom) : Math.max(0, cr.top - r.bottom)
       perp = Math.abs(cx - ccx)
-      sameBand = r.left < cr.right && r.right > cr.left
+      overlap = overlapLen(cr.left, cr.right, r.left, r.right)
+      crossSize = Math.min(cr.width, r.width)
+    }
+    if (gap > maxHop && !(curGroup && groupOf(el) === curGroup)) continue
+
+    const sameZone = zoneOf(el) === curZone
+    const sameGroup = !!curGroup && groupOf(el) === curGroup
+    const adjacent = gap <= ADJACENT_GAP
+    // 3) 跨区域（顶栏 / 左导航 / 内容区）只能走「贴边的正交邻居」，
+    //    否则宁可不动 —— 这是「按一下上就飞到左上角版本号」的根因。
+    if (!sameZone && (!adjacent || overlap <= 0)) continue
+
+    // 4) 评分
+    let bonus = 0
+    if (sameGroup) bonus -= 60
+    else if (sameZone) bonus += 120
+    if (horizontal) {
+      if (Math.abs(r.top - cr.top) <= 3 || Math.abs(r.bottom - cr.bottom) <= 3) bonus -= 30
+    } else if (Math.abs(r.left - cr.left) <= 3 || Math.abs(r.right - cr.right) <= 3) {
+      bonus -= 30
     }
 
-    // 目标必须真的在那一侧（留 1px 容差，避免同一元素边界抖动）
-    if (primary <= 1) continue
+    const ratio = crossSize > 0 ? Math.min(1, overlap / crossSize) : 0
 
-    const score = primary + (sameBand ? perp * 0.35 : perp * 1.9)
-    if (score < bestScore) {
-      bestScore = score
+    if (overlap > 0) {
+      // 行内 / 列内：间隙为主，正交偏移微调，重叠越完整越像「同一行」
+      aligned.push({ el, score: gap + perp * 0.5 - ratio * 200 + bonus })
+    } else {
+      // 斜向：只在同一区域内、且距离够近时兜底，且正交偏移不能超过主轴间隙太多
+      if (!sameZone) continue
+      if (gap > maxHop * 0.45) continue
+      if (perp > gap * 0.8 + 30) continue
+      diagonal.push({ el, score: gap + perp * 1.6 + 400 + bonus })
+    }
+  }
+
+  const pool = aligned.length ? aligned : diagonal
+  let best = null
+  let bestScore = Infinity
+  for (let i = 0; i < pool.length; i++) {
+    if (pool[i].score < bestScore) {
+      bestScore = pool[i].score
+      best = pool[i].el
+    }
+  }
+  return best
+}
+
+/** 中心距离最近的可聚焦元素（兜底用） */
+function nearestOf(list, cur) {
+  const cr = cur.getBoundingClientRect()
+  const ccx = cr.left + cr.width / 2
+  const ccy = cr.top + cr.height / 2
+  let best = null
+  let bestDist = Infinity
+  for (let i = 0; i < list.length; i++) {
+    const el = list[i]
+    if (el === cur) continue
+    const r = el.getBoundingClientRect()
+    const dx = r.left + r.width / 2 - ccx
+    const dy = r.top + r.height / 2 - ccy
+    const dist = dx * dx + dy * dy
+    if (dist < bestDist) {
+      bestDist = dist
       best = el
     }
   }
@@ -267,11 +437,14 @@ function move(dir) {
   const list = collect()
   if (!list.length) return
 
-  // 滑条：左右直接调值，不移动焦点（否则永远走不出滑条）
-  if (currentEl && currentEl.tagName === 'INPUT' && currentEl.type === 'range'
-    && (dir === 'left' || dir === 'right')) {
-    nudgeRange(currentEl, dir === 'right' ? 1 : -1)
-    return
+  // 数值调节模式：左右改值，上下/其它方向先退出调节再正常导航
+  if (gpNav.adjusting) {
+    if (currentEl && currentEl.tagName === 'INPUT' && currentEl.type === 'range'
+      && (dir === 'left' || dir === 'right')) {
+      nudgeRange(currentEl, dir === 'right' ? 1 : -1)
+      return
+    }
+    exitAdjust()
   }
 
   if (!currentEl || !list.includes(currentEl)) {
@@ -279,7 +452,20 @@ function move(dir) {
     return
   }
   const next = findNext(list, currentEl, dir)
-  if (next) setFocus(next)
+  if (next) {
+    setFocus(next)
+    return
+  }
+  // 兜底：只有「四个方向都走不通」的孤立元素（如顶栏版本号）才允许跳最近邻，
+  // 避免焦点落在上面之后彻底出不来。正常的边界「按了不动」保持原样。
+  const stuck = !findNext(list, currentEl, 'up')
+    && !findNext(list, currentEl, 'down')
+    && !findNext(list, currentEl, 'left')
+    && !findNext(list, currentEl, 'right')
+  if (stuck) {
+    const fallback = nearestOf(list, currentEl)
+    if (fallback) setFocus(fallback)
+  }
 }
 
 /* =========================================================
@@ -321,8 +507,8 @@ async function openOverlay(kind, props) {
     if (!gpNav.overlay) return
     const list = collect()
     if (!list.length) return
-    const marked = scopeRoot().querySelector('[data-gp-autofocus]')
-    setFocus(marked && list.indexOf(marked) !== -1 ? marked : list[0], { instant: true })
+    const marked = markedIn(list)
+    setFocus(marked || list[0], { instant: true })
   }, 40)
   return promise
 }
@@ -341,8 +527,10 @@ export function resolveOverlay(id, value) {
   const resolve = overlayResolvers.get(id)
   overlayResolvers.delete(id)
   gpNav.overlay = null
+  exitAdjust()
   if (currentEl) currentEl.classList.remove('gp-focus')
   currentEl = null
+  gpNav.focusKind = ''
   if (resolve) resolve(value)
   nextTick(() => {
     if (!gpNav.padMode) return
@@ -430,7 +618,12 @@ async function activate() {
   const tag = el.tagName
 
   if (tag === 'SELECT') return openSelect(el)
-  if (tag === 'INPUT' && el.type === 'range') return nudgeRange(el, 1)
+  if (tag === 'INPUT' && el.type === 'range') {
+    // 确认键 = 开始调节（再按一次结束）。滑条不会一聚焦就被左右键改值。
+    if (gpNav.adjusting) exitAdjust()
+    else enterAdjust(el)
+    return undefined
+  }
   if (tag === 'INPUT' || tag === 'TEXTAREA') return openKeyboard(el)
   if (el.disabled) return
 
@@ -473,6 +666,11 @@ function back() {
     gpNav.hintOpen = false
     return
   }
+  // 调节模式下「返回」= 结束调节，焦点留在滑条上，不发散到页面外
+  if (gpNav.adjusting) {
+    exitAdjust()
+    return
+  }
   if (gpNav.overlay) {
     resolveOverlay(gpNav.overlay.id, null)
     return
@@ -489,7 +687,21 @@ function back() {
     if (trigger) nextTick(() => setFocus(trigger, { instant: true }))
     return
   }
-  exitPadMode('back')
+
+  // 页面层：「返回」= 回到本页主操作（启动 / 停止按钮），不直接退出手柄模式。
+  // 否则在调试 / 设置这类没有主按钮的页面会按到最后「什么都没有被聚焦」。
+  // 退出手柄模式统一走菜单键（≡）、鼠标或键盘操作。
+  const list = collect()
+  if (!list.length) return
+  const home = initialFocusTarget(list)
+  if (home && home !== currentEl) {
+    setFocus(home)
+    return
+  }
+  // 当前焦点指向的元素已经被移除（列表刷新等），重新锚定一下
+  if (currentEl && !list.includes(currentEl)) {
+    setFocus(home || list[0], { instant: true })
+  }
 }
 
 function switchPage(direction) {
@@ -649,11 +861,13 @@ function enterPadMode() {
 
 export function exitPadMode(reason) {
   gpNav.exitReason = reason || 'manual'
+  exitAdjust()
   if (currentEl) currentEl.classList.remove('gp-focus')
   currentEl = null
   gpNav.padMode = false
   gpNav.hintOpen = false
   gpNav.hintVisible = false
+  gpNav.focusKind = ''
   holdDir = null
 }
 
@@ -780,6 +994,7 @@ function installDebugBridge() {
     enter: () => enterPadMode(),
     button: (index) => handleButton(index),
     stats: () => ({ missingTicks, now: Date.now() }),
+    adjust: () => (gpNav.adjusting ? exitAdjust() : enterAdjust(currentEl)),
     chooser: (props) => openOverlay('chooser', props || {}),
     keyboard: (props) => openOverlay('keyboard', props || {}),
     folder: (props) => openOverlay('folder', props || {}),
