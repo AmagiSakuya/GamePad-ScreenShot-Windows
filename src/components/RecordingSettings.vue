@@ -180,6 +180,7 @@
 
 <script>
 import AppIcon from '@/components/AppIcon.vue';
+import { judgeLoad } from '@/lib/recorder/load';
 
 const DEFAULTS = {
   enabled: false,
@@ -444,29 +445,32 @@ export default {
         } else {
           const speed = Number(result.speed) || 0;
           const dropped = Number(result.dropFrames) || 0;
+          const frames = Number(result.frames) || 0;
           const size = `${result.testWidth || 0}×${result.testHeight || 0}`;
           const fps = Math.round(Number(this.config.fps) || 0);
 
-          // speed = 编码速度 / 实时速度。小于 1 只说明「连续满帧输入时会略紧」，
-          // 不等于过载 —— 采集源是 VFR（画面静止时不出帧），实际录制时很难持续满帧。
-          // OBS 也是看实际丢帧数，所以这里以 drop_frames 为准，speed 只作余量参考。
-          if (dropped > 3) {
+          // 结论由 judgeLoad 出，和录制中那条实时过载提示是同一套阈值。
+          // 以前这里是「丢帧 > 3 才算过载、speed < 1 一律说可用」，
+          // 于是 0.98x 显示「可用」，一开录又被判过载，自相矛盾。
+          const verdict = judgeLoad({ speed, dropped, frames });
+
+          if (verdict.level === 'overload') {
             this.testResult = {
-              tone: 'warn',
+              tone: 'bad',
               text: this.$t('Recording.testOverload', { size, fps, speed: speed.toFixed(2), dropped })
             };
-          } else if (speed > 0 && speed < 1) {
-            // 不丢帧就能用，只是没余量。4K60 硬编基本都在这个区间。
+          } else if (verdict.level === 'tight') {
+            // 没余量但没丢帧：只如实说「临界」，不带劝降配置的话术 ——
+            // 这个区间能正常录，真正丢帧时运行时会自己报过载
             this.testResult = {
-              tone: 'good',
+              tone: 'warn',
               text: this.$t('Recording.testTight', { size, fps, speed: speed.toFixed(2), dropped })
             };
           } else {
             this.testResult = {
               tone: 'good',
               text: this.$t('Recording.testOk', {
-                size, fps, speed: speed.toFixed(2), dropped,
-                margin: Math.max(0, Math.round((speed - 1) * 100))
+                size, fps, speed: speed.toFixed(2), dropped, margin: verdict.margin
               })
             };
           }
@@ -488,6 +492,8 @@ export default {
             at: Date.now(),
             measured: !!result.measured,
             ok: !!result.ok,
+            // ok / tight / overload，和实时提示的判定同源
+            level: result.level || '',
             speed: Number(result.speed) || 0,
             dropped: Number(result.dropFrames) || 0,
             encoderId: this.config.encoderId,

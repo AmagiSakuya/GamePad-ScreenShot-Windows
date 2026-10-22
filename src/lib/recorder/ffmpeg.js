@@ -200,7 +200,10 @@ async function selfTestPipeline(exe, { inputArgs, videoArgs, filters, durationSe
 
     const frames = pickNumber(result.stderr, 'frame')
     const dropFrames = pickNumber(result.stderr, 'drop_frames')
-    const speed = pickNumber(result.stderr, 'speed')
+    // 用整段测试的 speed 中位数，而不是最后一个进度块 ——
+    // 末尾那一个可能刚好是「画面静止后突然来一帧」的虚高值，
+    // 运行时也是取中位数，两边口径必须一样
+    const speed = median(pickAll(result.stderr, 'speed').filter((v) => v > 0))
 
     if (!result.ok && frames === 0) {
         return { ok: false, frames: 0, dropFrames: 0, speed: 0, error: errorTail(result.stderr, result.message) }
@@ -347,6 +350,25 @@ function pickNumber(text, key) {
     while ((m = re.exec(text)) !== null) last = m[1]
     if (last == null) return 0
     return parseFloat(String(last).replace('x', '')) || 0
+}
+
+/** 从 -progress 输出里取出某个 key 的所有取值（保留出现顺序） */
+function pickAll(text, key) {
+    const re = new RegExp(`^${key}=(.+)$`, 'gm')
+    const values = []
+    let m
+    while ((m = re.exec(text)) !== null) {
+        const value = parseFloat(String(m[1]).replace('x', ''))
+        if (Number.isFinite(value)) values.push(value)
+    }
+    return values
+}
+
+/** 中位数：空数组返回 0，偶数个取偏小的那个（和 session.summarize 一致） */
+function median(values) {
+    if (!values || values.length === 0) return 0
+    const sorted = values.slice().sort((a, b) => a - b)
+    return sorted[Math.floor(sorted.length / 2)]
 }
 
 module.exports = {

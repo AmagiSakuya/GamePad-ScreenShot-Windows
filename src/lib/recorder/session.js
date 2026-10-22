@@ -9,10 +9,11 @@
  *
  * 所以 stderr 必须自己拆：能识别的 key 归进度，其余当日志。
  * 进度里的 speed / drop_frames 就是「编码有没有过载」的原始依据：
- * speed < 1 表示编码速度跟不上采集速度，ffmpeg 开始丢帧。
+ * speed < 1 只说明没有实时余量，真正算过载要看丢帧 —— 判定统一走 load.js 的 judgeLoad。
  */
 
 const { spawn } = require('child_process')
+const { judgeLoad } = require('./load')
 
 // -progress 会输出的字段。只认这些，避免把普通日志里的 `=` 误判成进度。
 const PROGRESS_KEYS = new Set([
@@ -158,11 +159,18 @@ function createSession({ exe, args, onProgress, onLog, onData, onExit }) {
  *
  * 判据不是单次 speed：ddagrab 在画面静止时会突增一批帧，
  * 瞬时 speed 掉到 0.5 很常见，但那不是过载。
- * 所以取最近 8 个采样的中位数，再叠加累计丢帧数的增长。
+ * 所以取最近 8 个采样的中位数，再叠加窗口内的丢帧增量，
+ * 最后交给 judgeLoad 出结论 —— 和编码测试用的是同一套阈值。
  */
+
+// 启动后的前几个采样不判过载：编码器 warmup + 滤镜初始化会把 speed
+// 压到 0.7 左右（实测 4K60 NVENC 头 0.5 秒就是 0.75x），
+// 这时候报警等于每次开录都弹一次「编码过载」
+const WARMUP_SAMPLES = 3
+
 function summarize(history) {
     if (!history || history.length === 0) {
-        return { overloaded: false, medianSpeed: 0, dropped: 0, avgFps: 0, samples: 0 }
+        return { level: 'ok', overloaded: false, medianSpeed: 0, dropped: 0, avgFps: 0, samples: 0 }
     }
     const recent = history.slice(-8)
     const speeds = recent.map((s) => s.speed).filter((v) => v > 0).sort((a, b) => a - b)
@@ -171,11 +179,17 @@ function summarize(history) {
     const avgFps = fpsList.length ? fpsList.reduce((a, b) => a + b, 0) / fpsList.length : 0
     const last = history[history.length - 1]
     const first = recent[0]
+    // 丢帧和帧数都取「窗口内的增量」：累计值没有可比性，也没法算丢帧率
     const dropped = Math.max(0, (last.dropFrames || 0) - (first.dropFrames || 0))
+    const frames = Math.max(0, (last.frame || 0) - (first.frame || 0))
+
+    const verdict = history.length < WARMUP_SAMPLES
+        ? { level: 'ok', overloaded: false }
+        : judgeLoad({ speed: medianSpeed, dropped, frames })
 
     return {
-        // 速度跟不上 + 确实在丢帧，才算过载
-        overloaded: medianSpeed > 0 && medianSpeed < 0.95 && dropped > 0,
+        level: verdict.level,
+        overloaded: verdict.overloaded,
         medianSpeed,
         dropped,
         avgFps,

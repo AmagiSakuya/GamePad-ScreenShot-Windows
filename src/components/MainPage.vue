@@ -652,8 +652,9 @@ export default {
     /**
      * 运行时过载监控。
      *
-     * 主进程推来的 overloaded 是「最近 8 个采样的 speed 中位数 < 0.95 且确实在丢帧」，
-     * 单个采样抖动不会误报。连续两次（约 1 秒）才提示，一次监听里只提示一次 ——
+     * 主进程推来的 overloaded 来自 session.summarize（近 8 个采样的 speed 中位数
+     * + 窗口内丢帧增量），阈值和编码测试共用 lib/recorder/load.js 里的 judgeLoad。
+     * 单个采样抖动不会误报；连续两次（约 1 秒）才提示，一次监听里只提示一次 ——
      * 过载是持续性状态，每 500ms 弹一次只会让提示失去意义。
      */
     trackOverload(state) {

@@ -17,6 +17,7 @@ const { ENCODERS } = require('./encoders')
 const { buildRecordCommand } = require('./command')
 const { buildCaptureInput } = require('./sources')
 const { createSession } = require('./session')
+const { judgeLoad } = require('./load')
 const { Fmp4RingBuffer } = require('./fmp4')
 const { createAudioCapture } = require('./audioCapture')
 
@@ -206,11 +207,19 @@ function createRecorder(deps = {}) {
 
         // 帧数太少说明测的是「静止桌面」，数字没有参考价值
         const measured = result.frames >= 5
+        // 结论和运行时录制用同一个 judgeLoad：测试说「临界」时，
+        // 真实录制也不该反过来把它当成「可用」
+        const verdict = judgeLoad({
+            speed: result.speed,
+            dropped: result.dropFrames,
+            frames: result.frames
+        })
 
         return {
             ...result,
             ok: measured,
             measured,
+            level: verdict.level,
             testWidth: Number(config.testWidth) || Number(config.width) || 0,
             testHeight: Number(config.testHeight) || Number(config.height) || 0,
             backend: meta.backend,

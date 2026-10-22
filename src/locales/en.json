@@ -416,7 +416,7 @@
         "keyframeInterval": "Keyframe interval",
         "keyframeAuto": "Auto",
         "bufferMaxMB": "Max memory",
-        "testTight": "{size} at {fps}fps works, no dropped frames measured ({speed}x — slightly tight under sustained full frame rate)",
+        "testTight": "{size} at {fps}fps borderline: {speed}x encode speed, recording unaffected",
         "testIdle": "Screen is static, no load measured — play a video or move a window, then test again",
         "testFallback": "This window can't be captured directly — recording its display instead",
         "switchOn": "On",
