@@ -39,3 +39,4 @@ package-lock.json
 
 # 内置 ffmpeg（160MB，不进仓库；构建前用 scripts/fetch-ffmpeg.js 拉取）
 /vendor/ffmpeg/
+.workbuddy

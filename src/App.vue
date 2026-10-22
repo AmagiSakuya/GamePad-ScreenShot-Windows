@@ -26,7 +26,9 @@
           <i></i>{{ listening ? $t('ui.captureRunning') : $t('ui.captureIdle') }}
           <span class="pill-div" aria-hidden="true"></span>
           <span class="rec-zone" :class="'is-' + recTone" :title="$t('ui.recMonitor')">
-            <span class="rec-dot" aria-hidden="true"></span>{{ recLabel }}
+            <span class="rec-dot" aria-hidden="true"></span>
+            <span class="rec-text">{{ recLabel }}</span>
+            <span class="rec-tag" aria-hidden="true">REC</span>
           </span>
         </span>
         <span class="state-pill mapping" :class="mappingEnabled ? 'on' : 'off'" :title="$t('ui.mappingMonitor')">
@@ -913,6 +915,13 @@ body {
   opacity: 0.8;
 }
 
+/* 窄窗时用的固定标记（见文件末尾的断点），宽窗不显示 */
+.rec-tag {
+  display: none;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
 .rec-zone.is-armed {
   color: var(--warn);
 }
@@ -939,11 +948,20 @@ body {
   50% { opacity: 0.45; transform: scale(0.82); }
 }
 
-/* 最小窗口宽度下顶栏三段挤不下：录制那段只留一个状态灯，文字收掉 */
+/* 最小窗口宽度下顶栏三段挤不下：本地化的状态词换成固定标记 REC，
+   文字再长也不会把胶囊顶到品牌区 / 右侧按钮上；品牌名同时收紧，避免长语言
+   （俄语 / 德语）压到中间的胶囊下面 */
 @media (max-width: 1000px) {
-  .rec-zone {
-    gap: 0;
-    font-size: 0;
+  .brand {
+    max-width: min(260px, 30vw);
+  }
+
+  .rec-zone .rec-text {
+    display: none;
+  }
+
+  .rec-zone .rec-tag {
+    display: inline;
   }
 }
 
