@@ -442,6 +442,10 @@ export default {
     },
     'config.soundPower'(value) {
       setCaptureSound(this.config.sound, value)
+    },
+    // 组合键选项里的「十字键 / 轴」是本地化的，切语言后要按新文案重建一次
+    '$i18n.locale'() {
+      this.refreshDeviceCapabilities()
     }
   },
   computed: {
@@ -923,7 +927,7 @@ export default {
       for (let h = 0; h < hatTotal; h++) {
         for (let d = 0; d < 4; d++) {
           const index = physicalCount + h * 4 + d;
-          const label = (hatTotal > 1 ? `十字键${h + 1}` : '十字键') + ' ' + dirNames[d];
+          const label = (hatTotal > 1 ? this.$t('ui.hatsIndexed', { n: h + 1 }) : this.$t('ui.hats')) + ' ' + dirNames[d];
           options.push({ label, value: 'Button' + index });
         }
       }
@@ -966,12 +970,12 @@ export default {
           const rel = index - this.physicalButtonCount;
           const dir = ['↑', '→', '↓', '←'][rel % 4];
           const hat = Math.floor(rel / 4);
-          return (this.hatCount > 1 ? `十字${hat + 1}` : '十字') + dir;
+          return (this.hatCount > 1 ? this.$t('ui.hatShortIndexed', { n: hat + 1 }) : this.$t('ui.hatShort')) + dir;
         }
         return 'B' + index;
       }
       if (value.startsWith('Axis')) {
-        return value.replace('Axis', '轴').replace('+', '＋').replace('-', '－');
+        return value.replace('Axis', this.$t('ui.axis')).replace('+', '＋').replace('-', '－');
       }
       return value;
     },

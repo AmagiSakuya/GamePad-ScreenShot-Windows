@@ -180,6 +180,7 @@
 
 <script>
 import AppIcon from '@/components/AppIcon.vue';
+import { getIntlLocale } from '@/locales/languages';
 import { judgeLoad } from '@/lib/recorder/load';
 
 const DEFAULTS = {
@@ -306,7 +307,9 @@ export default {
       if (test.measured === false) return this.$t('Recording.encoderCheckIdle');
       let time = '';
       try {
-        time = new Date(test.at).toLocaleString();
+        // 必须显式传界面语言：不传就按操作系统区域格式化，
+        // 中文 Windows 上跑日文界面会显示成「2026/10/22 下午3:28:51」。
+        time = new Date(test.at).toLocaleString(getIntlLocale(this.$i18n.locale));
       } catch (error) {
         time = '';
       }
