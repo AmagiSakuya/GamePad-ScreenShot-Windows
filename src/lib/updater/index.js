@@ -554,6 +554,10 @@ function createUpdater(deps) {
     const helper = fs.existsSync(stagedHelper) ? stagedHelper : helperPath
     if (!fs.existsSync(helper)) return { ok: false, reason: 'missing-helper' }
 
+    // 助手正常要等本进程退出才动手，存活时间一定以秒计；
+    // 如果它几十毫秒就退了（非 0），说明根本没跑起来（脚本损坏 / 权限 / 路径不对）。
+    let helperExitCode = null
+
     try {
       const child = spawn(appExePath, [helper, '--plan', planPath], {
         detached: true,
@@ -561,6 +565,8 @@ function createUpdater(deps) {
         windowsHide: true,
         env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
       })
+      child.on('exit', (code) => { helperExitCode = code === null ? -1 : code })
+      child.on('error', (error) => { log.error('[UPDATER] helper error:', error) })
       child.unref()
     } catch (error) {
       log.error('[UPDATER] spawn helper failed:', error)
@@ -574,6 +580,13 @@ function createUpdater(deps) {
 
     // 留一点时间让渲染进程收到状态、动画走完
     setTimeout(() => {
+      // 助手已经异常退出：这时候再 app.exit 就是「应用关了、更新没做、也没提示」，
+      // 用户只能自己重开一个旧版本。直接把状态退回 ready 让用户重试。
+      if (helperExitCode !== null && helperExitCode !== 0) {
+        log.error('[UPDATER] helper exited early, code:', helperExitCode)
+        setState({ status: STATUS.READY, error: '更新助手启动失败，请重试' })
+        return
+      }
       try {
         app.exit(0)
       } catch (error) {

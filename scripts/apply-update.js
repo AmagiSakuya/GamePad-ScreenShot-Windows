@@ -128,8 +128,9 @@ async function main() {
 
   const exited = await waitForExit(plan.pid)
   if (!exited) {
+    // 旧实例还活着：新实例大概会被单实例锁挡掉，这里只当作「唤起」兜底
     writeLog('等待应用退出超时，放弃本次更新')
-    restartApp(plan)
+    await restartApp(plan)
     process.exit(4)
   }
 
@@ -197,7 +198,7 @@ async function main() {
   } catch (error) {
     writeLog(`更新失败: ${error.message}`)
     await rollback()
-    restartApp(plan)
+    await restartApp(plan)
     process.exit(5)
   }
 
@@ -208,26 +209,61 @@ async function main() {
   await forceRemove(plan.stagingDir)
 
   writeLog(`更新到 v${plan.version} 完成，准备重启`)
-  restartApp(plan)
+  await restartApp(plan)
   process.exit(0)
 }
 
-function restartApp(plan) {
+/**
+ * 重新拉起应用。
+ *
+ * 这里最容易踩的坑：**不能原样把本进程的环境变量交给新实例**。
+ *
+ * 助手自己是被主进程用 ELECTRON_RUN_AS_NODE=1 拉起来的（只有这样它才是一个纯
+ * Node 进程，能绕开 asar 去覆盖 app.asar），而 spawn 默认继承 process.env。
+ * 一旦把这个开关一起传下去，重新拉起的「应用」会继续以 Node 模式启动：
+ *   - 不加载 app.asar，不创建 BrowserWindow；
+ *   - stdio 是 'ignore'，stdin 指向 NUL，Node 读到 EOF 就立刻退出。
+ * 结果就是更新在几十毫秒里「静默跑完并消失」，用户完全看不到界面，只能自己
+ * 再双击一次图标 —— 而文件早就换好了，所以那时看到的是新版本。
+ *
+ * 所以要把 Electron 的启动开关摘掉，其余环境变量（PATH / APPDATA / 代理等）照常继承。
+ */
+const SPAWN_ENV_DROPS = ['ELECTRON_RUN_AS_NODE', 'ELECTRON_NO_ASAR']
+
+async function restartApp(plan) {
   const exe = plan.restart
   if (!exe || !fs.existsSync(exe)) {
     writeLog(`找不到可执行文件，跳过自动重启: ${exe}`)
-    return
+    return false
   }
+
+  const env = { ...process.env }
+  for (const key of SPAWN_ENV_DROPS) delete env[key]
+
   try {
     const child = spawn(exe, [], {
       detached: true,
       stdio: 'ignore',
-      cwd: path.dirname(exe)
+      cwd: path.dirname(exe),
+      env
+    })
+
+    let earlyExit = null
+    child.on('error', (error) => writeLog(`重启失败: ${error.message}`))
+    child.on('exit', (code, signal) => {
+      earlyExit = `code=${code} signal=${signal}`
     })
     child.unref()
-    writeLog('已重新拉起应用')
+    writeLog(`已重新拉起应用 (pid ${child.pid})`)
+
+    // 留一个观察窗口：正常启动的应用会一直活着，1.5 秒内就退出说明这次重启
+    // 没成功（缺文件、单实例锁被旧进程占着等）。写进日志，不用再靠猜。
+    await sleep(1500)
+    if (earlyExit) writeLog(`新实例提前退出（${earlyExit}），请检查是否被单实例锁挡住或启动失败`)
+    return !earlyExit
   } catch (error) {
     writeLog(`重启失败: ${error.message}`)
+    return false
   }
 }
 
