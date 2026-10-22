@@ -5,7 +5,8 @@
  * 改完 UI 之后跑一遍，回答四个问题：
  *   1. 每个可聚焦元素的上下左右分别落到哪个元素？（导航图）
  *   2. 有没有「按了没反应又出不去」的死胡同？
- *   3. 滑条是不是仍然是「先按确定才能调值」的两段式？
+ *   3. 滑条和档位条（int progress）是不是仍然「先按确定才能调值」的两段式？
+ *      档位条还必须整条只算一个焦点，且按上落在紧邻的上一行。
  *   4. 返回键会不会「保底定格」在某个元素上？连续按返回必须走到「没有任何被选中」。
  *
  * 用法：
@@ -141,9 +142,11 @@ function stubElectronAPI() {
  * 注意：这里的可见性判定必须和 src/lib/gamepadNav.js 的 collect() 保持一致，
  * 改了那边的 FOCUSABLE_SELECTOR / skip 规则记得同步这里。
  */
-const PROBE = () => {
+const PROBE = async () => {
   // 冻结滚动：否则 focus() 的自动滚动会让后续 getBoundingClientRect 全部偏移
   Element.prototype.scrollIntoView = function () {}
+  // 组件改值要等 Vue 重渲染后 aria-valuenow 才是新的
+  const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms || 40))
 
   const SELECTOR = ['button', 'select', 'textarea', 'input', 'a[href]', '[data-gp]'].join(',')
   const isVisible = (el) => {
@@ -170,8 +173,14 @@ const PROBE = () => {
   })
 
   const describe = (el) => {
-    const text = (el.getAttribute('aria-label') || el.getAttribute('title')
+    // 档位条本体没有文字，用「行标题 + 当前档位文案」描述（和提示条里的说法一致）
+    const rowEl = el.hasAttribute('data-gp-adjust') ? el.closest('.set-row') : null
+    const rowText = rowEl
+      ? ((rowEl.querySelector('.set-label') || {}).innerText || '').replace(/\s+/g, ' ').trim()
+      : ''
+    const own = (el.getAttribute('aria-valuetext') || el.getAttribute('aria-label') || el.getAttribute('title')
       || el.innerText || el.textContent || el.value || '').replace(/\s+/g, ' ').trim()
+    const text = rowText ? (rowText + ' ' + own).trim() : own
     const cls = typeof el.className === 'string' && el.className ? '.' + el.className.split(' ')[0] : ''
     return `${text.slice(0, 40)} <${el.tagName.toLowerCase()}${el.type ? ':' + el.type : ''}${cls}>`
   }
@@ -229,6 +238,57 @@ const PROBE = () => {
       adjustExited
     })
   })
+
+  // 档位条（int progress）两段式：整条只算一个焦点，体验必须和滑条一致
+  const steps = []
+  for (const item of items.filter((x) => x.el.hasAttribute('data-gp-adjust'))) {
+    const el = item.el
+    const read = () => Number(el.getAttribute('aria-valuenow'))
+    const before = read()
+    // 内部方块必须 tabindex=-1：否则手柄会一格一格停在方块上（本次修复的根因）
+    const innerStops = Array.from(el.querySelectorAll('button, [data-gp]'))
+      .filter((n) => n.getAttribute('tabindex') !== '-1').length
+
+    nav.focusEl(el)
+    nav.move('right')
+    const leftWithoutConfirm = nav.current() !== el
+    const valueUntouched = read() === before
+
+    nav.focusEl(el)
+    nav.activate()
+    const adjustEntered = !!nav.state.adjusting
+    nav.move('right')
+    await tick()
+    const rightChanged = read() !== before
+    nav.move('left')
+    await tick()
+    const leftRestored = read() === before
+    nav.activate()
+    const adjustExited = !nav.state.adjusting
+
+    // 上方邻居必须是紧邻的那一行（曾经会从最右边那格直接飞到上一行的「启用」按钮）
+    nav.focusEl(el)
+    nav.move('up')
+    const upEl = nav.current()
+    const upLabel = upEl && upEl !== el ? describe(upEl) : ''
+    const upGap = upEl && upEl !== el
+      ? Math.round(el.getBoundingClientRect().top - upEl.getBoundingClientRect().bottom)
+      : null
+
+    steps.push({
+      index: items.indexOf(item),
+      label: item.label,
+      innerStops,
+      leftWithoutConfirm,
+      valueUntouched,
+      adjustEntered,
+      rightChanged,
+      leftRestored,
+      adjustExited,
+      upLabel,
+      upGap
+    })
+  }
 
   // 返回键语义：不应「保底定格」在某个元素上，连续按返回必须能走到「没有任何被选中」
   const backProbe = (() => {
@@ -325,6 +385,7 @@ const PROBE = () => {
   return {
     items: result.map(({ i, label, tag, type, inHeader, rect, dirs }) => ({ i, label, tag, type, inHeader, rect, dirs })),
     ranges,
+    steps,
     back: backProbe,
     bar: barProbe,
     head: headProbe
@@ -427,7 +488,7 @@ const DRAW = ({ currentIndex, targets }) => {
    断言
    ========================================================= */
 function analysePage(name, data) {
-  const { items, ranges, back, bar, head } = data
+  const { items, ranges, steps, back, bar, head } = data
   const dirs = ['up', 'down', 'left', 'right']
 
   // 同名元素很多（设置页一排「启用/禁用」），diff 必须用「名称#第几个」当唯一键
@@ -445,7 +506,7 @@ function analysePage(name, data) {
 
   const deadEnds = items.filter((r) => dirs.every((d) => r.dirs[d] < 0 || r.dirs[d] === r.i))
   const unreachable = items.filter((r) => !inDegree[r.i] && !r.inHeader)
-  return { name, items, ranges, back, bar, head, deadEnds, unreachable }
+  return { name, items, ranges, steps, back, bar, head, deadEnds, unreachable }
 }
 
 function runAssertions(pages) {
@@ -487,6 +548,19 @@ function runAssertions(pages) {
         ok
           ? `按右${r.leftSliderWithoutConfirm ? '移开焦点' : '原地不动'}且不改值 → 确认进入调节 → 调节改值 → 再确认退出`
           : JSON.stringify(r))
+    })
+
+    // 档位条：整条一个焦点 + 两段式 + 上方邻居必须是紧邻的那一行
+    p.steps.forEach((s) => {
+      const ok = s.innerStops === 0 && s.valueUntouched && s.adjustEntered
+        && s.rightChanged && s.leftRestored && s.adjustExited
+      push(ok, `[${p.name}] 档位条两段式 #${s.index}`,
+        ok
+          ? `整条 1 个焦点 → 按右${s.leftWithoutConfirm ? '移开焦点' : '原地不动'}且不改档 → 确认进入调节 → 左右改档 → 再确认退出`
+          : JSON.stringify(s))
+      const upOk = typeof s.upGap === 'number' && s.upGap <= 64
+      push(upOk, `[${p.name}] 档位条按上 → 紧邻的上一行 #${s.index}`,
+        upOk ? `→ ${s.upLabel}（间隙 ${s.upGap}px）` : `落到了「${s.upLabel || '没有元素'}」，间隙 ${s.upGap === null ? '—' : s.upGap + 'px'}`)
     })
 
     // 调试页：右上「刷新」与下方「选择控制器」左右互通
@@ -574,10 +648,19 @@ function writeHtml(report, shotsExist) {
       <td>${r.adjustEntered ? '✅' : '❌'}</td>
       <td>${r.valueChanged ? '✅' : '❌'}</td>
       <td>${r.adjustExited ? '✅' : '❌'}</td></tr>`).join('')
+    const stepRows = (p.steps || []).map((s) => `
+      <tr><td class="mono">#${s.index}</td><td>${esc(s.label)}</td>
+      <td>${s.innerStops === 0 ? '✅' : '❌'}</td>
+      <td>${s.valueUntouched ? '✅' : '❌'}</td>
+      <td>${s.adjustEntered ? '✅' : '❌'}</td>
+      <td>${s.rightChanged && s.leftRestored ? '✅' : '❌'}</td>
+      <td>${s.adjustExited ? '✅' : '❌'}</td>
+      <td>${typeof s.upGap === 'number' && s.upGap <= 64 ? '✅ ' : '❌ '}${s.upLabel ? esc(s.upLabel.slice(0, 24)) + ` (${s.upGap}px)` : '没有落点'}</td></tr>`).join('')
     return `
     <section>
       <h2>${esc(p.name)} <span class="muted">${p.items.length} 个可聚焦元素 · 死胡同 ${p.deadEnds.length}${p.back ? ` · 返回 → ${p.back.hasHome ? '主操作 → 无选中' : '直接无选中'}` : ''}</span></h2>
       ${rangeRows ? `<table class="ranges"><thead><tr><th>滑条</th><th>名称</th><th>右=导航</th><th>未确认不改值</th><th>确认进调节</th><th>调节改值</th><th>再确认退出</th></tr></thead><tbody>${rangeRows}</tbody></table>` : ''}
+      ${stepRows ? `<table class="ranges"><thead><tr><th>档位条</th><th>名称</th><th>整条 1 焦点</th><th>未确认不改档</th><th>确认进调节</th><th>左右改档</th><th>再确认退出</th><th>按上落点</th></tr></thead><tbody>${stepRows}</tbody></table>` : ''}
       <table><thead><tr><th>#</th><th>元素</th><th>↑ ↓ ← →</th><th>位置</th>${shotsExist ? '<th>标注图</th>' : ''}</tr></thead><tbody>${rows}</tbody></table>
     </section>`
   }).join('')
@@ -713,6 +796,7 @@ ${pageBlocks}
       key: p.key,
       name: p.name,
       ranges: p.ranges,
+      steps: p.steps,
       back: p.back,
       bar: p.bar,
       head: p.head,

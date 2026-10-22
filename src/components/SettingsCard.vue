@@ -54,11 +54,17 @@
             <span class="range-badge">{{ formatOverlayScale(valueOf(setting)) }}</span>
           </div>
 
-          <!-- 进度条（离散档位，点击档位直接取值） -->
+          <!-- 进度条（离散档位，鼠标点档位直接取值）
+               手柄：整条只算一个焦点（data-gp），按确认进入调节后左右改档，
+               和滑条完全同一套两段式体验；内部档位块 tabindex=-1 不单独参与导航 -->
           <div v-else-if="setting.type === 'progress'" class="progress-wrap">
-            <div class="ui-progress" role="slider" :aria-valuemin="progressBounds(setting).min"
-              :aria-valuemax="progressBounds(setting).max" :aria-valuenow="progressValue(setting)">
-              <button v-for="option in setting.options" :key="String(option.value)" type="button"
+            <div class="ui-progress" role="slider" tabindex="0" data-gp data-gp-adjust="int"
+              :aria-valuemin="progressBounds(setting).min" :aria-valuemax="progressBounds(setting).max"
+              :aria-valuenow="progressValue(setting)" :aria-valuetext="progressText(setting)"
+              @gp-nudge="onProgressNudge(setting, $event)"
+              @keydown.left.prevent="onProgressNudge(setting, { detail: { delta: -1 } })"
+              @keydown.right.prevent="onProgressNudge(setting, { detail: { delta: 1 } })">
+              <button v-for="option in setting.options" :key="String(option.value)" type="button" tabindex="-1"
                 class="ui-progress-step" :class="{ on: Number(option.value) <= progressValue(setting) }"
                 @click="emitValue(setting, option.value)"></button>
             </div>
@@ -129,6 +135,33 @@ export default {
       const value = this.progressValue(setting);
       const matched = (setting.options || []).find(option => Number(option.value) === value);
       return matched ? this.$t(matched.label) : String(value);
+    },
+    /**
+     * 手柄在调节模式下按了左右（事件来自 gamepadNav 的 gp-nudge）。
+     * 每次只走一档：档位值可以不连续，所以按「当前值在档位表里的位置」前后移一格。
+     */
+    onProgressNudge(setting, event) {
+      const delta = Number((event && event.detail && event.detail.delta) || 0);
+      if (!delta) return;
+      const values = (setting.options || [])
+        .map(option => Number(option.value))
+        .filter(value => Number.isFinite(value))
+        .sort((a, b) => a - b);
+      if (!values.length) return;
+      const current = this.progressValue(setting);
+      const index = values.indexOf(current);
+      let next;
+      if (index >= 0) {
+        const target = Math.min(values.length - 1, Math.max(0, index + (delta > 0 ? 1 : -1)));
+        next = values[target];
+      } else {
+        // 存档里的值不在档位表里（旧版本升级）：按方向找最近的相邻档位
+        next = delta > 0
+          ? values.find(value => value > current)
+          : values.slice().reverse().find(value => value < current);
+      }
+      if (next === undefined || next === current) return;
+      this.emitValue(setting, next);
     }
   }
 }

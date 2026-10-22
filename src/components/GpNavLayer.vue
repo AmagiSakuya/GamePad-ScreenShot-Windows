@@ -18,8 +18,8 @@
             <GpGlyph kind="shoulder" label="L" /><GpGlyph kind="shoulder" label="R" />{{ $t('GpNav.hintPage') }}
           </span>
           <span class="gp-hint-item"><GpGlyph kind="face" pos="left" />{{ $t('GpNav.hintHelp') }}</span>
-          <!-- 焦点落在滑条上时，提示「确定 = 进入调节」 -->
-          <span v-if="focusKind === 'range'" class="gp-hint-item gp-hint-adjust">
+          <!-- 焦点落在数值型控件（滑条 / 档位条）上时，提示「确定 = 进入调节」 -->
+          <span v-if="focusKind === 'adjust'" class="gp-hint-item gp-hint-adjust">
             <GpGlyph kind="face" pos="bottom" />{{ $t('GpNav.adjustEnter') }}
           </span>
           <!-- 焦点在顶栏工具区（主题 / 主题色 / 字号 / 语言）：只有摇杆能回页面 -->

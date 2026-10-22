@@ -63,6 +63,15 @@ const FOCUSABLE_SELECTOR = [
  */
 const BAR_ATTR = 'data-gp-bar'
 
+/**
+ * 自定义「数值型」控件（设置页的离散档位条，`data-gp-adjust="int"`）。
+ *
+ * 这类控件用一排小方块显示档位，每个方块都带点击，但手柄只把它当作**一个焦点**：
+ * 聚焦时整条一起高亮，按确认进入调节模式后左右才改档 —— 和滑条完全同一套体验。
+ * 改值规则由控件自己掌握（它知道自己有哪些档位、到没到边界），引擎只派发 gp-nudge 事件。
+ */
+const ADJUST_ATTR = 'data-gp-adjust'
+
 /** 供界面读取的响应式状态 */
 export const gpNav = reactive({
   // 默认关闭（实验功能）
@@ -74,11 +83,11 @@ export const gpNav = reactive({
   overlay: null,
   /** 当前焦点元素的文字说明（提示条右侧显示） */
   focusLabel: '',
-  /** 当前焦点元素的类型（range 时界面提示「按确定调节」） */
+  /** 当前焦点元素的类型：'adjust' 数值型控件（滑条 / 档位条）、'bar' 顶栏工具组 */
   focusKind: '',
   /**
-   * 数值调节模式：滑条必须先按「确认」进入，进入后左右才改值。
-   * 否则焦点停在滑条上时左右键会被吃掉，走不出这一行。
+   * 数值调节模式：滑条和档位条都必须先按「确认」进入，进入后左右才改值。
+   * 否则焦点停在数值控件上时左右键会被吃掉，走不出这一行。
    */
   adjusting: false,
   /** 按键提示条是否显示（长时间无输入自动隐藏，再按一下手柄又出来） */
@@ -247,6 +256,17 @@ function fieldLabel(el) {
 
 function labelOf(el) {
   if (!el) return ''
+  // 数值型控件（滑条 / 档位条）优先：显示「行标题 + 当前值」，调节时提示条上能直接看到数值变化
+  const kind = adjustKindOf(el)
+  if (kind === 'range') {
+    const row = fieldLabel(el)
+    return (row ? row + ' ' : '') + el.value
+  }
+  if (kind) {
+    const row = fieldLabel(el)
+    const value = el.getAttribute('aria-valuetext') || el.getAttribute('aria-valuenow') || ''
+    return ((row ? row + ' ' : '') + value).trim()
+  }
   const explicit = el.getAttribute('aria-label') || el.getAttribute('title')
   if (explicit) return explicit.trim()
   if (el.tagName === 'SELECT') {
@@ -256,19 +276,25 @@ function labelOf(el) {
     if (text) return text
     return fieldLabel(el) || gpT('GpNav.selectOption')
   }
-  // 滑条显示「行标题 + 当前值」，调节时提示条上能直接看到数值变化
-  if (el.tagName === 'INPUT' && el.type === 'range') {
-    const row = fieldLabel(el)
-    return (row ? row + ' ' : '') + el.value
-  }
   if (el.tagName === 'INPUT') return (el.value || el.placeholder || '').trim()
   const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim()
   return text.slice(0, 48)
 }
 
-/** 滑条：进入 / 退出「数值调节」模式 */
+/**
+ * 数值型控件的类型：
+ *  - 'range' 原生滑条（左右一步 = 一个 step）
+ *  - 其它非空值 = 自定义档位条，取值规则交给控件自己的 gp-nudge 处理
+ */
+function adjustKindOf(el) {
+  if (!el || typeof el.getAttribute !== 'function') return ''
+  if (el.tagName === 'INPUT' && el.type === 'range') return 'range'
+  return el.getAttribute(ADJUST_ATTR) || ''
+}
+
+/** 滑条 / 档位条：进入「数值调节」模式 */
 function enterAdjust(el) {
-  if (!el || el.tagName !== 'INPUT' || el.type !== 'range') return
+  if (!adjustKindOf(el)) return
   gpNav.adjusting = true
   currentEl = el
   el.classList.add('gp-adjust')
@@ -310,12 +336,13 @@ function setFocus(el, options) {
   gpNav.focusLabel = labelOf(el)
   gpNav.focusKind = el.hasAttribute(BAR_ATTR)
     ? 'bar'
-    : (el.tagName === 'INPUT' && el.type === 'range' ? 'range' : '')
+    : (adjustKindOf(el) ? 'adjust' : '')
   // 记住页面内（非顶栏工具组）的落点，摇杆从顶栏抢回时回到这里
   if (!el.hasAttribute(BAR_ATTR)) lastStageEl = el
 
   const tag = el.tagName
-  if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'A') {
+  if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'A'
+    || el.hasAttribute('tabindex')) {
     try {
       el.focus({ preventScroll: true })
     } catch (error) {
@@ -550,9 +577,11 @@ function move(dir, source) {
 
   // 数值调节模式：左右改值，其它方向先退出调节
   if (gpNav.adjusting) {
-    if (currentEl && currentEl.tagName === 'INPUT' && currentEl.type === 'range'
-      && (dir === 'left' || dir === 'right')) {
-      nudgeRange(currentEl, dir === 'right' ? 1 : -1)
+    const kind = adjustKindOf(currentEl)
+    if (kind && (dir === 'left' || dir === 'right')) {
+      const delta = dir === 'right' ? 1 : -1
+      if (kind === 'range') nudgeRange(currentEl, delta)
+      else nudgeStep(currentEl, delta)
       return
     }
     exitAdjust()
@@ -627,6 +656,18 @@ function nudgeRange(el, direction) {
   el.dispatchEvent(new Event('input', { bubbles: true }))
   el.dispatchEvent(new Event('change', { bubbles: true }))
   gpNav.focusLabel = labelOf(el)
+}
+
+/**
+ * 自定义档位条：把「上一档 / 下一档」的意图交给控件自己。
+ * 档位值、是否到边界都由控件判断（它派发 change 更新业务状态），引擎不碰它的内部结构。
+ */
+function nudgeStep(el, direction) {
+  el.dispatchEvent(new CustomEvent('gp-nudge', { detail: { delta: direction } }))
+  // 组件改完值才会重渲染 aria-valuetext，等一帧再读，提示条上的数值才是新的
+  nextTick(() => {
+    if (currentEl === el) gpNav.focusLabel = labelOf(el)
+  })
 }
 
 /* =========================================================
@@ -758,8 +799,8 @@ async function activate() {
   const tag = el.tagName
 
   if (tag === 'SELECT') return openSelect(el)
-  if (tag === 'INPUT' && el.type === 'range') {
-    // 确认键 = 开始调节（再按一次结束）。滑条不会一聚焦就被左右键改值。
+  if (adjustKindOf(el)) {
+    // 确认键 = 开始调节（再按一次结束）。滑条 / 档位条都不会一聚焦就被左右键改值。
     if (gpNav.adjusting) exitAdjust()
     else enterAdjust(el)
     return undefined

@@ -1910,6 +1910,17 @@ input {
   outline-color: var(--accent);
 }
 
+/* 离散档位条（整条是一个焦点，内部方块不单独聚焦）：
+   环往外撑一点，把「一条」圈住而不是压住方块 */
+.gp-focus.gp-focus.ui-progress {
+  outline-offset: 5px;
+  border-radius: 4px;
+}
+
+.gp-focus.gp-focus.gp-adjust.ui-progress {
+  outline-color: var(--accent);
+}
+
 @keyframes gp-adjust-pulse {
   0%, 100% {
     box-shadow: 0 0 0 5px var(--accent-soft), 0 0 20px -6px var(--accent);
