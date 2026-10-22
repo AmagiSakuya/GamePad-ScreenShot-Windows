@@ -13,6 +13,7 @@
     "release": "node scripts/release.js",
     "devtools:fetch": "node scripts/fetch-devtools.js",
     "gp:nav": "node scripts/gp-nav-check.js",
+    "i18n:check": "node scripts/locale-check.js",
     "gp:nav:shots": "node scripts/gp-nav-check.js --shots",
     "ffmpeg:fetch": "node scripts/fetch-ffmpeg.js",
     "rec:smoke": "node scripts/recorder-smoke.js",
