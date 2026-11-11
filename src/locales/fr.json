@@ -132,6 +132,12 @@
         "manualCheckUpdate": "Recherche manuelle",
         "checkUpdate": "Rechercher des mises à jour",
         "proxy": "Proxy réseau",
+        "updateSource": "Source des mises à jour",
+        "updateSourceDesc": "L'accélérateur chinois bascule sur GitHub s'il est indisponible",
+        "updateSourceEnum": {
+            "mirror": "Accélération Chine",
+            "github": "GitHub"
+        },
         "updateAvailable": "Nouvelle version disponible",
         "updateNotAvailable": "Vous êtes à jour",
         "updateCheckFailed": "Échec de la recherche de mise à jour, réessayez plus tard",

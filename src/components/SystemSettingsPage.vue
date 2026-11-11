@@ -63,6 +63,7 @@ let closeTypeKey = 'closeType';
 let filenameConflictResolutionKey = 'filenameConflictResolution';
 let autoListenResolutionKey = 'autoListenResolution';
 let checkUpdateOnStartupKey = 'checkUpdateOnStartup';
+let updateSourceKey = 'updateSource';
 let proxyKey = 'proxy';
 let autoStartKey = 'autoStart';
 let minimizeOnStartupKey = 'minimizeOnStartup';
@@ -100,6 +101,7 @@ export default {
         filenameConflictResolution: 'overwrite',
         autoListenResolution: false,
         checkUpdateOnStartup: 'enabled',
+        updateSource: 'mirror',
         proxy: '',
         autoStart: false,
         minimizeOnStartup: false,
@@ -260,6 +262,18 @@ export default {
           collapsed: false,
           settings: [
             {
+              key: 'updateSource',
+              icon: 'link',
+              type: 'seg',
+              configKey: 'updateSource',
+              desc: 'SystemSettingsPage.updateSourceDesc',
+              handler: this.onUpdateSourceChanged,
+              options: [
+                { value: 'mirror', label: 'SystemSettingsPage.updateSourceEnum.mirror' },
+                { value: 'github', label: 'SystemSettingsPage.updateSourceEnum.github' }
+              ]
+            },
+            {
               key: 'checkUpdateOnStartup',
               icon: 'refresh',
               type: 'seg',
@@ -340,6 +354,7 @@ export default {
     const filenameConflictResolution = await window.electronAPI.getStore(filenameConflictResolutionKey, 'overwrite');
     const autoListenResolution = await window.electronAPI.getStore(autoListenResolutionKey, false);
     const checkUpdateOnStartup = await window.electronAPI.getStore(checkUpdateOnStartupKey, 'enabled');
+    const updateSource = await window.electronAPI.getStore(updateSourceKey, 'mirror');
     const proxy = await window.electronAPI.getStore(proxyKey, '');
     const autoStart = await window.electronAPI.getStore(autoStartKey, false);
     const overlayNotify = await window.electronAPI.getStore('overlayNotify', 'show');
@@ -357,6 +372,7 @@ export default {
     }
     this.config.autoListenResolution = normalizeAutoListen(autoListenResolution);
     this.config.checkUpdateOnStartup = checkUpdateOnStartup;
+    this.config.updateSource = updateSource === 'github' ? 'github' : 'mirror';
     this.config.proxy = proxy;
     this.config.autoStart = autoStart === 'true' || autoStart === true;
     const minimizeOnStartup = await window.electronAPI.getStore(minimizeOnStartupKey, false);
@@ -437,6 +453,9 @@ export default {
     },
     async onCheckUpdateOnStartupChanged() {
       await window.electronAPI.setStore(checkUpdateOnStartupKey, this.config.checkUpdateOnStartup);
+    },
+    async onUpdateSourceChanged() {
+      await window.electronAPI.setStore(updateSourceKey, this.config.updateSource);
     },
     async onProxyChanged() {
       await window.electronAPI.setStore(proxyKey, this.config.proxy);

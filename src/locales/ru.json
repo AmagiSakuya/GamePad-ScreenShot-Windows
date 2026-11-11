@@ -132,6 +132,12 @@
         "manualCheckUpdate": "Ручная проверка обновлений",
         "checkUpdate": "Проверить обновления",
         "proxy": "Сетевой прокси",
+        "updateSource": "Источник обновлений",
+        "updateSourceDesc": "Если ускоритель недоступен, используется GitHub напрямую",
+        "updateSourceEnum": {
+            "mirror": "Ускоритель (Китай)",
+            "github": "GitHub"
+        },
         "updateAvailable": "Доступна новая версия",
         "updateNotAvailable": "Установлена последняя версия",
         "updateCheckFailed": "Не удалось проверить обновления, повторите позже",

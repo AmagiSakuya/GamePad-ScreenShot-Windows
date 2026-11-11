@@ -132,6 +132,12 @@
         "manualCheckUpdate": "Manuell nach Updates suchen",
         "checkUpdate": "Nach Updates suchen",
         "proxy": "Netzwerk-Proxy",
+        "updateSource": "Update-Quelle",
+        "updateSourceDesc": "Der China-Beschleuniger fällt bei Ausfall auf GitHub zurück",
+        "updateSourceEnum": {
+            "mirror": "China-Beschleunigung",
+            "github": "GitHub"
+        },
         "updateAvailable": "Neue Version verfügbar",
         "updateNotAvailable": "Bereits auf dem neuesten Stand",
         "updateCheckFailed": "Updateprüfung fehlgeschlagen, bitte später erneut versuchen",

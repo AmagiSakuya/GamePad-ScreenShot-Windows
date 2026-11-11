@@ -132,6 +132,12 @@
         "manualCheckUpdate": "Manual update check",
         "checkUpdate": "Check for Updates",
         "proxy": "Network Proxy",
+        "updateSource": "Update Source",
+        "updateSourceDesc": "The China accelerator falls back to GitHub when unavailable",
+        "updateSourceEnum": {
+            "mirror": "China Accelerated",
+            "github": "GitHub"
+        },
         "updateAvailable": "New version available",
         "updateNotAvailable": "Already up to date",
         "updateCheckFailed": "Update check failed, please try again later",

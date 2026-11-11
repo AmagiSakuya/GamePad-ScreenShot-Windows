@@ -132,6 +132,12 @@
         "manualCheckUpdate": "手動で更新を確認",
         "checkUpdate": "更新を確認",
         "proxy": "ネットワークプロキシ",
+        "updateSource": "更新元",
+        "updateSourceDesc": "中国本土ミラーが利用できない場合は GitHub に切り替わります",
+        "updateSourceEnum": {
+            "mirror": "中国本土ミラー",
+            "github": "GitHub"
+        },
         "updateAvailable": "新しいバージョンがあります",
         "updateNotAvailable": "最新バージョンです",
         "updateCheckFailed": "更新の確認に失敗しました。しばらくしてから再試行してください",

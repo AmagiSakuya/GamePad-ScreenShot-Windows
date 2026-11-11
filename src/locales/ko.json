@@ -132,6 +132,12 @@
         "manualCheckUpdate": "수동 업데이트 확인",
         "checkUpdate": "업데이트 확인",
         "proxy": "네트워크 프록시",
+        "updateSource": "업데이트 소스",
+        "updateSourceDesc": "중국 가속 소스를 사용할 수 없으면 GitHub로 전환합니다",
+        "updateSourceEnum": {
+            "mirror": "중국 가속",
+            "github": "GitHub"
+        },
         "updateAvailable": "새 버전이 있습니다",
         "updateNotAvailable": "최신 버전입니다",
         "updateCheckFailed": "업데이트 확인에 실패했습니다. 잠시 후 다시 시도하세요",

@@ -132,6 +132,12 @@
         "manualCheckUpdate": "手動檢查更新",
         "checkUpdate": "檢查更新",
         "proxy": "網路代理",
+        "updateSource": "更新來源",
+        "updateSourceDesc": "中國大陸加速來源不可用時自動回退 GitHub 直連",
+        "updateSourceEnum": {
+            "mirror": "中國大陸加速",
+            "github": "GitHub"
+        },
         "updateAvailable": "發現新版本",
         "updateNotAvailable": "目前已是最新版本",
         "updateCheckFailed": "檢查更新失敗，請稍後再試",

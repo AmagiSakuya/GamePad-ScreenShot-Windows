@@ -185,8 +185,10 @@ function createUpdater(deps) {
     } catch (error) { /* 不存在即忽略 */ }
   }
 
-  function buildMirrorUrls(originalUrl, mirrors) {
-    const list = Array.isArray(mirrors) && mirrors.length ? mirrors : config.ASSET_MIRRORS
+  function buildMirrorUrls(originalUrl, mirrors, fallbacks) {
+    const list = Array.isArray(mirrors) && mirrors.length
+      ? mirrors
+      : (Array.isArray(fallbacks) && fallbacks.length ? fallbacks : config.ASSET_MIRRORS)
     const urls = []
     for (const prefix of list) {
       const base = String(prefix || '').trim()
@@ -260,7 +262,7 @@ function createUpdater(deps) {
   }
 
   /** 清单全部镜像都拉不到时，用 GitHub API 拿 release 概要，再从它的附件里找 latest.json */
-  async function fetchManifestFromApi(proxy) {
+  async function fetchManifestFromApi(proxy, assetMirrors) {
     const release = await net.fetchJson(config.GITHUB_API_RELEASE, {
       proxy,
       timeout: 12000,
@@ -269,7 +271,7 @@ function createUpdater(deps) {
     const assets = Array.isArray(release.assets) ? release.assets : []
     const manifestAsset = assets.find((item) => item.name === config.MANIFEST_FILE)
     if (manifestAsset && manifestAsset.browser_download_url) {
-      const urls = buildMirrorUrls(manifestAsset.browser_download_url, null)
+      const urls = buildMirrorUrls(manifestAsset.browser_download_url, null, assetMirrors)
       for (const url of urls) {
         try {
           return normalizeManifest(await net.fetchJson(url, { proxy, timeout: 10000 }))
@@ -286,7 +288,7 @@ function createUpdater(deps) {
   }
 
   /**
-   * 拉取版本清单：按 MANIFEST_SOURCES 顺序尝试，任意一个成功即返回。
+   * 拉取版本清单：按用户选定更新源的地址顺序尝试，任意一个成功即返回。
    *
    * latest.json 的文件名是固定的（不随版本变化），加速镜像很可能把它缓存住，
    * 所以每次都带一个时间戳参数。GitHub 解析附件时只看路径、忽略查询串
@@ -297,9 +299,10 @@ function createUpdater(deps) {
     return `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`
   }
 
-  async function fetchManifest(proxy, token) {
+  async function fetchManifest(proxy, token, source) {
+    const sourceConfig = source || config.getUpdateSourceConfig(config.UPDATE_SOURCE_DEFAULT)
     const errors = []
-    for (const url of config.MANIFEST_SOURCES) {
+    for (const url of sourceConfig.manifestSources) {
       if (token) token.throwIfCancelled()
       try {
         const raw = await net.fetchJson(withCacheBust(url), { proxy, timeout: 8000, cancelToken: token })
@@ -309,7 +312,7 @@ function createUpdater(deps) {
       }
     }
     try {
-      return await fetchManifestFromApi(proxy)
+      return await fetchManifestFromApi(proxy, sourceConfig.assetMirrors)
     } catch (error) {
       errors.push(`api.github.com: ${error.message}`)
     }
@@ -353,9 +356,10 @@ function createUpdater(deps) {
       setState({ status: STATUS.CHECKING, error: '' })
       const proxy = net.normalizeProxy(configStore.get('proxy', ''))
       const channel = String(configStore.get('updateChannel', 'stable') || 'stable')
+      const source = config.getUpdateSourceConfig(configStore.get('updateSource', config.UPDATE_SOURCE_DEFAULT))
 
       try {
-        const next = await fetchManifest(proxy)
+        const next = await fetchManifest(proxy, null, source)
         manifest = next
 
         if (next.channel !== 'stable' && channel !== next.channel && channel !== 'beta') {
@@ -433,7 +437,12 @@ function createUpdater(deps) {
   async function downloadPatchArchive(token) {
     const patch = manifest.patch
     const target = path.join(stageDir, patch.asset)
-    const urls = buildMirrorUrls(patch.url, manifest.mirrors)
+    const source = config.getUpdateSourceConfig(configStore.get('updateSource', config.UPDATE_SOURCE_DEFAULT))
+    const urls = buildMirrorUrls(
+      patch.url,
+      source.useManifestMirrors ? manifest.mirrors : null,
+      source.assetMirrors
+    )
     let lastError = null
 
     for (const url of urls) {

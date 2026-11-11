@@ -8,7 +8,8 @@
  *   `/releases/latest/download/<文件名>` 固定地址读，不需要再维护 update 分支，
  *   也不用发完 Release 再单独提交一次清单。
  * - 镜像前缀列表对「清单」和「补丁包」都生效：镜像站挂掉时按顺序自动换下一个。
- * - 清单里的 mirrors 字段可以覆盖这里的 ASSET_MIRRORS，所以以后换镜像不用重新发客户端。
+ * - 清单里的 mirrors 字段可以覆盖这里的 ASSET_MIRRORS（仅「中国大陆加速」模式），
+ *   所以以后换镜像不用重新发客户端；用户选择「GitHub」时则只走官方直连。
  */
 
 const REPO = 'AmagiSakuya/GamePad-ScreenShot-Windows'
@@ -41,6 +42,38 @@ const ASSET_MIRRORS = [
   ''
 ]
 
+/**
+ * 用户可选的更新源：
+ * - mirror：中国大陆加速源优先，全部失败后回退 GitHub 直连（默认，国内可用性最高）
+ * - github：只走 GitHub 官方直连（海外用户 / 使用代理时更快，也不会经过第三方镜像）
+ */
+const UPDATE_SOURCE_MIRROR = 'mirror'
+const UPDATE_SOURCE_GITHUB = 'github'
+const UPDATE_SOURCE_DEFAULT = UPDATE_SOURCE_MIRROR
+
+function normalizeUpdateSource(value) {
+  return value === UPDATE_SOURCE_GITHUB ? UPDATE_SOURCE_GITHUB : UPDATE_SOURCE_MIRROR
+}
+
+/**
+ * 按用户设置返回本次检查 / 下载要用的源列表。
+ * github 模式下不再接受清单里的 mirrors 覆盖，避免又绕回第三方镜像。
+ */
+function getUpdateSourceConfig(value) {
+  if (normalizeUpdateSource(value) === UPDATE_SOURCE_GITHUB) {
+    return {
+      manifestSources: [LATEST_MANIFEST],
+      assetMirrors: [''],
+      useManifestMirrors: false
+    }
+  }
+  return {
+    manifestSources: MANIFEST_SOURCES,
+    assetMirrors: ASSET_MIRRORS,
+    useManifestMirrors: true
+  }
+}
+
 // GitHub API 兜底（清单全部拉不到时，用 API 拿 release 概要，再从资源里找 latest.json）
 const GITHUB_API_RELEASE = `https://api.github.com/repos/${REPO}/releases/latest`
 
@@ -62,6 +95,11 @@ module.exports = {
   LATEST_RELEASE_BASE,
   MANIFEST_SOURCES,
   ASSET_MIRRORS,
+  UPDATE_SOURCE_MIRROR,
+  UPDATE_SOURCE_GITHUB,
+  UPDATE_SOURCE_DEFAULT,
+  normalizeUpdateSource,
+  getUpdateSourceConfig,
   GITHUB_API_RELEASE,
   RELEASE_DOWNLOAD_BASE,
   RELEASE_PAGE,
