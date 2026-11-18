@@ -64,6 +64,10 @@
         "replaySaved": "Loop recording saved",
         "replaySavedDesc": "The last {sec}s were saved locally"
     },
+    "debugInfo": {
+        "burnTotal": "DebugInfo capture delay {ms} ms",
+        "burnStages": "overlay {dismiss} ms · capture {capture} ms · encode {encode} ms"
+    },
     "screenshotSound": {
         "None": "Mute",
         "Sound1": "Sound 1",
@@ -162,7 +166,9 @@
         "mappingAutoStart": "Start button mapping on launch",
         "gamepadUiNav": "Controller control",
         "experimental": "Experimental",
-        "gamepadUiNavDesc": "Operate the UI with a controller: move focus, on-screen keyboard, in-app folder picker"
+        "gamepadUiNavDesc": "Operate the UI with a controller: move focus, on-screen keyboard, in-app folder picker",
+        "debugInfo": "Show Debug Info on screenshots",
+        "debugInfoDesc": "Burns the capture latency into the top-left of every screenshot: total delay plus overlay, capture and encode times; the same numbers also go to the log"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Open Screenshot Folder",

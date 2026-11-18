@@ -64,6 +64,10 @@
         "replaySaved": "Enregistrement en boucle sauvegardé",
         "replaySavedDesc": "Les {sec} dernières secondes ont été sauvegardées localement"
     },
+    "debugInfo": {
+        "burnTotal": "DebugInfo délai de capture {ms} ms",
+        "burnStages": "superposition {dismiss} ms · capture {capture} ms · encodage {encode} ms"
+    },
     "screenshotSound": {
         "None": "Muet",
         "Sound1": "Son 1",
@@ -162,7 +166,9 @@
         "mappingAutoStart": "Démarrer le mappage au lancement",
         "gamepadUiNav": "Contrôle à la manette",
         "experimental": "Expérimental",
-        "gamepadUiNavDesc": "Piloter l'interface à la manette : déplacer le focus, clavier virtuel, choix de dossier intégré"
+        "gamepadUiNavDesc": "Piloter l'interface à la manette : déplacer le focus, clavier virtuel, choix de dossier intégré",
+        "debugInfo": "Afficher Debug Info sur la capture",
+        "debugInfoDesc": "Inscrit le délai de capture en haut à gauche de chaque image : délai total, superposition, capture et encodage ; les mêmes valeurs vont aussi au journal"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Ouvrir le dossier de captures",

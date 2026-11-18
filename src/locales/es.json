@@ -64,6 +64,10 @@
         "replaySaved": "Grabación en bucle guardada",
         "replaySavedDesc": "Los últimos {sec} s se guardaron localmente"
     },
+    "debugInfo": {
+        "burnTotal": "DebugInfo retardo de captura {ms} ms",
+        "burnStages": "superposición {dismiss} ms · captura {capture} ms · codificación {encode} ms"
+    },
     "screenshotSound": {
         "None": "Silencio",
         "Sound1": "Sonido 1",
@@ -162,7 +166,9 @@
         "mappingAutoStart": "Iniciar el mapeo al arrancar",
         "gamepadUiNav": "Control con mando",
         "experimental": "Experimental",
-        "gamepadUiNavDesc": "Controla la interfaz con el mando: mover el foco, teclado en pantalla, selector de carpetas integrado"
+        "gamepadUiNavDesc": "Controla la interfaz con el mando: mover el foco, teclado en pantalla, selector de carpetas integrado",
+        "debugInfo": "Mostrar Debug Info en la captura",
+        "debugInfoDesc": "Graba el retardo de captura en la esquina superior izquierda de cada imagen: retardo total y tiempos de superposición, captura y codificación; los mismos números van también al registro"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Abrir carpeta de capturas",

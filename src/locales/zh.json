@@ -64,6 +64,10 @@
         "replaySaved": "循环录制已保存",
         "replaySavedDesc": "最近 {sec} 秒已保存到本地"
     },
+    "debugInfo": {
+        "burnTotal": "DebugInfo 截图总延迟 {ms} ms",
+        "burnStages": "清场 {dismiss} ms · 抓屏 {capture} ms · 编码 {encode} ms"
+    },
     "screenshotSound": {
         "None": "静音",
         "Sound1": "音效 1",
@@ -162,7 +166,9 @@
         "mappingAutoStart": "启动时运行键盘映射",
         "gamepadUiNav": "手柄控制软件",
         "experimental": "实验性",
-        "gamepadUiNavDesc": "用手柄操作界面：方向键移动焦点、软键盘输入、应用内选择文件夹"
+        "gamepadUiNavDesc": "用手柄操作界面：方向键移动焦点、软键盘输入、应用内选择文件夹",
+        "debugInfo": "在截图上显示 Debug Info",
+        "debugInfoDesc": "每张截图左上角烧录截图延迟：总延迟以及清场、抓屏、编码各段耗时，同一组数字也写入日志"
     },
     "TrayMenu": {
         "openScreenshotFolder": "打开截图文件夹",

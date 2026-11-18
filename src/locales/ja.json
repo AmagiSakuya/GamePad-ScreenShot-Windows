@@ -64,6 +64,10 @@
         "replaySaved": "ループ録画を保存しました",
         "replaySavedDesc": "直近 {sec} 秒をローカルに保存しました"
     },
+    "debugInfo": {
+        "burnTotal": "DebugInfo 画面取得の遅延 {ms} ms",
+        "burnStages": "オーバーレイ解除 {dismiss} ms · 取得 {capture} ms · 変換 {encode} ms"
+    },
     "screenshotSound": {
         "None": "消音",
         "Sound1": "サウンド 1",
@@ -162,7 +166,9 @@
         "mappingAutoStart": "起動時にボタンマッピングを実行",
         "gamepadUiNav": "コントローラー操作",
         "experimental": "実験的",
-        "gamepadUiNavDesc": "コントローラーで画面を操作：フォーカス移動・ソフトキーボード・アプリ内フォルダー選択"
+        "gamepadUiNavDesc": "コントローラーで画面を操作：フォーカス移動・ソフトキーボード・アプリ内フォルダー選択",
+        "debugInfo": "スクリーンショットに Debug Info を表示",
+        "debugInfoDesc": "各スクリーンショットの左上に取得遅延を書き込みます。合計遅延とオーバーレイ解除・取得・変換の各時間し、同じ値をログにも記録します"
     },
     "TrayMenu": {
         "openScreenshotFolder": "スクリーンショットフォルダーを開く",

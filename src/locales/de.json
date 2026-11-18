@@ -64,6 +64,10 @@
         "replaySaved": "Loop-Aufnahme gespeichert",
         "replaySavedDesc": "Die letzten {sec} s wurden lokal gespeichert"
     },
+    "debugInfo": {
+        "burnTotal": "DebugInfo Aufnahmezeit {ms} ms",
+        "burnStages": "Overlay-Abbau {dismiss} ms · Aufnahme {capture} ms · Enkodierung {encode} ms"
+    },
     "screenshotSound": {
         "None": "Stumm",
         "Sound1": "Sound 1",
@@ -162,7 +166,9 @@
         "mappingAutoStart": "Tastenzuordnung beim Start",
         "gamepadUiNav": "Controller-Steuerung",
         "experimental": "Experimentell",
-        "gamepadUiNavDesc": "Oberfläche mit Controller bedienen: Fokus bewegen, Bildschirmtastatur, Ordnerauswahl in der App"
+        "gamepadUiNavDesc": "Oberfläche mit Controller bedienen: Fokus bewegen, Bildschirmtastatur, Ordnerauswahl in der App",
+        "debugInfo": "Debug Info im Screenshot anzeigen",
+        "debugInfoDesc": "Brennt die Aufnahmeverzögerung oben links in jeden Screenshot: Gesamtzeit sowie Overlay-Abbau, Aufnahme und Enkodierung; dieselben Werte landen auch im Protokoll"
     },
     "TrayMenu": {
         "openScreenshotFolder": "Screenshot-Ordner öffnen",

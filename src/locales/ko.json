@@ -64,6 +64,10 @@
         "replaySaved": "루프 녹화 저장 완료",
         "replaySavedDesc": "최근 {sec}초를 로컬에 저장했습니다"
     },
+    "debugInfo": {
+        "burnTotal": "DebugInfo 화면 캡처 지연 {ms} ms",
+        "burnStages": "오버레이 해제 {dismiss} ms · 캡처 {capture} ms · 인코딩 {encode} ms"
+    },
     "screenshotSound": {
         "None": "무음",
         "Sound1": "효과음 1",
@@ -162,7 +166,9 @@
         "mappingAutoStart": "시작 시 버튼 매핑 실행",
         "gamepadUiNav": "컨트롤러 조작",
         "experimental": "실험적",
-        "gamepadUiNavDesc": "컨트롤러로 화면 조작: 포커스 이동, 소프트 키보드, 앱 내 폴더 선택"
+        "gamepadUiNavDesc": "컨트롤러로 화면 조작: 포커스 이동, 소프트 키보드, 앱 내 폴더 선택",
+        "debugInfo": "스크린샷에 Debug Info 표시",
+        "debugInfoDesc": "모든 스크린샷 좌측 상단에 캡처 지연을 기록합니다. 총 지연과 오버레이 해제·캡처·인코딩 시간을 로그에도 함께 남깁니다"
     },
     "TrayMenu": {
         "openScreenshotFolder": "스크린샷 폴더 열기",

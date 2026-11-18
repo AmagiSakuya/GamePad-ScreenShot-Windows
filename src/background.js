@@ -437,11 +437,16 @@ const messages = {
 };
 
 // 2. 模拟 $t 函数
-function $t(key) {
+// params 是可选的占位符表：`{ms}` 这类记号和渲染进程 vue-i18n 的写法保持一致，
+// 这样同一条文案（比如 DebugInfo 烧进图的那两行）在主进程里也能带数字。
+function $t(key, params) {
   let locale = configStore.get(localeKey, 'zh');
   const dict = messages[locale] || messages.en;
   // 支持 "menu.file.save" 这种嵌套路径
-  return key.split('.').reduce((obj, i) => (obj ? obj[i] : null), dict) || key;
+  const text = key.split('.').reduce((obj, i) => (obj ? obj[i] : null), dict) || key;
+  if (!params || typeof text !== 'string') return text;
+  return text.replace(/\{([a-zA-Z0-9_]+)\}/g, (match, name) =>
+    params[name] !== undefined ? String(params[name]) : match);
 }
 //#endregion
 
@@ -532,6 +537,62 @@ function encodeScreenshotBuffer(buffer, format) {
   return format === 'png' ? image.toPNG() : image.toJPEG(100);
 }
 
+//#region DebugInfo（实验性功能）
+/**
+ * ffmpeg 定位。录像引擎已经带一份（vendor / resources 里的 ffmpeg.exe），
+ * 这里复用它，并顺手把「找不到」降级成 null —— DebugInfo 不该因为缺 ffmpeg 就影响截图。
+ */
+function getBurnFfmpegPath() {
+  try {
+    return recorderEngine.ffmpegPath();
+  } catch (error) {
+    log.warn('[DebugInfo] ffmpeg 定位失败:', error);
+    return '';
+  }
+}
+
+function formatMs(value) {
+  return `${Number.isFinite(value) ? Math.round(value) : 0} ms`;
+}
+
+/** 烧进图片的两行：总延迟 + 各阶段拆开 */
+function buildDebugInfoLines(stages) {
+  return [
+    $t('debugInfo.burnTotal', { ms: Math.round(stages.total || 0) }),
+    $t('debugInfo.burnStages', {
+      dismiss: Math.round(stages.dismiss || 0),
+      capture: Math.round(stages.capture || 0),
+      encode: Math.round(stages.encode || 0)
+    })
+  ];
+}
+
+async function burnCaptureDebugInfo(buffer, format, stages, { windowCapture }) {
+  const burned = await burnDebugInfo(buffer, format, buildDebugInfoLines(stages), {
+    ffmpegPath: getBurnFfmpegPath(),
+    tempDir: app.getPath('temp'),
+    log
+  });
+  if (!burned) {
+    log.warn('[DebugInfo] 本次烧录未成功，保存的是没有调试信息的原始截图', windowCapture ? '(窗口抓屏)' : '(整屏)');
+  }
+  return burned;
+}
+
+/** 同一组数字也写进日志，方便对照「图上的延迟」和「实际耗时」 */
+function logCaptureDebugInfo(stages, { windowCapture, format, filePath }) {
+  const line = `[DebugInfo] ${windowCapture ? '窗口' : '整屏'} ${format.toUpperCase()}`
+    + ` 总延迟 ${formatMs(stages.total)}`
+    + ` · 清场 ${formatMs(stages.dismiss)}`
+    + ` · 抓屏 ${formatMs(stages.capture)}`
+    + ` · 编码 ${formatMs(stages.encode)}`
+    + ` · 烧录 ${formatMs(stages.burn)}`
+    + ` · 保存 ${formatMs(stages.save)}`
+    + ` → ${filePath || '(仅剪贴板)'}`;
+  log.info(line);
+}
+//#endregion
+
 ipcMain.handle('get-screen-sources', async () => {
   const displays = await screenshot.listDisplays();
   screenSourceCache = displays.map((display) => ({ id: display.id, name: display.name }));
@@ -617,11 +678,25 @@ ipcMain.handle('screen-shot', async (_, config) => {
   const format = config.imageFormat === 'png' ? 'png' : 'jpg';
   let buffer;
 
+  // DebugInfo（实验性功能）：秒表从进入 handler 起算，每段各记自己花了多久。
+  // 「总延迟」= 清场 + 抓屏 + 编码，也就是「按键到画面真的被抓下来」这段时间；
+  // 烧录和保存发生在画面已经到手之后，只进日志、不计进总延迟。
+  const debugInfoEnabled = isDebugInfoEnabled(configStore);
+  let stageStart = Date.now();
+  const handlerStartedAt = stageStart;
+  const stages = {};
+  const markStage = (name) => {
+    const now = Date.now();
+    stages[name] = now - stageStart;
+    stageStart = now;
+  };
+
   const isWindowCapture = config.captureTargetType === 'window';
   // 「截图前销毁浮层」开关开启时：先把上一次截图的预览浮层清掉再抓画面，
   // 否则浮层（alwaysOnTop + screen-saver 层级）会被一起截进新图里。
   // 整屏抓屏要在浮层销毁后补一帧合成；窗口抓屏只关浮层、不等帧。
   await dismissOverlayBeforeCapture({ waitForComposition: !isWindowCapture });
+  markStage('dismiss');
 
   if (isWindowCapture) {
     try {
@@ -654,9 +729,21 @@ ipcMain.handle('screen-shot', async (_, config) => {
       });
     }
   }
+  markStage('capture');
 
   if (!isWindowCapture) {
     buffer = encodeScreenshotBuffer(buffer, format);
+  }
+  markStage('encode');
+
+  // 画面到手的那一刻就是「延迟」的终点：抓屏之后做的事（烧录、写盘）不该算进去
+  const totalDelayMs = Date.now() - handlerStartedAt;
+  stages.total = totalDelayMs;
+
+  if (debugInfoEnabled) {
+    const burned = await burnCaptureDebugInfo(buffer, format, stages, { windowCapture: isWindowCapture });
+    if (burned) buffer = burned;
+    markStage('burn');
   }
 
   let filePath = null;
@@ -672,11 +759,14 @@ ipcMain.handle('screen-shot', async (_, config) => {
       return null;
     }
   }
+  markStage('save');
 
   if (config.screenShotSaveWay != ScreenShotSaveWayEnum.FileOnly) {
     const image = nativeImage.createFromBuffer(buffer);
     clipboard.writeImage(image);
   }
+
+  if (debugInfoEnabled) logCaptureDebugInfo(stages, { windowCapture: isWindowCapture, format, filePath });
 
   return filePath;
 })
@@ -784,7 +874,9 @@ function toPlainDevice(device) {
 // 分辨率帧率码率、以及编码过载自检。
 
 const { createRecorder } = require('@/lib/recorder')
-const { run: runFfmpeg } = require('@/lib/recorder/ffmpeg')
+const { run: runFfmpeg, resolveFfmpegPath } = require('@/lib/recorder/ffmpeg')
+// DebugInfo（实验性功能）：把截图延迟烧进图片像素
+const { isDebugInfoEnabled, burnDebugInfo } = require('@/lib/burnDebugInfo')
 
 const RECORDING_CONFIG_KEY = 'recordingConfig'
 
@@ -1373,11 +1465,7 @@ const NAV_MAX_DIRS = 400
 function listChildDirectories(targetPath) {
   const dirs = []
   let entries = []
-  try {
-    entries = fs.readdirSync(targetPath, { withFileTypes: true })
-  } catch (error) {
-    throw error
-  }
+  entries = fs.readdirSync(targetPath, { withFileTypes: true })
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     if (entry.name.startsWith('.') || entry.name.startsWith('$')) continue;

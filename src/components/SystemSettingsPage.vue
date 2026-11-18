@@ -114,7 +114,9 @@ export default {
         overlayNotifyPosition: 'left',
         // 截图前先销毁上一次截图的预览浮层，避免浮层被截进新图
         overlayDismissBeforeCapture: false,
-        listenNotifyPolicy: 'all'
+        listenNotifyPolicy: 'all',
+        // DebugInfo：把截图延迟烧进图片（默认关闭，纯诊断用）
+        debugInfo: false
       },
       // 数据管理相关路径（来自主进程，用于在界面上说明操作范围）
       dataPaths: {
@@ -357,6 +359,19 @@ export default {
                 { value: true, label: 'SystemSettingsPage.enabled' },
                 { value: false, label: 'SystemSettingsPage.disabled' }
               ]
+            },
+            {
+              // DebugInfo：每张截图左上角烧录截图延迟，主进程每次截图现读存档，开关立即生效
+              key: 'debugInfo',
+              icon: 'info',
+              type: 'seg',
+              configKey: 'debugInfo',
+              desc: 'SystemSettingsPage.debugInfoDesc',
+              handler: this.onDebugInfoChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
+              ]
             }
           ]
         }
@@ -377,6 +392,7 @@ export default {
     const overlayNotifyPosition = await window.electronAPI.getStore('overlayNotifyPosition', 'left');
     const overlayDismissBeforeCapture = await window.electronAPI.getStore('overlayDismissBeforeCapture', false);
     const listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
+    const debugInfo = await window.electronAPI.getStore('debugInfo', false);
 
     this.config.closeType = closeType;
     // 冲突策略只剩「覆盖 / 追加时间戳」两态，旧的 notSave / askEveryTime 一律折算成覆盖
@@ -401,6 +417,7 @@ export default {
     this.config.overlayNotifyDuration = Math.min(5, Math.max(1, Number(overlayNotifyDuration) || 2));
     this.config.overlayNotifyPosition = overlayNotifyPosition;
     this.config.overlayDismissBeforeCapture = overlayDismissBeforeCapture === true || overlayDismissBeforeCapture === 'true';
+    this.config.debugInfo = debugInfo === true || debugInfo === 'true';
     // Windows 通知只剩「启用 / 禁用」两态，旧的 start / stop 折算成启用
     const notifyPolicy = listenNotifyPolicy === 'none' ? 'none' : 'all';
     this.config.listenNotifyPolicy = notifyPolicy;
@@ -471,6 +488,11 @@ export default {
     async onOverlayDismissBeforeCaptureChanged() {
       this.config.overlayDismissBeforeCapture = this.config.overlayDismissBeforeCapture === 'true' || this.config.overlayDismissBeforeCapture === true;
       await window.electronAPI.setStore('overlayDismissBeforeCapture', this.config.overlayDismissBeforeCapture);
+    },
+    /** DebugInfo：同样立即生效，主进程每次截图现读存档 */
+    async onDebugInfoChanged() {
+      this.config.debugInfo = this.config.debugInfo === 'true' || this.config.debugInfo === true;
+      await window.electronAPI.setStore('debugInfo', this.config.debugInfo);
     },
     async onCheckUpdateOnStartupChanged() {
       await window.electronAPI.setStore(checkUpdateOnStartupKey, this.config.checkUpdateOnStartup);
