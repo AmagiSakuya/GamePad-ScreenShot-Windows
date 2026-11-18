@@ -874,7 +874,7 @@ function toPlainDevice(device) {
 // 分辨率帧率码率、以及编码过载自检。
 
 const { createRecorder } = require('@/lib/recorder')
-const { run: runFfmpeg, resolveFfmpegPath } = require('@/lib/recorder/ffmpeg')
+const { run: runFfmpeg } = require('@/lib/recorder/ffmpeg')
 // DebugInfo（实验性功能）：把截图延迟烧进图片像素
 const { isDebugInfoEnabled, burnDebugInfo } = require('@/lib/burnDebugInfo')
 
