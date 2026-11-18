@@ -123,6 +123,7 @@
             "topRight": "Oben rechts"
         },
         "overlayNotifySize": "Größe der Overlay-Benachrichtigung",
+        "overlayDismissBeforeCapture": "Overlay vor Aufnahme schließen",
         "testOverlayNotify": "Overlay-Benachrichtigung testen",
         "testOverlayNotifyTitle": "Benachrichtigungsvorschau",
         "testOverlayNotifyDesc": "Vorschau der aktuellen Größe",

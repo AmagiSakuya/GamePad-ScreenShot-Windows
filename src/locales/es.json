@@ -123,6 +123,7 @@
             "topRight": "Arriba a la derecha"
         },
         "overlayNotifySize": "Tamaño de la notificación",
+        "overlayDismissBeforeCapture": "Descartar la superposición antes de capturar",
         "testOverlayNotify": "Probar notificación",
         "testOverlayNotifyTitle": "Vista previa de la notificación",
         "testOverlayNotifyDesc": "Vista previa del tamaño actual",

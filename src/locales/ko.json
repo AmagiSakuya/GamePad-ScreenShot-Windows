@@ -123,6 +123,7 @@
             "topRight": "오른쪽 위"
         },
         "overlayNotifySize": "오버레이 알림 크기",
+        "overlayDismissBeforeCapture": "촬영 전 오버레이 제거",
         "testOverlayNotify": "오버레이 알림 테스트",
         "testOverlayNotifyTitle": "알림 미리보기",
         "testOverlayNotifyDesc": "현재 크기 미리보기",

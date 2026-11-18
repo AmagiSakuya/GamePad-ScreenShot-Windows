@@ -123,6 +123,7 @@
             "topRight": "En haut à droite"
         },
         "overlayNotifySize": "Taille de la notification",
+        "overlayDismissBeforeCapture": "Fermer le survol avant capture",
         "testOverlayNotify": "Tester la notification",
         "testOverlayNotifyTitle": "Aperçu de la notification",
         "testOverlayNotifyDesc": "Aperçu de la taille actuelle",

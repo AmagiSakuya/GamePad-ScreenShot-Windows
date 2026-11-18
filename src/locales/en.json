@@ -123,6 +123,7 @@
             "topRight": "Top Right"
         },
         "overlayNotifySize": "Overlay Notification Size",
+        "overlayDismissBeforeCapture": "Dismiss Overlay Before Capture",
         "testOverlayNotify": "Test Overlay Notification",
         "testOverlayNotifyTitle": "Notification Preview",
         "testOverlayNotifyDesc": "Current size preview",

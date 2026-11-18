@@ -123,6 +123,7 @@
             "topRight": "右上"
         },
         "overlayNotifySize": "オーバーレイ通知のサイズ",
+        "overlayDismissBeforeCapture": "撮影前にオーバーレイを破棄",
         "testOverlayNotify": "オーバーレイ通知をテスト",
         "testOverlayNotifyTitle": "通知プレビュー",
         "testOverlayNotifyDesc": "現在のサイズのプレビュー",

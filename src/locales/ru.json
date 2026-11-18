@@ -123,6 +123,7 @@
             "topRight": "Сверху справа"
         },
         "overlayNotifySize": "Размер уведомления",
+        "overlayDismissBeforeCapture": "Закрыть оверлей перед снимком",
         "testOverlayNotify": "Проверить уведомление",
         "testOverlayNotifyTitle": "Предпросмотр уведомления",
         "testOverlayNotifyDesc": "Предпросмотр текущего размера",

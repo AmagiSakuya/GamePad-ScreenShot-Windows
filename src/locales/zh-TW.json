@@ -123,6 +123,7 @@
             "topRight": "右上角"
         },
         "overlayNotifySize": "覆蓋通知大小",
+        "overlayDismissBeforeCapture": "截圖前摧毀浮層",
         "testOverlayNotify": "測試覆層通知",
         "testOverlayNotifyTitle": "覆層通知預覽",
         "testOverlayNotifyDesc": "目前大小預覽",

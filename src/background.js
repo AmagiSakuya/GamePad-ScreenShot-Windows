@@ -618,6 +618,11 @@ ipcMain.handle('screen-shot', async (_, config) => {
   let buffer;
 
   const isWindowCapture = config.captureTargetType === 'window';
+  // 「截图前销毁浮层」开关开启时：先把上一次截图的预览浮层清掉再抓画面，
+  // 否则浮层（alwaysOnTop + screen-saver 层级）会被一起截进新图里。
+  // 整屏抓屏要在浮层销毁后补一帧合成；窗口抓屏只关浮层、不等帧。
+  await dismissOverlayBeforeCapture({ waitForComposition: !isWindowCapture });
+
   if (isWindowCapture) {
     try {
       const selectedWindow = await resolveCaptureWindow(config);
@@ -1686,6 +1691,118 @@ ipcMain.handle('get-active-win-info', () => {
 let overlayWindow = null;
 let overlayTimeout = null;
 
+// 「截图前先销毁浮层」开关（默认关闭，保持旧版行为）
+const overlayDismissBeforeCaptureKey = 'overlayDismissBeforeCapture';
+// 'closed' 事件的兜底上限。正常情况下销毁完成的那一刻事件就派发了，只有一两毫秒；
+// 这个上限只在极端情况下生效（浮层被外部强杀、事件没派发），保证截图不会被卡死。
+const OVERLAY_CLOSED_GUARD_MS = 150;
+// 读不到显示器刷新率时用它估一帧
+const OVERLAY_FALLBACK_HZ = 60;
+
+function isOverlayDismissBeforeCaptureEnabled() {
+  const value = configStore.get(overlayDismissBeforeCaptureKey, false);
+  return value === true || value === 'true';
+}
+
+/**
+ * 一帧的时长：直接问显示器自己的刷新率，不写死延时。
+ * 主进程拿不到 DWM 的 vsync 回调，所以只能按刷新率换算出「一帧」来逼近下一帧。
+ */
+function displayFrameMs() {
+  let hz = 0;
+  try {
+    hz = Number(screen.getPrimaryDisplay().displayFrequency) || 0;
+  } catch (error) {
+    hz = 0;
+  }
+  if (!Number.isFinite(hz) || hz < 20 || hz > 400) hz = OVERLAY_FALLBACK_HZ;
+  // 上下限夹一下：240Hz 约 4ms，异常数据不会退化成几百毫秒的等待
+  return Math.min(64, Math.max(4, Math.round(1000 / hz)));
+}
+
+/**
+ * 等显示器过一帧。
+ * Node 的定时器不对齐 vsync，所以这里只能按刷新率近似：到点后再接一个
+ * setImmediate，确保真正排到事件循环的下一个 tick 才去抓屏。
+ */
+function waitFrame(frameMs) {
+  return new Promise((resolve) => {
+    setTimeout(() => setImmediate(resolve), frameMs);
+  });
+}
+
+/**
+ * 等浮层的原生窗口真正销毁。
+ * 'closed' 派发时 HWND 已经没了 —— 也就是 DWM 上那一层确定没了的那一刻。
+ */
+function onceNativeWindowClosed(target) {
+  return new Promise((resolve) => {
+    if (target.isDestroyed()) {
+      resolve();
+      return;
+    }
+    let guardTimer = null;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (guardTimer) clearTimeout(guardTimer);
+      resolve();
+    };
+    guardTimer = setTimeout(finish, OVERLAY_CLOSED_GUARD_MS);
+    target.once('closed', finish);
+  });
+}
+
+/**
+ * 截图前清场：把上一次截图留下的预览浮层销毁掉。
+ * 事件驱动，不睡固定时长：hide() 让浮层当场从屏幕上撤掉，close() 销毁窗口，
+ * 等待全部交给 'closed' 事件 —— 销毁完成的一瞬间返回，之后只补显示器的一帧，
+ * 让 BitBlt 捞到的是已经重新合成的干净画面。
+ *
+ * 只有整屏抓屏需要补这一帧：窗口抓屏走 Windows Graphics Capture，
+ * 抓的是目标窗口自己的画面，浮层本来就截不进去 —— 浮层照样立刻关掉，但一毫秒都不用等。
+ */
+async function dismissOverlayBeforeCapture({ waitForComposition = true } = {}) {
+  if (!isOverlayDismissBeforeCaptureEnabled()) return false;
+  if (!overlayWindow || overlayWindow.isDestroyed()) return false;
+
+  const closing = overlayWindow;
+  const frameWaitMs = waitForComposition ? displayFrameMs() : 0;
+  overlayWindow = null;
+  if (overlayTimeout) {
+    clearTimeout(overlayTimeout);
+    overlayTimeout = null;
+  }
+
+  const startedAt = Date.now();
+  try {
+    closing.hide(); // 立刻撤掉画面
+    closing.close(); // 销毁窗口，'closed' 派发即原生窗口已经没了
+  } catch (error) {
+    log.warn('[OVERLAY] Failed to dismiss overlay before capture:', error);
+  }
+
+  if (waitForComposition) {
+    // 两个条件同时成立才抓屏，但计时并行跑，总等待 = 两者较大值而不是相加：
+    // 1) 'closed' 派发 —— 原生窗口确定没了（正常只有一两毫秒）
+    // 2) 显示器过一帧 —— DWM 重新合成完，画面里不会再有浮层的残影
+    // 60Hz 下典型耗时约 17ms，240Hz 约 4ms，取代原来固定 240ms。
+    await Promise.all([
+      onceNativeWindowClosed(closing),
+      waitFrame(frameWaitMs)
+    ]);
+  }
+
+  const elapsed = Date.now() - startedAt;
+  const expectedMax = frameWaitMs + OVERLAY_CLOSED_GUARD_MS;
+  if (elapsed > expectedMax) {
+    // 正常路径不会走到这里；走到了说明浮层销毁异常慢，留条线索好排查
+    log.warn(`[OVERLAY] 截图前销毁浮层耗时异常: ${elapsed}ms（等一帧 ${frameWaitMs}ms）`);
+  }
+  return true;
+}
+
 /**
  * 浮窗预览图统一转成 file:// URL。
  * 通知页本身是 file:// 页面，直接把 `C:\a\b.jpg` 塞进 img.src 会被当成
@@ -1768,9 +1885,15 @@ function showScreenshotNotification({ img, title = '截图成功', desc = '已�
     overlayWindow.showInactive(); // 不抢焦点
   });
 
-  overlayWindow.on('closed', () => {
+  const currentOverlay = overlayWindow;
+  currentOverlay.on('closed', () => {
+    // 只回收「自己」这一份。截图前清场会让老窗口的 closed 延后派发，
+    // 那时新浮层可能已经建好 —— 绝不能把新浮层的引用和它的自动关闭定时器一起清掉，
+    // 否则新浮层没人管，会一直留在屏幕上。
+    if (overlayWindow !== currentOverlay) return;
     overlayWindow = null;
     clearTimeout(overlayTimeout);
+    overlayTimeout = null;
   });
 
   // 5秒后自动关闭

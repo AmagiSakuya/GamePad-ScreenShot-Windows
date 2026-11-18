@@ -112,6 +112,8 @@ export default {
         overlayNotifySize: 1,
         overlayNotifyDuration: 3,
         overlayNotifyPosition: 'left',
+        // 截图前先销毁上一次截图的预览浮层，避免浮层被截进新图
+        overlayDismissBeforeCapture: false,
         listenNotifyPolicy: 'all'
       },
       // 数据管理相关路径（来自主进程，用于在界面上说明操作范围）
@@ -218,6 +220,18 @@ export default {
               options: [
                 { value: 'left', label: 'SystemSettingsPage.overlayNotifyPositionEnum.topLeft' },
                 { value: 'right', label: 'SystemSettingsPage.overlayNotifyPositionEnum.topRight' }
+              ]
+            },
+            {
+              // 开启后每次截图都会先销毁已有的预览浮层再抓屏，保证浮层不被截进图里
+              key: 'overlayDismissBeforeCapture',
+              icon: 'camera',
+              type: 'seg',
+              configKey: 'overlayDismissBeforeCapture',
+              handler: this.onOverlayDismissBeforeCaptureChanged,
+              options: [
+                { value: true, label: 'SystemSettingsPage.enabled' },
+                { value: false, label: 'SystemSettingsPage.disabled' }
               ]
             },
             {
@@ -361,6 +375,7 @@ export default {
     const overlayNotifySize = await window.electronAPI.getStore('overlayNotifySize', 1);
     const overlayNotifyDuration = await window.electronAPI.getStore('overlayNotifyDuration', 2);
     const overlayNotifyPosition = await window.electronAPI.getStore('overlayNotifyPosition', 'left');
+    const overlayDismissBeforeCapture = await window.electronAPI.getStore('overlayDismissBeforeCapture', false);
     const listenNotifyPolicy = await window.electronAPI.getStore('listenNotifyPolicy', 'all');
 
     this.config.closeType = closeType;
@@ -385,6 +400,7 @@ export default {
     this.config.overlayNotifySize = normalizeOverlayScale(overlayNotifySize);
     this.config.overlayNotifyDuration = Math.min(5, Math.max(1, Number(overlayNotifyDuration) || 2));
     this.config.overlayNotifyPosition = overlayNotifyPosition;
+    this.config.overlayDismissBeforeCapture = overlayDismissBeforeCapture === true || overlayDismissBeforeCapture === 'true';
     // Windows 通知只剩「启用 / 禁用」两态，旧的 start / stop 折算成启用
     const notifyPolicy = listenNotifyPolicy === 'none' ? 'none' : 'all';
     this.config.listenNotifyPolicy = notifyPolicy;
@@ -450,6 +466,11 @@ export default {
     async onAutoListenResolutionChanged() {
       this.config.autoListenResolution = normalizeAutoListen(this.config.autoListenResolution);
       await window.electronAPI.setStore(autoListenResolutionKey, this.config.autoListenResolution);
+    },
+    /** 截图前销毁浮层：开关立即生效，主进程每次截图时现读存档，不需要重启 */
+    async onOverlayDismissBeforeCaptureChanged() {
+      this.config.overlayDismissBeforeCapture = this.config.overlayDismissBeforeCapture === 'true' || this.config.overlayDismissBeforeCapture === true;
+      await window.electronAPI.setStore('overlayDismissBeforeCapture', this.config.overlayDismissBeforeCapture);
     },
     async onCheckUpdateOnStartupChanged() {
       await window.electronAPI.setStore(checkUpdateOnStartupKey, this.config.checkUpdateOnStartup);
