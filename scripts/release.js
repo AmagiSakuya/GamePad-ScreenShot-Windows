@@ -7,6 +7,7 @@
  *   node scripts/release.js 2.1.0
  *   node scripts/release.js 2.1.0 --notes "修复手柄断连" --nozip
  *   node scripts/release.js 2.1.0 --patch-from 2.1.0     # 本次改了 exe/dll，老版本必须走完整包
+ *   node scripts/release.js 2.1.0 --with-static          # 本次改了 ffmpeg 等被排除的静态资源
  *   node scripts/release.js 2.1.0 --no-build             # 复用已有 dist_electron（调试脚本用）
  *
  * 产物（一共 3 个文件，全部传到同一个 GitHub Release）：
@@ -53,6 +54,37 @@ const DOWNLOAD_BASE = `https://github.com/${REPO}/releases/download`
  */
 const ZIP_PATCH_SINCE = '2.0.2'
 
+/**
+ * 热更新包（update-x.y.z.zip）里**不该出现**的东西。
+ *
+ * 补丁包不是真正的「二进制差分」，而是 resources 目录的完整快照 —— 也就是说
+ * 谁在 resources 里躺着，谁就得被每个用户重下一次。内置 ffmpeg 有 170MB
+ * （压缩后约 66MB），占了补丁包的 93%，而它从装上那天起就不会变。
+ *
+ * 排除是有代价的：老客户端里没有这个文件，光靠热更新补不回来。所以每一项都
+ * 记着「从哪个版本开始随完整包安装」（since），运行时会把它和 patch.minVersion
+ * 取最大值 —— 比它更老的客户端直接走手动下载完整包，不会出现「更新完录像挂了」。
+ */
+const PATCH_STATIC = [
+  {
+    entry: 'ffmpeg',
+    since: '2.2.0',
+    why: '内置 ffmpeg（约 170MB），v2.2.0 起随完整包安装，热更新不需要重传'
+  }
+]
+
+/** 只比 major.minor.patch，够用于这里的版本门槛判断 */
+function compareVersions(a, b) {
+  const pa = String(a).split('-')[0].split('.').map((n) => Number(n) || 0)
+  const pb = String(b).split('-')[0].split('.').map((n) => Number(n) || 0)
+  for (let i = 0; i < 3; i++) {
+    const x = pa[i] || 0
+    const y = pb[i] || 0
+    if (x !== y) return x > y ? 1 : -1
+  }
+  return 0
+}
+
 const ASSET_MIRRORS = [
   'https://ghfast.top/',
   'https://gh-proxy.com/',
@@ -91,6 +123,8 @@ const targetVersion = args.positional[0] ? String(args.positional[0]).replace(/^
 const noZip = !!args.nozip
 const noBuild = !!args['no-build']
 const noPatch = !!args['no-patch']
+// 逃生开关：某些版本确实改了 ffmpeg / 其它被排除的静态资源，需要把全量重新塞回补丁包
+const withStatic = !!args['with-static']
 const channel = String(args.channel || 'stable')
 const mandatory = !!args.mandatory
 const patchFrom = String(args['patch-from'] || ZIP_PATCH_SINCE)
@@ -241,7 +275,10 @@ function runBuild() {
 
 /**
  * 把 srcDir 的内容打成 zip（条目路径相对 srcDir）。
- * 用 `-C srcDir .` 而不是逐个列文件名，避免命令行过长。
+ *
+ * options.entries：只打包这些「顶层条目」（文件或目录名）。不传就整目录打包。
+ * 传了之后不再用 `-C srcDir .` 而是显式列出名字 —— 这样既能精确跳过
+ * ffmpeg 这种大块头，也不用依赖各家 tar 对 --exclude 的语义差异。
  */
 function isZipFile(filePath) {
   try {
@@ -274,12 +311,17 @@ function zipToolCandidates() {
   return list
 }
 
-function zipDirectory(srcDir, zipPath) {
+function zipDirectory(srcDir, zipPath, options = {}) {
   rmrf(zipPath)
+
+  const entries = Array.isArray(options.entries) && options.entries.length ? options.entries : null
 
   for (const tool of zipToolCandidates()) {
     try {
-      execFileSync(tool, ['-a', '-c', '-f', zipPath, '-C', srcDir, '.'], { stdio: 'ignore' })
+      const args = ['-a', '-c', '-f', zipPath, '-C', srcDir]
+      if (entries) args.push(...entries)
+      else args.push('.')
+      execFileSync(tool, args, { stdio: 'ignore' })
       if (fs.existsSync(zipPath) && fs.statSync(zipPath).size > 0 && isZipFile(zipPath)) {
         return path.basename(tool)
       }
@@ -290,17 +332,74 @@ function zipDirectory(srcDir, zipPath) {
   }
 
   // 兜底：PowerShell 的 Compress-Archive（慢，但任何 Windows 都有）
-  const escapedSrc = srcDir.replace(/'/g, "''")
+  const targets = entries
+    ? entries.map((entry) => path.join(srcDir, entry))
+    : [path.join(srcDir, '*')]
+  const pathList = targets.map((item) => `'${item.replace(/'/g, "''")}'`).join(',')
   const escapedZip = zipPath.replace(/'/g, "''")
   execFileSync('powershell', [
     '-NoProfile',
     '-NonInteractive',
     '-Command',
-    `Compress-Archive -Path '${escapedSrc}\\*' -DestinationPath '${escapedZip}' -CompressionLevel Optimal -Force`
+    `Compress-Archive -Path ${pathList} -DestinationPath '${escapedZip}' -CompressionLevel Optimal -Force`
   ], { stdio: 'inherit' })
 
   if (!isZipFile(zipPath)) throw new Error('压缩失败：产物不是有效的 zip')
   return 'Compress-Archive'
+}
+
+// ---------------------------------------------------------------- 补丁内容
+
+function dirSize(dirPath) {
+  try {
+    const stat = fs.statSync(dirPath)
+    if (stat.isFile()) return stat.size
+  } catch (error) {
+    return 0
+  }
+  let total = 0
+  for (const item of walkFiles(dirPath)) {
+    try {
+      total += fs.statSync(item.full).size
+    } catch (error) { /* 文件刚好被删，忽略 */ }
+  }
+  return total
+}
+
+/**
+ * 算出这一版补丁包该装哪几个顶层条目。
+ * 返回的 requiredSince 是「被排除的文件从哪一版开始存在」——
+ * 低于它的客户端补不齐，必须走完整包。
+ */
+function resolvePatchEntries() {
+  let all = []
+  try {
+    all = fs.readdirSync(RESOURCES_DIR, { withFileTypes: true }).map((entry) => entry.name)
+  } catch (error) {
+    fail(`读不到打包产物目录: ${RESOURCES_DIR}`)
+  }
+
+  const excluded = []
+  const skipped = new Set()
+
+  for (const item of PATCH_STATIC) {
+    if (!all.includes(item.entry)) continue
+    if (withStatic) continue
+    skipped.add(item.entry)
+    excluded.push({ ...item, size: dirSize(path.join(RESOURCES_DIR, item.entry)) })
+  }
+
+  const entries = all
+    .filter((name) => !skipped.has(name) && !SKIP_DIRS.has(name) && !SKIP_RE.test(name))
+    .sort()
+  const requiredSince = excluded
+    .reduce((acc, item) => (compareVersions(item.since, acc) > 0 ? item.since : acc), '0.0.0')
+
+  return {
+    entries,
+    excluded,
+    requiredSince: requiredSince === '0.0.0' ? '' : requiredSince
+  }
 }
 
 // ---------------------------------------------------------------- 说明文本
@@ -377,17 +476,47 @@ async function main() {
     fail(`找不到 app.asar: ${asarPath}`)
   }
 
-  // 3. 统计 resources 内容（补丁包就是它的完整快照）
+  // 3. 统计补丁内容（补丁包就是 resources 的完整快照，减去 PATCH_STATIC 里的大件）
   step('统计补丁内容')
   cleanResources()
-  const collected = walkFiles(RESOURCES_DIR)
+  const patchPlan = resolvePatchEntries()
   let patchRawSize = 0
-  for (const item of collected) {
+  let patchFileCount = 0
+  for (const entryName of patchPlan.entries) {
+    const full = path.join(RESOURCES_DIR, entryName)
+    let stat = null
     try {
-      patchRawSize += fs.statSync(item.full).size
-    } catch (error) { /* 文件刚被删掉，忽略 */ }
+      stat = fs.statSync(full)
+    } catch (error) {
+      continue
+    }
+    if (stat.isDirectory()) {
+      const files = walkFiles(full)
+      patchFileCount += files.length
+      for (const file of files) {
+        try {
+          patchRawSize += fs.statSync(file.full).size
+        } catch (error) { /* 文件刚被删掉，忽略 */ }
+      }
+    } else {
+      patchFileCount += 1
+      patchRawSize += stat.size
+    }
   }
-  log(`  ${collected.length} 个文件，原始体积 ${formatBytes(patchRawSize)}`)
+  log(`  ${patchFileCount} 个文件，原始体积 ${formatBytes(patchRawSize)}`)
+  for (const item of patchPlan.excluded) {
+    log(`  跳过 ${item.entry}/（${formatBytes(item.size)}）：${item.why}`)
+  }
+  if (withStatic && PATCH_STATIC.length) {
+    log('  已指定 --with-static，被排除的静态资源本次一并打包')
+  }
+
+  // 补丁不携带这些文件，那客户端至少得装过带它们的版本，否则更新完就缺件
+  let effectivePatchFrom = patchFrom
+  if (patchPlan.requiredSince && compareVersions(patchPlan.requiredSince, effectivePatchFrom) > 0) {
+    effectivePatchFrom = patchPlan.requiredSince
+    log(`  patch.minVersion 提升到 ${effectivePatchFrom}（低于此版本的客户端改走完整包）`)
+  }
 
   // 4. 建输出目录
   const outDir = path.join(OUT_ROOT, `v${version}`)
@@ -402,7 +531,7 @@ async function main() {
     const patchName = `update-${version}.zip`
     const patchPath = path.join(assetsDir, patchName)
     try {
-      const tool = zipDirectory(RESOURCES_DIR, patchPath)
+      const tool = zipDirectory(RESOURCES_DIR, patchPath, { entries: patchPlan.entries })
       patchInfo = {
         asset: patchName,
         size: fs.statSync(patchPath).size,
@@ -447,7 +576,7 @@ async function main() {
     channel,
     version,
     build: Date.now(),
-    minSupportedVersion: patchFrom,
+    minSupportedVersion: effectivePatchFrom,
     mandatory,
     publishedAt: new Date().toISOString(),
     releaseUrl: `${RELEASE_PAGE}/tag/v${version}`,
@@ -461,7 +590,7 @@ async function main() {
       ? {
         // format 2 = 单个 zip；1 = 老的逐文件方案（客户端已不再使用）
         format: 2,
-        minVersion: patchFrom,
+        minVersion: effectivePatchFrom,
         asset: patchInfo.asset,
         size: patchInfo.size,
         sha256: patchInfo.sha256,
@@ -478,7 +607,7 @@ async function main() {
   log(`  热更新包 ${patchInfo ? formatBytes(patchInfo.size) : '无'} / 完整包 ${fullInfo ? formatBytes(fullInfo.size) : '无'}`)
 
   // 8. 上传说明
-  writeUploadGuide(outDir, { version, patchInfo, fullInfo, patchFrom })
+  writeUploadGuide(outDir, { version, patchInfo, fullInfo, patchFrom: effectivePatchFrom, patchPlan })
 
   // 9. 汇总
   log('\n============================================')
@@ -492,6 +621,10 @@ async function main() {
   log('')
   log(`  热更新包: ${patchInfo ? formatBytes(patchInfo.size) : '无'}`)
   if (fullInfo) log(`  完整包:   ${formatBytes(fullInfo.size)}`)
+  if (patchPlan.excluded.length) {
+    const names = patchPlan.excluded.map((item) => `${item.entry}/`).join('、')
+    log(`  补丁不含: ${names}（已在老用户机器上，无需重传）`)
+  }
   log('============================================\n')
 }
 
@@ -533,7 +666,13 @@ function writeUploadGuide(outDir, info) {
     `> 请用 \`--patch-from ${info.version}\` 重新发布，让老版本走完整包下载。`,
     '>',
     `> 当前 \`patch.minVersion = ${info.patchFrom}\`：低于这个版本的客户端会提示手动下载完整包。`,
-    `> 第一个支持 zip 补丁的版本是 ${ZIP_PATCH_SINCE}，比它更老的客户端必须手动装一次。`
+    `> 第一个支持 zip 补丁的版本是 ${ZIP_PATCH_SINCE}，比它更老的客户端必须手动装一次。`,
+    '',
+    '> 热更新包按设计**不含**这些目录：',
+    ...info.patchPlan.excluded.map((item) => `> - \`${item.entry}/\`（${formatBytes(item.size)}，${item.why}）`),
+    '>',
+    '> 它们从完整包安装，客户端本地已经有了。万一某次真的改动了它们，',
+    '> 用 `--with-static` 重新打包，并配合 `--patch-from <新版本>` 让老客户端走完整包。'
   ]
 
   fs.writeFileSync(path.join(outDir, 'UPLOAD.md'), `${lines.filter((line) => line !== '').join('\n')}\n`, 'utf8')

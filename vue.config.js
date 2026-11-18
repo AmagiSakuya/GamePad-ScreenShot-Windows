@@ -3,6 +3,9 @@ const path = require('path')
 
 module.exports = defineConfig({
   transpileDependencies: true,
+  // 生产构建不打 sourcemap：dist/js 里两张 .map 加起来近 2MB，会原样进 app.asar，
+  // 每次热更新都要多传一份；而且会把源码结构一起发出去，没必要。
+  productionSourceMap: false,
   configureWebpack: {
     resolve: {
       alias: {
@@ -52,8 +55,8 @@ module.exports = defineConfig({
           // 内置录制引擎：ffmpeg 必须作为「真实文件」放在 resources 下，
           // 不能打进 asar（子进程要从文件系统启动它）。
           // 体积约 160MB，用户装完即用，不需要另外下载。
-          // 注意：热更新只替换 app.asar，这个目录动不到 ——
-          // 所以升级版本号不受它影响，也不会让补丁包变大。
+          // 注意：它确实落在 resources 里，但 scripts/release.js 会把它排除在
+          // 热更新包之外（见 PATCH_STATIC），否则每个补丁包都要白扛 170MB。
           {
             from: "vendor/ffmpeg/ffmpeg.exe",
             to: "./ffmpeg/ffmpeg.exe"
