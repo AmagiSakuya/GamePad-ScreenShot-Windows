@@ -48,6 +48,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     offScreenshotKeyboardTriggered: () => {
         ipcRenderer.removeAllListeners('screen-shot-keyboard-triggered')
     },
+    // 手柄输入变化（按键/十字键/扳机越阈）：用来立刻复查组合键，不用等下一轮 60ms 轮询
+    onGamepadInputEvent: (callback) => {
+        ipcRenderer.removeAllListeners('gamepad-input-event')
+        ipcRenderer.on('gamepad-input-event', (_event, kind) => callback(kind))
+    },
+    offGamepadInputEvent: () => {
+        ipcRenderer.removeAllListeners('gamepad-input-event')
+    },
     selectFolder: () => ipcRenderer.invoke('select-folder'),
     copyText: (text) => clipboard.writeText(text),
     getAllGamePad: () => ipcRenderer.invoke('get-all-gamepad'),

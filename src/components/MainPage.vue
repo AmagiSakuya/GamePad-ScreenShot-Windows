@@ -353,6 +353,8 @@ let lastAxesValue;
 let activeWinInfoResult;
 let autoListenResolutionKey = 'autoListenResolution';
 let errorFlashTimer;
+// 组合键复查是否正在跑：轮询和主进程推送会同时调进来
+let screenShotTriggerBusy = false;
 
 export default {
   name: 'MainPage',
@@ -501,6 +503,8 @@ export default {
   async mounted() {
     await window.electronAPI.onDeviceChanged(this.onSDL2DeviceChanged, 'main');
     await window.electronAPI.onScreenshotKeyboardTriggered(this.onScreenshotKeyboardTriggeredCallback);
+    // 手柄输入一变化就复查组合键（轮询继续跑，负责长按判定和界面预览）
+    await window.electronAPI.onGamepadInputEvent(this.onGamepadInputEventCallback);
     await window.electronAPI.offOpenFolderTriggered();
     await window.electronAPI.onOpenFolderTriggered(this.openScreenShotFolder);
     await this.loadScreenSources();
@@ -1336,6 +1340,17 @@ export default {
       }
     },
     async handleScreenShotTrigger() {
+      // 60ms 轮询和「输入变化推送」都会调到这里，两次调用在同一个 tick 里重叠时
+      // 直接跳过 —— 否则会把同一帧的按键状态读两遍、长按计时也会被重复推进
+      if (screenShotTriggerBusy) return
+      screenShotTriggerBusy = true
+      try {
+        await this.runScreenShotTrigger()
+      } finally {
+        screenShotTriggerBusy = false
+      }
+    },
+    async runScreenShotTrigger() {
       this.buttonsValuePreview = await window.electronAPI.getCurrentButtonsValue()
       this.axesValuePreview = await window.electronAPI.getCurrentAxesValue()
 
@@ -1586,6 +1601,14 @@ export default {
       if (this.config.keyboardTrigger && this.listening && event.keycode == this.config.keyboardTriggerKeyCode) {
         this.takeScreenshot();
       }
+    },
+    /**
+     * 主进程推送的「手柄输入变了」。
+     * 只是提前把轮询里那段判断跑一遍：按键/扳机一变化就复查组合键，
+     * 松手到截图之间不用再等最多 60ms 的轮询周期。
+     */
+    onGamepadInputEventCallback() {
+      this.handleScreenShotTrigger();
     },
     computedKeyCodeLabel() {
       let m_key = this.config.keyboardTriggerKeyCode;

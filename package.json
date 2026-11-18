@@ -1,6 +1,6 @@
 {
   "name": "gamepad-screenshot",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "author": "AmagiSakuya",
   "description": "A Simple Gamepad ScreenShot Tool",
   "private": true,
@@ -20,7 +20,8 @@
     "rec:replay": "node scripts/replay-smoke.js",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
-    "rec:audio": "node scripts/audio-smoke.js"
+    "rec:audio": "node scripts/audio-smoke.js",
+    "cap:bench": "electron scripts/capture-bench.js && node -e \"process.stdout.write(require('fs').readFileSync('log/capture-bench.txt','utf8'))\""
   },
   "main": "background.js",
   "dependencies": {

@@ -47,6 +47,20 @@ function listCaptureMonitors() {
 }
 
 /**
+ * 按显示器名（`\\.\DISPLAY1`）或数字 id 取回 Monitor 实例，供真正抓屏用。
+ * 抓屏和下拉框用同一个枚举口径，才不会出现「列表里有、截不到」。
+ */
+function findCaptureMonitor(id) {
+    if (!ScreenshotMonitor || typeof ScreenshotMonitor.all !== 'function') return null
+    const key = String(id === undefined || id === null ? '' : id)
+    if (!key) return null
+    const monitors = ScreenshotMonitor.all() || []
+    return monitors.find((item) => {
+        return String(readWindowField(item, 'name')) === key || String(readWindowField(item, 'id')) === key
+    }) || null
+}
+
+/**
  * @returns {Array<{id:number,title:string,ownerName:string,processId:number,path:string,
  *                  bounds:{x:number,y:number,width:number,height:number},minimized:boolean}>}
  */
@@ -130,5 +144,6 @@ module.exports = {
     listCaptureWindows,
     listCaptureWindowsFallback,
     listCaptureMonitors,
+    findCaptureMonitor,
     enumerateCaptureWindows
 }

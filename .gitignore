@@ -12,6 +12,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+# 本地截图基准报告（npm run cap:bench 生成）
+/log
 
 # Editor directories and files
 .idea

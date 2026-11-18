@@ -24,7 +24,9 @@ if (process.platform === 'win32') {
 const { screenshotSoundEnum, CommonButtonEnum, ScreenShotSaveWayEnum } = require('@/lib/enum')
 const { snapUiScale, migrateLegacyUiScale, UI_SCALE_DEFAULT, UI_SCALE_MIN, UI_SCALE_MAX, UI_SCALE_VERSION } = require('@/lib/uiScale')
 // 窗口来源枚举：不要求窗口带标题栏，否则无边框全屏的游戏会被过滤掉
-const { enumerateCaptureWindows } = require('@/lib/captureWindows')
+const { enumerateCaptureWindows, listCaptureMonitors, findCaptureMonitor } = require('@/lib/captureWindows')
+// 截图编码：JPEG 走 Chromium 的 libjpeg-turbo，比 node-screenshots 自带编码器快约 5 倍
+const { encodeCapturedImage } = require('@/lib/captureEncode')
 const configStore = require('@/lib/configLoader')
 // 手柄按键映射（手柄 → 键盘）：引擎读 SDL 设备状态，键盘通过常驻 PowerShell 调用 keybd_event 发送
 const { createKeySender } = require('@/lib/keySender')
@@ -593,10 +595,21 @@ function logCaptureDebugInfo(stages, { windowCapture, format, filePath }) {
 }
 //#endregion
 
-ipcMain.handle('get-screen-sources', async () => {
-  const displays = await screenshot.listDisplays();
-  screenSourceCache = displays.map((display) => ({ id: display.id, name: display.name }));
+/** 显示器下拉框 / 抓屏共用的来源列表（id 用显示器设备名，兼容老配置） */
+function refreshScreenSourceCache() {
+  screenSourceCache = listCaptureMonitors().map((monitor) => {
+    const id = monitor.name || String(monitor.id);
+    return { id, name: id };
+  });
   return screenSourceCache;
+}
+
+ipcMain.handle('get-screen-sources', async () => {
+  // 枚举口径统一到 node-screenshots —— 它本来就是真正抓屏的那个库，
+  // 列表里的 id 和「能截到的显示器」天然一致（原来用 screenshot-desktop 列、
+  // 再拿它的 id 去抓，中间隔着一次 cmd.exe 调用，列表和抓屏两套口径）。
+  // id 仍沿用显示器设备名（\\.\DISPLAY1），老配置里的 screenSourceId 不用迁移。
+  return refreshScreenSourceCache();
 })
 
 ipcMain.handle('get-capture-windows', async () => {
@@ -634,26 +647,58 @@ function getScreenshotImageDimension(image, key) {
   return typeof image[key] === 'function' ? image[key]() : image[key];
 }
 
-async function captureWindowBuffer(windowId, format) {
+/**
+ * 抓屏只负责「把画面拿到手」，编码放到下一步 —— 这样 DebugInfo 才能把
+ * 「抓屏」和「编码」分开计时，也方便把同一份 raw 复用给黑帧检测和 JPEG 编码。
+ */
+async function captureWindowImage(windowId) {
   const windows = ScreenshotWindow.all();
   const targetWindow = windows.find((item) => String(getScreenshotWindowId(item)) === String(windowId));
   if (!targetWindow) {
     throw new Error($t('captureWindowNotFound'));
   }
 
-  const image = await targetWindow.captureImage();
-  const width = getScreenshotImageDimension(image, 'width');
-  const height = getScreenshotImageDimension(image, 'height');
-  const raw = await image.toRaw(true);
-  if (isLikelyBlackGameFrame(raw, width, height)) {
-    throw new Error('检测到游戏黑帧，拒绝保存黑屏截图');
+  return targetWindow.captureImage();
+}
+
+/**
+ * 整屏抓屏：进程内 WGC，不需要起子进程。
+ *
+ * 旧实现走 screenshot-desktop：每次抓屏都要 cmd.exe → 现场编译/调起的 C# 程序
+ * → 写临时 bmp → 再读回 Node（实测 4K 下 280~320ms，其中光 listDisplays 就 95ms）。
+ * 换成本库后同一块屏约 65ms，而且和窗口抓屏共用一套 DPI / 坐标系。
+ */
+async function captureMonitorImage(screenSourceId) {
+  let monitor = findCaptureMonitor(screenSourceId);
+  if (!monitor) {
+    // 缓存可能是空的（渲染进程还没拉过来源列表），也可能是 id 失效（换显示器、热插拔）。
+    // 两种情况都现场重枚举一次，再退回第一块屏，和旧逻辑一致。
+    const sources = refreshScreenSourceCache();
+    if (sources.length) {
+      monitor = findCaptureMonitor(sources[0].id);
+    }
+  }
+  if (!monitor) {
+    throw new Error('No screen source available for capture');
   }
 
-  const buffer = format === 'png' ? await image.toPng(true) : await image.toJpeg(true);
-  if (!buffer || buffer.length === 0) {
-    throw new Error('窗口捕获返回了空画面');
+  return monitor.captureImage();
+}
+
+/**
+ * 兜底：WGC 不可用（Win7 等老系统）或注入失败时，退回旧的外部进程抓屏。
+ * 慢，但只在异常路径上走。
+ */
+async function captureScreenBufferByDesktop(screenSourceId, format) {
+  const known = screenSourceId && screenSourceCache.some((display) => display.id === screenSourceId);
+  try {
+    const buffer = await screenshot(known ? { screen: screenSourceId, format } : { format });
+    return encodeScreenshotBuffer(buffer, format);
+  } catch (error) {
+    log.warn('Legacy screen capture failed, retrying with default display:', error);
+    const buffer = await screenshot({ format });
+    return encodeScreenshotBuffer(buffer, format);
   }
-  return buffer;
 }
 
 async function resolveCaptureWindow(config) {
@@ -677,6 +722,7 @@ async function resolveCaptureWindow(config) {
 ipcMain.handle('screen-shot', async (_, config) => {
   const format = config.imageFormat === 'png' ? 'png' : 'jpg';
   let buffer;
+  let image = null;
 
   // DebugInfo（实验性功能）：秒表从进入 handler 起算，每段各记自己花了多久。
   // 「总延迟」= 清场 + 抓屏 + 编码，也就是「按键到画面真的被抓下来」这段时间；
@@ -701,38 +747,37 @@ ipcMain.handle('screen-shot', async (_, config) => {
   if (isWindowCapture) {
     try {
       const selectedWindow = await resolveCaptureWindow(config);
-      buffer = await captureWindowBuffer(selectedWindow.id, format);
+      image = await captureWindowImage(selectedWindow.id);
     } catch (error) {
       log.warn('Game window capture rejected:', error);
       return null;
     }
   } else {
-    let screenSourceId = config.screenSourceId;
-    if (!screenSourceCache.some((display) => display.id === screenSourceId)) {
-      screenSourceId = screenSourceCache[0] && screenSourceCache[0].id;
-    }
-
     try {
-      buffer = await screenshot({
-        screen: screenSourceId,
-        format
-      });
+      image = await captureMonitorImage(config.screenSourceId);
     } catch (error) {
-      screenSourceCache = (await screenshot.listDisplays()).map((display) => ({ id: display.id, name: display.name }));
-      const fallbackDisplay = screenSourceCache[0];
-      if (!fallbackDisplay) {
-        throw new Error('No screen source available for capture');
-      }
-      buffer = await screenshot({
-        screen: fallbackDisplay.id,
-        format
-      });
+      // 进程内抓屏起不来才退回旧实现，正常情况下不该走到这里
+      log.warn('[CAPTURE] In-process screen capture failed, falling back to legacy capture:', error);
+      buffer = await captureScreenBufferByDesktop(config.screenSourceId, format);
     }
   }
   markStage('capture');
 
-  if (!isWindowCapture) {
-    buffer = encodeScreenshotBuffer(buffer, format);
+  if (image) {
+    if (isWindowCapture) {
+      // 黑帧检测：WGC 抓受保护内容（部分 DRM / 独占全屏）会返回一整张纯黑，
+      // 存下来就是一张黑图。raw 顺手复用给 JPEG 编码，不多花一次拷贝。
+      const raw = await image.toRaw(true);
+      const width = getScreenshotImageDimension(image, 'width');
+      const height = getScreenshotImageDimension(image, 'height');
+      if (isLikelyBlackGameFrame(raw, width, height)) {
+        log.warn('Game window capture rejected: 检测到游戏黑帧，拒绝保存黑屏截图');
+        return null;
+      }
+      buffer = await encodeCapturedImage(image, format, { raw });
+    } else {
+      buffer = await encodeCapturedImage(image, format);
+    }
   }
   markStage('encode');
 
@@ -833,6 +878,27 @@ function syncHatStatesFromDevice() {
   }
 }
 
+// 扳机/摇杆「越过阈值」的推送状态：只在跨越时推一次，摇杆抖动不会刷屏
+const AXIS_PUSH_THRESHOLD = 0.85;
+let axisArmed = [];
+
+/**
+ * 手柄输入变化的即时推送。
+ *
+ * 渲染进程本来靠 60ms 一次轮询判断组合键，也就是说「松手」这个动作最多要多等
+ * 一整个轮询周期（平均 30ms、最坏 60ms）才会被截图逻辑看到。
+ * 这里在状态真正变化时补一条推送，让渲染进程立刻复查一次；轮询继续负责长按判定
+ * 和界面预览，两者互不冲突（截图入口本身有 screenShoting 互斥）。
+ */
+function pushGamepadInputEvent(kind) {
+  if (!win || win.isDestroyed()) return;
+  try {
+    win.webContents.send('gamepad-input-event', kind);
+  } catch (e) {
+    // 窗口正在销毁时 send 会抛，忽略即可
+  }
+}
+
 function resetDeviceState() {
   const buttonCount = (device_instance && device_instance.buttons && device_instance.buttons.length)
     ? device_instance.buttons.length
@@ -842,6 +908,7 @@ function resetDeviceState() {
     ? device_instance.axes.length
     : 10;
   axes = new Array(axisCount).fill(0);
+  axisArmed = new Array(axisCount).fill(false);
   hatCount = (device_instance && device_instance.hats && device_instance.hats.length)
     ? device_instance.hats.length
     : 0;
@@ -1228,10 +1295,12 @@ function openDeviceInstance(index) {
 
   device_instance.on('buttonDown', (data) => {
     buttons[data.button] = true;
+    pushGamepadInputEvent('button');
   })
 
   device_instance.on('buttonUp', (data) => {
     buttons[data.button] = false;
+    pushGamepadInputEvent('button');
   })
 
   // 十字键（hat）：不再限定 Xbox 型号，任何带 hat 的设备都会记录
@@ -1239,11 +1308,18 @@ function openDeviceInstance(index) {
     const index = Number.isInteger(data.hat) ? data.hat : 0;
     if (index >= 0 && index < hatCount) {
       hatStates[index] = data.value;
+      pushGamepadInputEvent('hat');
     }
   })
 
   device_instance.on('axisMotion', (data) => {
     axes[data.axis] = data.value;
+    // 只在「按下/松开」跨越阈值时推一次：摇杆静止时的细碎抖动不该触发整条截图链路
+    const armed = Math.abs(data.value) >= AXIS_PUSH_THRESHOLD;
+    if (axisArmed[data.axis] !== armed) {
+      axisArmed[data.axis] = armed;
+      pushGamepadInputEvent('axis');
+    }
   })
 
   return true
